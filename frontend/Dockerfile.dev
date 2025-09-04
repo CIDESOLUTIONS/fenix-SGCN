@@ -1,0 +1,22 @@
+# Imagen base
+FROM node:18-alpine
+
+# Configuramos directorio de trabajo
+WORKDIR /usr/src/app
+
+# Evita problemas de permisos
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copiamos solo package.json para instalar deps
+COPY package*.json ./
+
+RUN npm install
+
+# Usuario no root
+USER appuser
+
+# Exponemos el puerto de Next.js
+EXPOSE 3000
+
+# Comando por defecto (se sobreescribe en docker-compose)
+CMD ["npm", "run", "dev"]
