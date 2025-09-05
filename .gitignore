@@ -5,6 +5,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # ===========================
 # Build outputs
@@ -13,6 +14,8 @@ dist/
 .next/
 out/
 coverage/
+*.tsbuildinfo
+.turbo/
 
 # ===========================
 # Prisma
@@ -44,12 +47,12 @@ Thumbs.db
 # ===========================
 # Docker
 # ===========================
-*.pid
-*.seed
 .docker/
 docker-data/
 postgres-data/
 minio-data/
+*.pid
+*.seed
 
 # ===========================
 # IDEs / Editors
@@ -65,3 +68,4 @@ minio-data/
 *.tgz
 *.tar.gz
 *.zip
+*.bak
