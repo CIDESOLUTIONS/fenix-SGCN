@@ -1,22 +1,43 @@
-# Imagen base
-FROM node:18-alpine
-
-# Configuramos directorio de trabajo
+# ============================
+# STAGE 1: Dependencias
+# ============================
+FROM node:18-alpine AS deps
 WORKDIR /usr/src/app
 
-# Evita problemas de permisos
+# Crear usuario seguro
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copiamos solo package.json para instalar deps
+# Copiar manifiestos de dependencias
 COPY package*.json ./
 
-RUN npm install
+# Instalar dependencias (con flags para evitar problemas de permisos)
+RUN npm install --legacy-peer-deps --unsafe-perm
 
-# Usuario no root
+# Corrección automática de vulnerabilidades
+RUN npm audit fix --force || true
+
+# ============================
+# STAGE 2: Desarrollo
+# ============================
+FROM node:18-alpine AS dev
+WORKDIR /usr/src/app
+
+# Crear usuario seguro
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copiar node_modules desde deps
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+
+# Copiar todo el código del proyecto
+COPY . .
+
+# 🔑 Corrección de permisos
+RUN chown -R appuser:appgroup /usr/src/app
+
 USER appuser
 
-# Exponemos el puerto de Next.js
 EXPOSE 3000
+ENV PORT=3000
 
-# Comando por defecto (se sobreescribe en docker-compose)
+# Comando por defecto en modo dev
 CMD ["npm", "run", "dev"]
