@@ -11,37 +11,457 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo para las empresas/clientes (Tenants)
+// ============================================
+// MULTI-TENANCY Y USUARIOS
+// ============================================
+
 model Tenant {
   id        String   @id @default(uuid())
-  name      String   @unique
-  domain    String   @unique              // 🔑 Nuevo: dominio único para identificar tenant
+  name      String
+  domain    String   @unique
+  logo      String?
+  colors    Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users User[] // Relación: Un Tenant tiene muchos Usuarios
+  users               User[]
+  businessProcesses   BusinessProcess[]
+  biaAssessments      BiaAssessment[]
+  riskAssessments     RiskAssessment[]
+  continuityStrategies ContinuityStrategy[]
+  continuityPlans     ContinuityPlan[]
+  testExercises       TestExercise[]
+  complianceFrameworks ComplianceFramework[]
+  correctiveActions   CorrectiveAction[]
+  documents           Document[]
 
   @@map("tenants")
 }
 
-// Modelo para los Usuarios
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
+  fullName  String?
+  position  String?
+  phone     String?
   role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("users")
 }
 
-// Enum para los roles de usuario
 enum UserRole {
   ADMIN
   MANAGER
   USER
+  AUDITOR
+}
+
+// ============================================
+// MÓDULO: PROCESOS CRÍTICOS
+// ============================================
+
+model BusinessProcess {
+  id               String   @id @default(uuid())
+  tenantId         String
+  name             String
+  description      String?
+  criticalityLevel CriticalityLevel
+  department       String?
+  dependencies     String[]
+  responsiblePerson String?
+  
+  // Matriz RACI
+  raciResponsible       String?
+  raciResponsibleEmail  String?
+  raciAccountable       String?
+  raciAccountableEmail  String?
+  raciConsulted         String?
+  raciConsultedEmail    String?
+  raciInformed          String?
+  raciInformedEmail     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  biaAssessments  BiaAssessment[]
+  riskAssessments RiskAssessment[]
+  strategies      ContinuityStrategy[]
+  plans           ContinuityPlan[]
+
+  @@map("business_processes")
+}
+
+enum CriticalityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ============================================
+// MÓDULO: BIA (Business Impact Analysis)
+// ============================================
+
+model BiaAssessment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String
+  
+  // Métricas tiempo (en horas)
+  rto         Int?     // Recovery Time Objective
+  rpo         Int?     // Recovery Point Objective
+  mtpd        Int?     // Maximum Tolerable Period of Disruption
+  mbco        Decimal? // Minimum Business Continuity Objective
+  
+  // Impactos financieros
+  financialImpact1h   Decimal?
+  financialImpact24h  Decimal?
+  financialImpact1w   Decimal?
+  
+  // Impactos cualitativos
+  operationalImpact String?
+  reputationImpact  String?
+  regulatoryImpact  String?
+  
+  // Dependencias
+  dependencyMap     Json?    // Grafo de dependencias
+  
+  // Scoring
+  priorityScore     Decimal?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@map("bia_assessments")
+}
+
+// ============================================
+// MÓDULO: RIESGO DE CONTINUIDAD (ARA)
+// ============================================
+
+model RiskAssessment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String?
+  
+  name        String
+  description String?
+  category    RiskCategory
+  
+  // Evaluación sin controles
+  probabilityBefore Int      // 1-5
+  impactBefore      Int      // 1-5
+  scoreBefore       Decimal  // Calculado
+  
+  // Controles
+  controls          String[]
+  
+  // Evaluación con controles
+  probabilityAfter  Int?
+  impactAfter       Int?
+  scoreAfter        Decimal?
+  
+  // KRIs
+  kris              Json?
+  
+  // Score resiliencia
+  resilienceScore   Decimal?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+
+  @@map("risk_assessments")
+}
+
+enum RiskCategory {
+  OPERATIONAL
+  TECHNOLOGICAL
+  NATURAL
+  HUMAN
+  EXTERNAL
+}
+
+// ============================================
+// MÓDULO: ESCENARIOS Y ESTRATEGIAS
+// ============================================
+
+model ContinuityStrategy {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String?
+  
+  scenario    String
+  description String?
+  type        StrategyType
+  
+  // Evaluación
+  cost              Decimal?
+  effectiveness     Int?     // 1-5
+  implementationTime Int?    // días
+  
+  // Scoring
+  costEffectivenessScore Decimal?
+  
+  recommended Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+
+  @@map("continuity_strategies")
+}
+
+enum StrategyType {
+  PREVENTION
+  MITIGATION
+  RECOVERY
+  REDUNDANCY
+}
+
+// ============================================
+// MÓDULO: PLANES DE CONTINUIDAD
+// ============================================
+
+model ContinuityPlan {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String?
+  
+  name        String
+  type        PlanType
+  content     Json     // Editor visual blocks
+  version     String   @default("1.0")
+  
+  // Estado
+  status      PlanStatus @default(DRAFT)
+  approvedBy  String?
+  approvedAt  DateTime?
+  
+  // Ejecución
+  lastActivated DateTime?
+  executionLog  Json?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+
+  @@map("continuity_plans")
+}
+
+enum PlanType {
+  BCP  // Business Continuity Plan
+  DRP  // Disaster Recovery Plan
+  IRP  // Incident Response Plan
+  CRISIS // Crisis Management Plan
+}
+
+enum PlanStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ACTIVE
+  ARCHIVED
+}
+
+// ============================================
+// MÓDULO: PRUEBAS DE CONTINUIDAD
+// ============================================
+
+model TestExercise {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  name        String
+  type        TestType
+  description String?
+  
+  // Planificación
+  scheduledDate DateTime
+  duration      Int?     // minutos
+  participants  String[]
+  
+  // Ejecución
+  executedDate  DateTime?
+  executedBy    String?
+  
+  // Resultados
+  checklist     Json?
+  results       String?
+  score         Decimal?
+  
+  // Evidencias
+  evidences     String[] // URLs MinIO
+  
+  // Lecciones aprendidas
+  lessonsLearned String?
+  improvements   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("test_exercises")
+}
+
+enum TestType {
+  DESKTOP
+  FUNCTIONAL
+  SIMULATION
+  FULL_RECOVERY
+}
+
+// ============================================
+// MÓDULO: CUMPLIMIENTO NORMATIVO
+// ============================================
+
+model ComplianceFramework {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  name        String   // ISO 22301, ISO 31000, etc.
+  version     String?
+  description String?
+  
+  // Certificación
+  certificationDate DateTime?
+  expiryDate        DateTime?
+  certifyingBody    String?
+  certificateNumber String?
+  
+  // Estado
+  complianceLevel   Decimal? // 0-100%
+  lastAssessment    DateTime?
+  nextAssessment    DateTime?
+  
+  requirements Json?   // Requisitos detallados
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("compliance_frameworks")
+}
+
+// ============================================
+// MÓDULO: MEJORA CONTINUA
+// ============================================
+
+model CorrectiveAction {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  title       String
+  description String?
+  category    ActionCategory
+  
+  // NC/Hallazgo
+  finding     String?
+  severity    Severity
+  
+  // Plan de acción
+  actionPlan  String
+  responsible String
+  dueDate     DateTime
+  
+  // Estado
+  status      ActionStatus @default(OPEN)
+  
+  // Cierre
+  verification String?
+  closedBy     String?
+  closedAt     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("corrective_actions")
+}
+
+enum ActionCategory {
+  AUDIT_FINDING
+  INCIDENT
+  EXERCISE_RESULT
+  IMPROVEMENT
+}
+
+enum Severity {
+  CRITICAL
+  MAJOR
+  MINOR
+}
+
+enum ActionStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_VERIFICATION
+  CLOSED
+}
+
+// ============================================
+// REPOSITORIO DOCUMENTAL
+// ============================================
+
+model Document {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  name        String
+  type        DocumentType
+  category    String?
+  
+  // Storage
+  fileUrl     String   // MinIO URL
+  fileSize    Int?     // bytes
+  mimeType    String?
+  
+  // Metadata
+  version     String   @default("1.0")
+  tags        String[]
+  description String?
+  
+  // Control
+  approvedBy  String?
+  approvedAt  DateTime?
+  expiryDate  DateTime?
+  
+  // Legal hold
+  legalHold   Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+enum DocumentType {
+  POLICY
+  PROCEDURE
+  PLAN
+  REPORT
+  EVIDENCE
+  CERTIFICATE
+  OTHER
 }

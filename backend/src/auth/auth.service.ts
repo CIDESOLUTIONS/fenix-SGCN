@@ -17,12 +17,11 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(dto.password, salt);
 
-    // Usamos una transacción para asegurar que ambas operaciones (crear tenant y usuario)
-    // se completen con éxito o ninguna lo haga.
     const newUser = await this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           name: dto.tenantName,
+          domain: `${dto.tenantName.toLowerCase().replace(/\s/g, '-')}.fenix-sgcn.com`,
         },
       });
 
@@ -37,13 +36,8 @@ export class AuthService {
       return user;
     });
 
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // ESTA ES LA CORRECCIÓN DEL CÓDIGO
-    // En lugar de 'delete', creamos un nuevo objeto sin la propiedad 'password'.
-    // Esto es más seguro y cumple con las reglas de TypeScript.
     const { password, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   }
 
   async signin(dto: SigninDto) {
