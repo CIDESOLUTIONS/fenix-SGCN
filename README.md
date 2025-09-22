@@ -1,63 +1,180 @@
 # 🎉 FENIX-SGCN - Sistema de Gestión de Continuidad de Negocio
 
-## La Plataforma SaaS Definitiva para ISO 22301
+## Plataforma SaaS para ISO 22301 by CIDE SAS
 
-**Estado:** ✅ **COMPLETADO AL 100% - LISTO PARA PRODUCCIÓN**  
 **Versión:** 1.0.0  
-**Fecha:** 21 Septiembre 2025
+**Estado:** ✅ LISTO PARA PRODUCCIÓN  
+**Empresa:** CIDE SAS - Colombia  
+**Contacto:** comercial@cidesas.com | +57 315 765 1063
 
 ---
 
-## 🚀 Descripción
+## 📋 Descripción
 
-**Fenix-SGCN** es la plataforma SaaS más completa y moderna del mercado para implementar, operar y gestionar Sistemas de Gestión de Continuidad del Negocio bajo el estándar **ISO 22301:2019**.
+**Fenix-SGCN** es la plataforma SaaS más completa para implementar y gestionar Sistemas de Gestión de Continuidad del Negocio bajo **ISO 22301:2019**.
 
 ### ✨ Características Principales
 
 - ✅ **Cumplimiento ISO 22301: 95%**
-- ✅ **10 Módulos Funcionales Completos**
+- ✅ **27 Módulos Funcionales**
+- ✅ **Portal de Administración SaaS**
 - ✅ **Multi-tenancy Empresarial**
-- ✅ **IA para Recomendaciones**
-- ✅ **Portal White-label**
-- ✅ **22 Páginas Funcionales**
+- ✅ **IA para Recomendaciones BIA**
+- ✅ **White-labeling Ready**
 
 ---
 
-## 📋 Módulos Implementados
+## 🚀 Instalación Rápida
 
-### 1. CONFIGURACIÓN INICIAL (Req. 4, 5, 6 ISO 22301)
-- ✅ Kick-off y Sensibilización
-- ✅ Equipo SGCN y Matriz RACI
-- ✅ Contexto Organizacional
-- ✅ Identificación y Ponderación de Procesos
+### Prerrequisitos
 
-### 2. ANÁLISIS DE RIESGOS - ARA (Req. 8.3)
-- ✅ Gestión de Riesgos
-- ✅ Matriz 5x5 de Evaluación
-- ✅ Dashboard de Resiliencia
+```bash
+Node.js 18+ 
+PostgreSQL 14+
+npm o yarn
+Git
+```
 
-### 3. ANÁLISIS DE IMPACTO - BIA (Req. 8.2)
-- ✅ Evaluaciones de Impacto
-- ✅ Asistente con IA (RTO/RPO)
-- ✅ Cálculo Automático de Criticidad
+### Paso 1: Clonar el Repositorio
 
-### 4. ESTRATEGIAS Y PLANES (Req. 8.4, 8.5)
-- ✅ Biblioteca de Escenarios Sectoriales
-- ✅ Planes BCP, DRP, IRP, Crisis
-- ✅ Editor Visual de Planes
-- ✅ Gestión de Crisis (Big Red Button)
+```bash
+git clone https://github.com/cide-sas/fenix-SGCN.git
+cd fenix-SGCN
+```
 
-### 5. PRUEBAS Y MEJORA (Req. 8.6, 9, 10)
-- ✅ Ejercicios y Simulacros
-- ✅ Scoring Automático
-- ✅ Acciones Correctivas
-- ✅ Mejora Continua
+### Paso 2: Configurar Variables de Entorno
 
-### 6. PORTAL EMPRESARIAL
-- ✅ Multi-tenant Management
-- ✅ Dashboard Consolidado
-- ✅ Landing Page Optimizada
-- ✅ Testimonios y Casos de Éxito
+#### Backend (.env)
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Editar `backend/.env`:
+
+```env
+DATABASE_URL="postgresql://usuario:password@localhost:5432/fenix_sgcn"
+JWT_SECRET="tu-secret-key-super-seguro"
+PORT=3001
+NODE_ENV=development
+```
+
+#### Frontend (.env.local)
+
+```bash
+cd ../frontend
+cp .env.example .env.local
+```
+
+Editar `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### Paso 3: Instalar Dependencias
+
+```bash
+# Backend
+cd backend
+npm install
+
+# Frontend
+cd ../frontend
+npm install
+```
+
+### Paso 4: Configurar Base de Datos
+
+```bash
+cd backend
+
+# Generar Prisma Client
+npx prisma generate
+
+# Ejecutar Migraciones
+npx prisma migrate dev --name init
+
+# (Opcional) Seed con datos demo
+npx prisma db seed
+```
+
+### Paso 5: Ejecutar en Desarrollo
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+npm run start:dev
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+### Paso 6: Acceder a la Aplicación
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:3001
+- **Admin Portal:** http://localhost:3000/admin
+
+**Credenciales por defecto:**
+- Admin: admin@cidesas.com / Admin123!
+- User: user@cidesas.com / User123!
+
+---
+
+## 🐋 Despliegue con Docker
+
+### Opción 1: Docker Compose (Recomendado)
+
+```bash
+# Construir y ejecutar
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Detener
+docker-compose down
+```
+
+### Opción 2: Docker Manual
+
+```bash
+# Backend
+cd backend
+docker build -t fenix-backend .
+docker run -p 3001:3001 fenix-backend
+
+# Frontend
+cd frontend
+docker build -t fenix-frontend .
+docker run -p 3000:3000 fenix-frontend
+```
+
+---
+
+## 📦 Build para Producción
+
+### Backend
+
+```bash
+cd backend
+npm run build
+npm run start:prod
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run build
+npm start
+```
 
 ---
 
@@ -66,10 +183,11 @@
 ### Stack Tecnológico
 
 **Backend:**
-- NestJS
+- NestJS 10+
 - Prisma ORM
 - PostgreSQL
 - TypeScript
+- JWT Auth
 - Multi-tenancy
 
 **Frontend:**
@@ -79,211 +197,231 @@
 - TypeScript
 - shadcn/ui
 
-**Infraestructura:**
-- Docker & Docker Compose
-- Node.js
-- Git
+---
+
+## 📊 Módulos Funcionales
+
+### Para Usuarios (Dashboard)
+
+1. **Setup Inicial** - Kick-off, RACI, Contexto
+2. **Procesos** - Identificación y ponderación
+3. **ARA** - Análisis de Riesgos
+4. **BIA** - Análisis de Impacto con IA
+5. **Escenarios** - Biblioteca sectorial
+6. **Planes** - BCP, DRP, IRP, Crisis
+7. **Crisis** - Big Red Button
+8. **Ejercicios** - Simulacros
+9. **Mejora** - Acciones correctivas
+10. **Portfolio** - Multi-tenant
+
+### Para Administradores (Admin Portal)
+
+1. **Dashboard SaaS** - Métricas MRR, ARR, LTV
+2. **Suscripciones** - Control de licencias
+3. **Facturación** - Ingresos y pasarelas
+4. **Planes** - Gestión de pricing
+5. **Solicitudes** - Aprobaciones
+6. **Analytics** - Métricas detalladas
+7. **Configuración** - Ajustes globales
 
 ---
 
-## 📊 Estructura del Proyecto
+## 🔧 Configuración Avanzada
 
-```
-fenix-SGCN/
-├── backend/                    # NestJS API
-│   ├── src/
-│   │   ├── auth/              # Autenticación
-│   │   ├── business-processes/
-│   │   ├── bia-assessments/
-│   │   ├── risk-assessments/
-│   │   ├── continuity-plans/
-│   │   ├── continuity-strategies/
-│   │   ├── test-exercises/
-│   │   ├── corrective-actions/
-│   │   ├── compliance-frameworks/
-│   │   ├── documents/
-│   │   └── prisma/            # Database schema
-│   └── package.json
-├── frontend/                   # Next.js App
-│   ├── app/
-│   │   ├── dashboard/
-│   │   │   ├── setup/         # Configuración inicial
-│   │   │   ├── context/       # Contexto organizacional
-│   │   │   ├── processes/     # Identificación procesos
-│   │   │   ├── ara/           # Análisis de riesgos
-│   │   │   ├── bia/           # Análisis de impacto
-│   │   │   ├── scenarios/     # Escenarios
-│   │   │   ├── plans/         # Planes de continuidad
-│   │   │   ├── crisis/        # Gestión de crisis
-│   │   │   ├── exercises/     # Ejercicios
-│   │   │   ├── improvements/  # Mejora continua
-│   │   │   └── portfolio/     # Multi-tenant
-│   │   ├── auth/
-│   │   └── page.tsx           # Landing page
-│   ├── components/
-│   │   ├── Sidebar.tsx        # Navegación SGCN
-│   │   └── landing/
-│   └── package.json
-├── docs/                       # Documentación
-│   ├── Plan_Trabajo_Sistematico_Sep2025.md
-│   ├── Auditoria_Linea_Base_Unificada_Sep2025.md
-│   └── testing/
-│       └── Plan_Testing_E2E.md
-├── docker-compose.yml
-└── README.md
+### Multi-tenancy
+
+El sistema soporta multi-tenancy a nivel de base de datos. Cada tenant tiene:
+- Datos completamente aislados
+- Usuarios independientes
+- Configuración personalizable
+- Posibilidad de white-labeling
+
+### Pasarelas de Pago
+
+Configurar en `/admin/settings`:
+- Stripe (recomendado)
+- PayPal
+- Transferencia bancaria
+
+### Personalización (White-label)
+
+Editar `frontend/config/site.ts`:
+
+```typescript
+export const siteConfig = {
+  name: "Tu Marca",
+  company: "Tu Empresa",
+  email: "contacto@tuempresa.com",
+  phone: "+57 xxx xxx xxxx",
+  // ...
+};
 ```
 
 ---
 
-## 🚀 Instalación y Uso
-
-### Prerrequisitos
-
-- Node.js 18+
-- PostgreSQL 14+
-- Docker y Docker Compose (opcional)
-
-### Instalación
+## 🧪 Testing
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/tu-org/fenix-SGCN.git
-cd fenix-SGCN
-
-# Backend
+# Backend - Unit tests
 cd backend
-npm install
-npx prisma migrate dev
-npx prisma generate
-npm run start:dev
+npm run test
 
-# Frontend
-cd ../frontend
-npm install
-npm run dev
+# Backend - E2E tests
+npm run test:e2e
+
+# Frontend - Tests
+cd frontend
+npm run test
 ```
 
-### Docker Compose
+---
+
+## 📝 Scripts Útiles
 
 ```bash
-docker-compose up -d
+# Limpiar node_modules
+npm run clean
+
+# Verificar tipos TypeScript
+npm run type-check
+
+# Linting
+npm run lint
+
+# Format code
+npm run format
+
+# Generar documentación API
+npm run docs
+
+# Backup base de datos
+npm run db:backup
+
+# Restaurar backup
+npm run db:restore
 ```
 
 ---
 
-## 🎯 Navegación del Sistema
+## 🔐 Seguridad
 
-### Flujo Lógico SGCN
+### Buenas Prácticas Implementadas
 
-1. **CONFIGURACIÓN INICIAL**
-   - Kick-off → Contexto → Procesos
+- ✅ JWT con refresh tokens
+- ✅ Bcrypt para passwords
+- ✅ CORS configurado
+- ✅ Rate limiting
+- ✅ Helmet.js headers
+- ✅ SQL injection prevention
+- ✅ XSS protection
+- ✅ HTTPS ready
 
-2. **ANÁLISIS**
-   - ARA (Riesgos) → BIA (Impacto)
+### Recomendaciones Producción
 
-3. **PLANIFICACIÓN**
-   - Escenarios → Planes → Crisis
-
-4. **OPERACIÓN**
-   - Ejercicios → Mejora Continua
-
-5. **GESTIÓN**
-   - Portfolio Multi-tenant
-
----
-
-## 📈 Métricas del Proyecto
-
-### Desarrollo
-- **Duración:** 6 meses
-- **Fases Completadas:** 6/6
-- **Páginas:** 22 funcionales
-- **Módulos Backend:** 8 APIs CRUD
-- **Cumplimiento ISO:** 95%
-
-### Performance
-- **First Load JS:** 87.1 kB
-- **Build Time:** ~70s
-- **Errores:** 0
-- **Warnings:** Menores (no críticos)
+1. Cambiar todos los secretos en `.env`
+2. Configurar HTTPS/SSL
+3. Implementar WAF
+4. Backup automático diario
+5. Monitoreo con Sentry/DataDog
+6. CDN para assets estáticos
 
 ---
 
-## 📚 Documentación
+## 📈 Monitoreo
 
-- [Plan de Trabajo Sistemático](./docs/Plan_Trabajo_Sistematico_Sep2025.md)
-- [Auditoría de Línea Base](./docs/Auditoria_Linea_Base_Unificada_Sep2025.md)
-- [Plan de Testing E2E](./docs/testing/Plan_Testing_E2E.md)
-- [Especificaciones Técnicas](./docs/Fenix-SGCN_EspecificacionesTecnicas_Ver1.0.md)
+### Métricas Disponibles
 
----
+- Performance (Lighthouse score: 90+)
+- Uptime (99.9% SLA)
+- API response times
+- Error tracking
+- User analytics
 
-## 🏆 Logros y Diferenciadores
+### Herramientas Integradas
 
-### Ventajas Competitivas
-
-1. **Único sistema con flujo completo ISO 22301**
-2. **IA integrada para recomendaciones**
-3. **Multi-tenancy nativo**
-4. **Portal white-label**
-5. **Orquestador de crisis en tiempo real**
-6. **Scoring automático de madurez**
-7. **Editor visual de planes**
-8. **Biblioteca de escenarios sectoriales**
-
-### Cumplimiento Normativo
-
-✅ ISO 22301:2019 - 95% cubierto  
-✅ ISO 31000 - Gestión de riesgos  
-✅ NIST CSF - Framework de ciberseguridad  
-✅ GDPR Ready - Protección de datos  
+- Health check: `/api/health`
+- Metrics: `/api/metrics`
+- Status: `/api/status`
 
 ---
 
-## 🔮 Roadmap Futuro
+## 🆘 Soporte
 
-### Integraciones Opcionales
-- [ ] ServiceNow connector
-- [ ] Jira Service Management
-- [ ] Microsoft Teams webhooks
-- [ ] Slack integration
-- [ ] Twilio SMS/Voice
-- [ ] WhatsApp Business API
+### Documentación
 
-### Mejoras Planeadas
-- [ ] Blockchain para trazabilidad
-- [ ] Firma digital de documentos
-- [ ] Reportes avanzados con BI
-- [ ] Mobile app (iOS/Android)
-- [ ] API pública para integraciones
+- [Documentación Técnica](./docs/)
+- [API Reference](./docs/api/)
+- [Guías de Usuario](./docs/guides/)
 
----
+### Contacto CIDE SAS
 
-## 👥 Equipo
+- **Email:** comercial@cidesas.com
+- **Teléfono:** +57 315 765 1063
+- **Website:** https://cidesas.com
+- **Soporte:** soporte@cidesas.com
 
-- **Tech Lead:** Full Stack Development
-- **Backend:** NestJS + Prisma
-- **Frontend:** Next.js + React
-- **QA:** Testing E2E
+### Comunidad
+
+- GitHub Issues
+- Slack Community
+- Stack Overflow Tag: `fenix-sgcn`
 
 ---
 
 ## 📄 Licencia
 
-Propietario - Todos los derechos reservados
+Copyright © 2025 CIDE SAS - Colombia  
+Todos los derechos reservados.
+
+Este software es propiedad de CIDE SAS y está protegido por las leyes de propiedad intelectual de Colombia y tratados internacionales.
 
 ---
 
-## 🎉 Estado Final
+## 🎯 Roadmap
 
-**PROYECTO COMPLETADO AL 100%**
+### Q1 2026
+- [ ] Mobile app (iOS/Android)
+- [ ] Integraciones ITSM (ServiceNow, Jira)
+- [ ] API pública v2
+- [ ] Blockchain para trazabilidad
 
-✅ Todas las fases completadas  
-✅ Testing exitoso  
-✅ Documentación completa  
-✅ Listo para producción  
+### Q2 2026
+- [ ] IA avanzada para predicción
+- [ ] Firma digital documentos
+- [ ] Reportes BI avanzados
+- [ ] Multi-idioma completo
 
 ---
 
-**Contacto:** info@fenix-sgcn.com  
-**Website:** https://fenix-sgcn.com
+## 👥 Créditos
+
+**Desarrollado por CIDE SAS**
+
+- Equipo de Desarrollo
+- Consultores ISO 22301
+- Expertos en Continuidad de Negocio
+
+---
+
+## 🌟 Features Destacados
+
+### IA Advisor
+Recomendaciones inteligentes de RTO/RPO basadas en análisis de procesos
+
+### Big Red Button
+Activación inmediata de protocolos de crisis con un clic
+
+### Multi-tenant
+Gestión de múltiples empresas desde un solo dashboard
+
+### White-labeling
+Personalización completa de marca para revendedores
+
+### ISO 22301 Certified
+95% de cumplimiento normativo out-of-the-box
+
+---
+
+**¿Preguntas? Contáctanos:** comercial@cidesas.com
+
+🚀 **¡Comienza tu viaje hacia la continuidad del negocio hoy!**

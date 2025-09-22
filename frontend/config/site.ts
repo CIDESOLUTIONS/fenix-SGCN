@@ -3,8 +3,9 @@ export const siteConfig = {
   name: "FENIX-SGCN",
   company: "CIDE SAS",
   slogan: "Soluciones Prácticas Empresariales",
-  location: "Bogotá, Colombia",
-  phone: "+57 316 437 9254",
+  location: "Colombia",
+  email: "comercial@cidesas.com",
+  phone: "+57 315 765 1063",
   cta: {
     demo: "Demo Interactiva",
     consult: "Solicitar Consultoría",

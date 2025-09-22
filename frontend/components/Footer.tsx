@@ -5,6 +5,7 @@ interface FooterProps {
   companyName?: string;
   companySlogan?: string;
   location?: string;
+  email?: string;
   phone?: string;
   logo?: string;
 }
@@ -13,6 +14,7 @@ export default function Footer({
   companyName = siteConfig.company,
   companySlogan = siteConfig.slogan,
   location = siteConfig.location,
+  email = siteConfig.email,
   phone = siteConfig.phone,
   logo = "/logo.png",
 }: FooterProps) {
@@ -36,10 +38,9 @@ export default function Footer({
 
         {/* Contacto */}
         <div className="text-sm text-gray-200 text-right">
-          <p>
-            {location} · Tel: {phone}
-          </p>
-          <p>© 2025 {companyName}. Todos los derechos reservados.</p>
+          <p>{location}</p>
+          <p>Email: {email} · Tel: {phone}</p>
+          <p className="mt-2">© 2025 {companyName}. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>
