@@ -6,10 +6,10 @@ Cuando quieras actualizar librerías en **frontend o backend**:
 
 ``` bash
 # Para frontend
-docker compose -f docker-compose.dev.yml exec -u root fenix_frontend npm update
+docker compose -f docker-compose.prod.yml exec -u root fenix_frontend npm update
 
 # Para backend
-docker compose -f docker-compose.dev.yml exec -u root fenix_backend npm update
+docker compose -f docker-compose.prod.yml exec -u root fenix_backend npm update
 ```
 
 Esto actualiza los paquetes según las restricciones del `package.json`.
@@ -22,10 +22,10 @@ Después de cada `update`, ejecutar:
 
 ``` bash
 # Frontend
-docker compose -f docker-compose.dev.yml exec -u root fenix_frontend npm audit fix --force
+docker compose -f docker-compose.prod.yml exec -u root fenix_frontend npm audit fix --force
 
 # Backend
-docker compose -f docker-compose.dev.yml exec -u root fenix_backend npm audit fix --force
+docker compose -f docker-compose.prod.yml exec -u root fenix_backend npm audit fix --force
 ```
 
 Esto aplica parches de seguridad automáticamente.
@@ -38,8 +38,8 @@ Para asegurarte de que no quedan residuos de versiones anteriores:
 
 ``` bash
 rm -rf frontend/node_modules frontend/.next backend/node_modules backend/dist
-docker compose -f docker-compose.dev.yml build --no-cache
-docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ------------------------------------------------------------------------
@@ -49,8 +49,8 @@ docker compose -f docker-compose.dev.yml up -d
 Revisa los logs de cada servicio:
 
 ``` bash
-docker compose -f docker-compose.dev.yml logs -f fenix_frontend
-docker compose -f docker-compose.dev.yml logs -f fenix_backend
+docker compose -f docker-compose.prod.yml logs -f fenix_frontend
+docker compose -f docker-compose.prod.yml logs -f fenix_backend
 ```
 
 Confirma que **no hay errores de dependencias** y que la app arranca en
@@ -90,7 +90,7 @@ git push origin vX.Y.Z
 3.  Si Prisma cambia versión → regenerar cliente:
 
     ``` bash
-    docker compose -f docker-compose.dev.yml exec fenix_backend npx prisma generate
+    docker compose -f docker-compose.prod.yml exec fenix_backend npx prisma generate
     ```
 
 4.  Después de cambios mayores → correr migraciones y pruebas antes de

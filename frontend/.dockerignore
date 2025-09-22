@@ -2,8 +2,9 @@
 node_modules
 npm-debug.log
 
-# NestJS
-dist
+# Next.js
+.next
+out
 .cache
 
 # Development
@@ -15,7 +16,6 @@ dist
 # Testing
 coverage
 .nyc_output
-test
 
 # IDE
 .vscode
@@ -35,11 +35,6 @@ Thumbs.db
 # Documentation
 README.md
 docs
-
-# Prisma (mantenemos schema y migrations)
-!prisma/schema.prisma
-!prisma/migrations
-!prisma/seed.ts
 
 # Misc
 *.log
