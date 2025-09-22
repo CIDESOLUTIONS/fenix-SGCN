@@ -17,36 +17,86 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(dto.password, salt);
 
+    // Calcular fechas de suscripción
+    const now = new Date();
+    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
+    const gracePeriodEndsAt = new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 días más
+
     const newUser = await this.prisma.$transaction(async (tx) => {
+      // Crear tenant con período de prueba
       const tenant = await tx.tenant.create({
         data: {
           name: dto.tenantName,
           domain: `${dto.tenantName.toLowerCase().replace(/\s/g, '-')}.fenix-sgcn.com`,
+          subscriptionPlan: 'TRIAL',
+          subscriptionStatus: 'ACTIVE',
+          trialEndsAt,
+          gracePeriodEndsAt,
         },
       });
 
+      // Crear usuario administrador
       const user = await tx.user.create({
         data: {
           email: dto.email,
           password: hashedPassword,
+          fullName: dto.fullName,
+          position: dto.position,
+          phone: dto.phone,
           role: 'ADMIN',
           tenantId: tenant.id,
         },
       });
-      return user;
+
+      // Registrar en audit log
+      await tx.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          action: 'CREATE',
+          entity: 'Tenant',
+          entityId: tenant.id,
+          details: {
+            plan: 'TRIAL',
+            trialDays: 30,
+            gracePeriodDays: 30,
+          },
+        },
+      });
+
+      return { user, tenant };
     });
 
-    const { password, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    const { password, ...userWithoutPassword } = newUser.user;
+    return {
+      user: userWithoutPassword,
+      tenant: {
+        id: newUser.tenant.id,
+        name: newUser.tenant.name,
+        plan: newUser.tenant.subscriptionPlan,
+        trialEndsAt: newUser.tenant.trialEndsAt,
+      },
+    };
   }
 
   async signin(dto: SigninDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { tenant: true },
     });
 
     if (!user) {
       throw new ForbiddenException('Invalid credentials');
+    }
+
+    // Verificar estado de suscripción
+    const now = new Date();
+    if (user.tenant.subscriptionStatus === 'DELETED') {
+      throw new ForbiddenException('Tenant has been deleted');
+    }
+
+    if (user.tenant.gracePeriodEndsAt && now > user.tenant.gracePeriodEndsAt) {
+      throw new ForbiddenException('Subscription expired. Please contact support.');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
@@ -66,6 +116,25 @@ export class AuthService {
       secret: this.config.get('JWT_SECRET'),
     });
 
-    return { accessToken };
+    // Registrar login en audit log
+    await this.prisma.auditLog.create({
+      data: {
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: 'LOGIN',
+        entity: 'User',
+        entityId: user.id,
+      },
+    });
+
+    return { 
+      accessToken,
+      tenant: {
+        subscriptionStatus: user.tenant.subscriptionStatus,
+        subscriptionPlan: user.tenant.subscriptionPlan,
+        trialEndsAt: user.tenant.trialEndsAt,
+        subscriptionEndsAt: user.tenant.subscriptionEndsAt,
+      },
+    };
   }
 }

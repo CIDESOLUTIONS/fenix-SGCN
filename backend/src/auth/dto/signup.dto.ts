@@ -1,6 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
 
-// VERIFICAR: El nombre de la clase es 'SignupDto' (minúscula)
 export class SignupDto {
   @IsString()
   @IsNotEmpty()
@@ -12,6 +11,18 @@ export class SignupDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
+
+  @IsString()
+  @IsOptional()
+  fullName?: string;
+
+  @IsString()
+  @IsOptional()
+  position?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
 }

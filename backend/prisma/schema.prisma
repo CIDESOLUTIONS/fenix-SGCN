@@ -21,6 +21,19 @@ model Tenant {
   domain    String   @unique
   logo      String?
   colors    Json?
+  
+  // Sistema de suscripción
+  subscriptionPlan    SubscriptionPlan @default(TRIAL)
+  subscriptionStatus  SubscriptionStatus @default(ACTIVE)
+  trialEndsAt         DateTime?
+  subscriptionEndsAt  DateTime?
+  gracePeriodEndsAt   DateTime?  // 30 días después de vencimiento
+  
+  // Backup y eliminación
+  lastBackupAt        DateTime?
+  backupUrl           String?    // URL del último backup
+  scheduledDeletionAt DateTime?  // Fecha programada de eliminación
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -34,8 +47,25 @@ model Tenant {
   complianceFrameworks ComplianceFramework[]
   correctiveActions   CorrectiveAction[]
   documents           Document[]
+  auditLogs           AuditLog[]
 
   @@map("tenants")
+}
+
+enum SubscriptionPlan {
+  TRIAL          // 30 días gratis
+  STANDARD       // Plan básico
+  PROFESSIONAL   // Plan profesional
+  PREMIUM        // Plan premium
+  ENTERPRISE     // Plan empresarial
+}
+
+enum SubscriptionStatus {
+  ACTIVE         // Activa
+  EXPIRED        // Vencida (en período de gracia)
+  SUSPENDED      // Suspendida (no pago)
+  CANCELLED      // Cancelada por usuario
+  DELETED        // Eliminada (después de período de gracia)
 }
 
 model User {
@@ -60,6 +90,27 @@ enum UserRole {
   MANAGER
   USER
   AUDITOR
+}
+
+// ============================================
+// AUDITORÍA Y LOGS
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  action    String   // CREATE, UPDATE, DELETE, EXPORT, BACKUP
+  entity    String   // Tenant, User, Document, etc.
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }
 
 // ============================================
