@@ -1,0 +1,19 @@
+Proyecto Fenix-SGCN
+Especificaciones Técnicas 
+Aplicación para la Administración del Sistema de Gestión de Continuidad del Negocio
+Versión: 1.0
+Fecha de Actualización: 5 de Septiembre de 2025
+
+1. Introducción
+
+1.1. Descripción General 
+
+Fenix-SGCN es el ecosistema operativo integral diseñado para modernizar y unificar el ciclo de vida (PHVA) de un sistema de Gestión de Continuidad de Negocio para las empresas independiente de su tamaño. Superando las limitaciones de las aplicaciones GRC de gestión tradicional, Fenix-SGCN se posiciona como el socio estratégico indispensable para todas las empresas. La Aplicación está diseñada para servir a un espectro completo de usuarios: desde empresas que entregan productos y servicios, profesionales que gerencian procesos de continuidad de negocio, asesores que implementan estos sistemas de gestión hasta los auditores que preparan a las empresas para su certificación. 
+
+1.2. Misión del Producto 
+Nuestra misión es transformar radicalmente la gestión y la experiencia del ciclo de vida (PHVA) de un sistema de Gestión de Continuidad de Negocio para las Empresas, consolidando a Fenix-SGCN como la aplicación indispensable para garantizar el control de la continuidad del negocio en las Empresas. Nos dedicamos a:
+* Empoderar a los Administradores: Proporcionar a los administradores del proceso de continuidad y a las empresas de gestión de continuidad y que realizan la  administración profesional, de las herramientas de automatización y análisis más potentes del mercado, permitiéndoles escalar sus operaciones, eliminar tareas manuales y ofrecer un servicio de excelencia.
+* Mejorar la Calidad de del proceso de continuidad en las Empresas: Ofrecer a la alta Gerencia y al dueño del proceso de continuidad, una experiencia de usuario fluida, segura y enriquecedora que simplifique su día a día, desde la identificación de los procesos críticos, su análisis de riesgo, su análisis de impacto al negocio, su estrategia de continuidad, sus pruebas y métricas adecuadas, la confianza de conocer en línea, el estado real de la contingencia para atender una posible recuperación ante la materialización de un riesgo que genera una interrupción convirtiendo la aplicación en el centro de control de las acciones a seguir.
+* Liderar con Innovación Tecnológica: Utilizar nuestra arquitectura técnica superior para ofrecer una plataforma más rápida, segura y fiable, estableciendo el nuevo estándar de lo que es posible en el sector PropTech.
+
+[... contenido completo del archivo ...]
