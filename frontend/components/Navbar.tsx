@@ -1,73 +1,78 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-sky-700">
-          FENIX SGCN
+    <header className="bg-white shadow-sm fixed top-0 left-0 w-full z-50 border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3">
+          <Image 
+            src="/Logo.png" 
+            alt="Fenix-SGCN" 
+            width={40} 
+            height={40}
+            className="w-10 h-10"
+          />
+          <div>
+            <div className="text-lg font-bold text-[#4F46E5]">Fenix-SGCN</div>
+            <div className="text-xs text-gray-500">by CIDE SAS</div>
+          </div>
         </Link>
 
-        {/* Desktop links */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm">
-          <a href="#features" className="hover:text-sky-600">Funcionalidades</a>
-          <a href="#metrics" className="hover:text-sky-600">Métricas</a>
-          <a href="#benefits" className="hover:text-sky-600">Beneficios</a>
-          <a href="#pricing" className="hover:text-sky-600">Planes</a>
-          <a href="#cta" className="hover:text-sky-600">Contacto</a>
+        {/* Desktop navigation */}
+        <nav className="hidden md:flex items-center space-x-8 text-sm font-medium">
+          <a href="#caracteristicas" className="text-gray-700 hover:text-[#4F46E5] transition">Características</a>
+          <a href="#modulos" className="text-gray-700 hover:text-[#4F46E5] transition">Módulos</a>
+          <a href="#planes" className="text-gray-700 hover:text-[#4F46E5] transition">Planes</a>
+          <a href="#demo" className="text-gray-700 hover:text-[#4F46E5] transition">Demo</a>
         </nav>
 
         {/* Right actions */}
-        <div className="hidden md:flex items-center space-x-3">
-          <Link href="/auth/signin" className="text-sm">Iniciar sesión</Link>
-          <Link
-            href="/auth/signup"
-            className="bg-sky-600 text-white px-4 py-2 rounded-md text-sm"
+        <div className="hidden md:flex items-center space-x-4">
+          <Link 
+            href="/auth/login" 
+            className="px-5 py-2 text-[#4F46E5] border-2 border-[#4F46E5] rounded-lg hover:bg-indigo-50 transition font-medium"
           >
-            Crear cuenta
+            Iniciar Sesión
+          </Link>
+          <Link
+            href="/auth/register"
+            className="px-5 py-2 bg-gradient-to-r from-[#4F46E5] to-[#10B981] text-white rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 font-medium"
+          >
+            Prueba Gratuita
           </Link>
         </div>
 
-        {/* Mobile button */}
+        {/* Mobile menu button */}
         <button
-          className="md:hidden p-2 rounded-md focus:outline-none"
+          className="md:hidden p-2 rounded-md text-gray-600 hover:text-[#4F46E5] focus:outline-none"
           aria-label="Abrir menú"
           onClick={() => setOpen((s) => !s)}
         >
-          {/* simple hamburger */}
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden
-          >
-            <path
-              d="M4 6h16M4 12h16M4 18h16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden ${open ? "block" : "hidden"} bg-white border-t`}>
+      <div className={`md:hidden ${open ? "block" : "hidden"} bg-white border-t border-gray-100`}>
         <div className="px-6 py-4 space-y-3">
-          <a href="#features" className="block">Funcionalidades</a>
-          <a href="#metrics" className="block">Métricas</a>
-          <a href="#benefits" className="block">Beneficios</a>
-          <a href="#pricing" className="block">Planes</a>
-          <a href="#cta" className="block">Contacto</a>
-          <div className="pt-2 border-t mt-2">
-            <Link href="/auth/signin" className="block py-2">Iniciar sesión</Link>
-            <Link href="/auth/signup" className="block py-2 font-semibold">Crear cuenta</Link>
+          <a href="#caracteristicas" className="block py-2 text-gray-700 hover:text-[#4F46E5]">Características</a>
+          <a href="#modulos" className="block py-2 text-gray-700 hover:text-[#4F46E5]">Módulos</a>
+          <a href="#planes" className="block py-2 text-gray-700 hover:text-[#4F46E5]">Planes</a>
+          <a href="#demo" className="block py-2 text-gray-700 hover:text-[#4F46E5]">Demo</a>
+          <div className="pt-4 border-t mt-2 space-y-3">
+            <Link href="/auth/login" className="block py-2 text-[#4F46E5] font-medium">Iniciar Sesión</Link>
+            <Link href="/auth/register" className="block py-2 px-4 bg-gradient-to-r from-[#4F46E5] to-[#10B981] text-white rounded-lg text-center font-medium">
+              Prueba Gratuita
+            </Link>
           </div>
         </div>
       </div>

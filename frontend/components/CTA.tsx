@@ -1,23 +1,29 @@
+import Link from "next/link";
+
 export default function CTA() {
   return (
-    <section className="py-16 bg-sky-700 text-white">
+    <section id="contact" className="py-20 bg-gradient-to-r from-[#4F46E5] to-[#10B981] text-white">
       <div className="max-w-4xl mx-auto px-6 text-center">
-        <h2 className="text-2xl font-bold">¿Listo para proteger tu negocio?</h2>
-        <p className="mt-2 text-gray-100">Prueba una demo, empieza con el plan Básico o contacta a ventas para soluciones Enterprise.</p>
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          ¿Listo para proteger tu negocio?
+        </h2>
+        <p className="text-xl text-white/90 mb-8">
+          Prueba una demo, empieza con el plan Estándar o contacta a ventas para soluciones Enterprise.
+        </p>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href="/auth/signup"
-            className="inline-block bg-white text-sky-700 px-5 py-3 rounded-md font-medium"
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Link
+            href="/auth/register"
+            className="px-8 py-4 bg-white text-[#4F46E5] rounded-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1"
           >
-            Empieza ahora
-          </a>
+            Comenzar Ahora
+          </Link>
 
           <a
-            href="mailto:ventas@fenix-sgcn.com?subject=Interes%20en%20Plan%20Enterprise"
-            className="inline-block border border-white px-5 py-3 rounded-md"
+            href="mailto:comercial@cidesas.com?subject=Interés%20en%20Fenix-SGCN%20Plan%20Enterprise"
+            className="px-8 py-4 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition-all"
           >
-            Contactar ventas
+            Contactar Ventas
           </a>
         </div>
       </div>
