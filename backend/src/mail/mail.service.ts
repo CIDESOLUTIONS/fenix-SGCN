@@ -7,7 +7,7 @@ export class MailService {
 
   constructor() {
     // Configurar transporte de email con credenciales reales
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false, // true para 465, false para otros puertos
