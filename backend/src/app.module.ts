@@ -15,6 +15,7 @@ import { ComplianceFrameworksModule } from './compliance-frameworks/compliance-f
 import { CorrectiveActionsModule } from './corrective-actions/corrective-actions.module';
 import { DocumentsModule } from './documents/documents.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TenantsModule } from './tenants/tenants.module';
     ComplianceFrameworksModule,
     CorrectiveActionsModule,
     DocumentsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -34,7 +34,10 @@ export default function RegisterPage() {
         body: JSON.stringify({ 
           email, 
           password, 
-          tenantName: company 
+          tenantName: company,
+          fullName,
+          position,
+          phone
         })
       });
       if (!res.ok) throw new Error("Error al registrar");
@@ -47,9 +50,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#4F46E5] to-[#10B981] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-emerald-500 flex items-center justify-center p-4">
       {/* Botón Volver */}
-      <Link href="/" className="absolute top-8 left-8 text-white hover:opacity-80 transition">
+      <Link href="/" className="absolute top-6 left-6 text-white hover:opacity-80 transition">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -57,40 +60,40 @@ export default function RegisterPage() {
 
       {/* Card Principal */}
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-block bg-white rounded-2xl p-4 mb-4">
-            <Image src="/fenix-logo.png" alt="Fenix-SGCN" width={64} height={64} className="w-16 h-16" />
+        {/* Header con Logo */}
+        <div className="text-center mb-6">
+          <div className="inline-block bg-white rounded-xl p-3 mb-4 shadow-lg">
+            <Image src="/fenix-logo.png" alt="Fenix" width={48} height={48} className="w-12 h-12" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Fenix-SGCN</h1>
-          <p className="text-white/90">Sistema de Gestión de Continuidad de Negocio</p>
+          <h1 className="text-2xl font-bold text-white mb-1">Fenix-SGCN</h1>
+          <p className="text-white/90 text-sm">Sistema de Gestión de Continuidad de Negocio</p>
         </div>
 
         {/* Formulario */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-xl shadow-xl p-8">
           {/* Tabs */}
           <div className="flex border-b mb-6">
-            <Link href="/auth/login" className="flex-1 pb-3 text-center font-medium text-gray-500 hover:text-gray-700">
+            <Link href="/auth/login" className="flex-1 pb-3 text-center text-sm font-medium text-gray-500 hover:text-gray-700">
               Iniciar Sesión
             </Link>
-            <button className="flex-1 pb-3 text-center font-medium text-gray-900 border-b-2 border-[#4F46E5]">
+            <button className="flex-1 pb-3 text-center text-sm font-medium text-gray-900 border-b-2 border-indigo-600">
               Registrarse
             </button>
           </div>
 
           {/* Título */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-1">
               <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
               </svg>
-              <h2 className="text-xl font-semibold text-gray-900">Crear Cuenta Empresarial</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Crear Cuenta Empresarial</h2>
             </div>
-            <p className="text-sm text-gray-600">Registra tu empresa en Fenix-SGCN</p>
+            <p className="text-xs text-gray-600">Registra tu empresa en Fenix-SGCN</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={submit} className="space-y-3.5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre Completo <span className="text-red-500">*</span>
@@ -106,7 +109,7 @@ export default function RegisterPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Juan Pérez"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                   required
                 />
               </div>
@@ -127,7 +130,7 @@ export default function RegisterPage() {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Mi Empresa S.A.S."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                   required
                 />
               </div>
@@ -140,7 +143,7 @@ export default function RegisterPage() {
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
                 placeholder="Gerente de Riesgos"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
               />
             </div>
 
@@ -157,7 +160,7 @@ export default function RegisterPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+57 300 123 4567"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                 />
               </div>
             </div>
@@ -178,7 +181,7 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                   required
                 />
               </div>
@@ -199,7 +202,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                   required
                 />
               </div>
@@ -219,7 +222,7 @@ export default function RegisterPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                   required
                 />
               </div>
@@ -228,7 +231,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#4F46E5] text-white py-3 rounded-lg font-semibold hover:bg-[#4338CA] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-4"
             >
               {loading ? "Creando cuenta..." : "Crear Cuenta"}
             </button>

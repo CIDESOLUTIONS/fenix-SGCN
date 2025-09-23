@@ -10,11 +10,11 @@ export default function Footer() {
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               <Image 
-                src="/Logo.png" 
+                src="/cide-logo.png" 
                 alt="Fenix-SGCN" 
-                width={40} 
-                height={40}
-                className="w-10 h-10"
+                width={60} 
+                height={60}
+                className="w-15 h-15"
               />
               <div>
                 <div className="text-lg font-bold text-[#4F46E5]">Fenix-SGCN</div>
