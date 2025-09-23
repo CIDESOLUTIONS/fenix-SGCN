@@ -15,11 +15,13 @@ export async function POST(request: Request) {
     }
 
     // Preparar el contenido del correo
-    const tipoTexto = {
+    const tipoTextoMap: Record<string, string> = {
       demo: 'Solicitud de Demo Personalizada',
       sales: 'Contacto con Ventas',
       schedule: 'Programar Demostración'
-    }[tipoSolicitud] || 'Consulta General';
+    };
+    
+    const tipoTexto = tipoTextoMap[tipoSolicitud] || 'Consulta General';
 
     // Correo para el equipo comercial
     const emailToTeam = {
