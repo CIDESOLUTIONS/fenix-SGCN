@@ -131,6 +131,8 @@ export class TenantsService {
 
     for (const tenant of expiredTenants) {
       const endDate = tenant.subscriptionEndsAt || tenant.trialEndsAt;
+      if (!endDate) continue;
+      
       const gracePeriodEndsAt = new Date(endDate.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       await this.prisma.tenant.update({
