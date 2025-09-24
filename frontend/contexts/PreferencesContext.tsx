@@ -4,14 +4,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 type Language = 'es' | 'en' | 'pt';
 type Currency = 'COP' | 'USD' | 'BRL';
 type Theme = 'light' | 'dark' | 'system';
+type Environment = 'production' | 'staging' | 'development';
 
 interface PreferencesContextType {
   language: Language;
   currency: Currency;
   theme: Theme;
+  environment: Environment;
   setLanguage: (lang: Language) => void;
   setCurrency: (curr: Currency) => void;
   setTheme: (theme: Theme) => void;
+  setEnvironment: (env: Environment) => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -20,16 +23,19 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const [language, setLanguageState] = useState<Language>('es');
   const [currency, setCurrencyState] = useState<Currency>('COP');
   const [theme, setThemeState] = useState<Theme>('light');
+  const [environment, setEnvironmentState] = useState<Environment>('production');
 
   // Cargar preferencias del localStorage al iniciar
   useEffect(() => {
     const savedLang = localStorage.getItem('language') as Language;
     const savedCurr = localStorage.getItem('currency') as Currency;
     const savedTheme = localStorage.getItem('theme') as Theme;
+    const savedEnv = localStorage.getItem('environment') as Environment;
 
     if (savedLang) setLanguageState(savedLang);
     if (savedCurr) setCurrencyState(savedCurr);
     if (savedTheme) setThemeState(savedTheme);
+    if (savedEnv) setEnvironmentState(savedEnv);
   }, []);
 
   // Funciones para actualizar y guardar preferencias
@@ -55,8 +61,22 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     }
   };
 
+  const setEnvironment = (env: Environment) => {
+    setEnvironmentState(env);
+    localStorage.setItem('environment', env);
+  };
+
   return (
-    <PreferencesContext.Provider value={{ language, currency, theme, setLanguage, setCurrency, setTheme }}>
+    <PreferencesContext.Provider value={{ 
+      language, 
+      currency, 
+      theme, 
+      environment,
+      setLanguage, 
+      setCurrency, 
+      setTheme,
+      setEnvironment
+    }}>
       {children}
     </PreferencesContext.Provider>
   );

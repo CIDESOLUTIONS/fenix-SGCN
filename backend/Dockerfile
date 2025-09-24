@@ -11,11 +11,11 @@ RUN apk add --no-cache openssl libc6-compat
 COPY package*.json ./
 COPY prisma ./prisma
 
-# Instalar TODAS las dependencias
+# Instalar TODAS las dependencias con versiones exactas
 RUN npm install --legacy-peer-deps
 
-# Generar Prisma Client
-RUN npx prisma generate
+# Generar Prisma Client con la versión instalada
+RUN npm run prisma:generate
 
 # Copiar código fuente
 COPY . .
@@ -35,17 +35,14 @@ RUN apk add --no-cache bash openssl libc6-compat
 # Crear usuario no-root
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+# Copiar node_modules completo del builder (incluye Prisma generado)
+COPY --from=builder --chown=appuser:appgroup /usr/src/app/node_modules ./node_modules
+
 # Copiar package.json
 COPY --from=builder --chown=appuser:appgroup /usr/src/app/package*.json ./
 
-# Instalar solo producción
-RUN npm install --omit=dev --legacy-peer-deps
-
 # Copiar Prisma schema
 COPY --from=builder --chown=appuser:appgroup /usr/src/app/prisma ./prisma
-
-# Generar Prisma Client en producción
-RUN npx prisma generate
 
 # Copiar build
 COPY --from=builder --chown=appuser:appgroup /usr/src/app/dist ./dist
