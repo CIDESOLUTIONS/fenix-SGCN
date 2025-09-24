@@ -1,7 +1,7 @@
 # ============================
 # STAGE 1: Dependencias
 # ============================
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /usr/src/app
 
 # Librería necesaria para Next.js en Alpine
@@ -19,7 +19,7 @@ RUN npm ci --only=production --ignore-scripts
 # ============================
 # STAGE 2: Construcción (Build)
 # ============================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache libc6-compat
@@ -51,7 +51,7 @@ RUN npm run build
 # ============================
 # STAGE 3: Producción Final
 # ============================
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /usr/src/app
 
 # Variables de entorno

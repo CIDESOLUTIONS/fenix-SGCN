@@ -24,7 +24,7 @@ const menuItems = [
   { 
     name: 'Dashboard', 
     path: '/dashboard', 
-    icon: LayoutDashboard,
+    icon: "/cide-icono.png",
     section: 'main'
   },
   { 

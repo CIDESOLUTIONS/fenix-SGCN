@@ -12,13 +12,23 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/signin", {
+      const res = await fetch("http://localhost:3001/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
+      
       if (!res.ok) throw new Error("Credenciales inválidas");
-      window.location.href = "/dashboard";
+      
+      const data = await res.json();
+      
+      // Guardar el token en localStorage
+      if (data.accessToken) {
+        localStorage.setItem('token', data.accessToken);
+        window.location.href = "/dashboard";
+      } else {
+        throw new Error("No se recibió token de acceso");
+      }
     } catch (err: any) {
       alert(err.message ?? "Error");
     } finally {

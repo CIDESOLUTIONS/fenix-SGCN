@@ -28,7 +28,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/signup", {
+      const res = await fetch("http://localhost:3001/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -40,7 +40,26 @@ export default function RegisterPage() {
           phone
         })
       });
-      if (!res.ok) throw new Error("Error al registrar");
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Error al registrar");
+      }
+      
+      // Después del registro exitoso, hacer login automáticamente
+      const loginRes = await fetch("http://localhost:3001/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        if (loginData.accessToken) {
+          localStorage.setItem('token', loginData.accessToken);
+        }
+      }
+      
       window.location.href = "/dashboard";
     } catch (err: any) {
       alert(err.message ?? "Error");

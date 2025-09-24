@@ -1,7 +1,7 @@
 # ============================
 # STAGE 1: Dependencias
 # ============================
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /usr/src/app
 
 # Librerías necesarias para Prisma en Alpine
@@ -23,7 +23,7 @@ RUN npx prisma generate
 # ============================
 # STAGE 2: Builder - Dependencias de desarrollo y Build
 # ============================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 
 # Librerías necesarias
@@ -61,7 +61,7 @@ RUN if [ -f "prisma/seed.ts" ]; then \
 # ============================
 # STAGE 3: Producción
 # ============================
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 
 # Instalar bash y openssl para el entrypoint y Prisma

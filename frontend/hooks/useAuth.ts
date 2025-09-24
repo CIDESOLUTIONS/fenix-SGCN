@@ -26,7 +26,12 @@ export function useAuth() {
           return;
         }
 
-        const response = await fetch('/api/auth/me', {
+        // URL del backend
+        const baseURL = typeof window !== 'undefined'
+          ? 'http://localhost:3001'  // Cliente (navegador)
+          : 'http://fenix_backend:3001'; // Servidor (SSR)
+
+        const response = await fetch(`${baseURL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -53,7 +58,7 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = '/auth/login';
   };
 
   return {
