@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     };
 
     // Aquí integramos con el backend para enviar los correos
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://fenix_backend:3001';
     
     const response = await fetch(`${backendUrl}/api/mail/send-contact`, {
       method: 'POST',

@@ -137,4 +137,31 @@ export class AuthService {
       },
     };
   }
+
+  // NUEVO: Método para obtener datos del usuario actual
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        position: true,
+        role: true,
+        tenant: {
+          select: {
+            name: true,
+            subscriptionPlan: true,
+            subscriptionStatus: true,
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+
+    return user;
+  }
 }

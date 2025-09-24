@@ -6,9 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed de base de datos...');
 
-  // Limpiar datos existentes
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+  // Solo crear datos si no existen ya
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    console.log('✅ Ya existen usuarios, omitiendo seed');
+    return;
+  }
+
+  console.log('🌱 Base de datos vacía, creando datos iniciales...');
 
   // Crear Tenants
   const tenant1 = await prisma.tenant.create({

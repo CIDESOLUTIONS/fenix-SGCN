@@ -5,33 +5,45 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import SettingsMenu from "./settings/SettingsMenu";
 import { useTranslation } from "../lib/i18n/useTranslation";
+import { useAuth } from "../hooks/useAuth";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { user, logout } = useAuth();
 
   const menuItems = [
     {
-      title: t('common.systemModules') || "Módulos del Sistema",
+      title: "Módulos del SGCN",
       items: [
-        { icon: "📋", label: `1. ${t('modules.planning')}`, href: "/dashboard/planeacion" },
-        { icon: "📊", label: `2. ${t('modules.riskAnalysis')} ARA`, href: "/dashboard/analisis-riesgos" },
-        { icon: "🎯", label: `3. ${t('modules.impactAnalysis')} BIA`, href: "/dashboard/analisis-impacto" },
-        { icon: "🔄", label: `4. ${t('modules.strategy')}`, href: "/dashboard/estrategia" },
-        { icon: "📝", label: `5. ${t('modules.plans')}`, href: "/dashboard/planes" },
-        { icon: "✅", label: `6. ${t('modules.tests')}`, href: "/dashboard/pruebas" },
-        { icon: "🔧", label: `7. ${t('modules.maintenance')}`, href: "/dashboard/mantenimiento" },
+        { icon: "📋", label: `1. ${t('modules.planning') || 'Planeación'}`, href: "/dashboard/planeacion" },
+        { icon: "📊", label: `2. ${t('modules.riskAnalysis') || 'Análisis de Riesgos'} ARA`, href: "/dashboard/analisis-riesgos" },
+        { icon: "🎯", label: `3. ${t('modules.impactAnalysis') || 'Análisis de Impacto'} BIA`, href: "/dashboard/analisis-impacto" },
+        { icon: "🔄", label: `4. ${t('modules.strategy') || 'Estrategia de Continuidad'}`, href: "/dashboard/estrategia" },
+        { icon: "📝", label: `5. ${t('modules.plans') || 'Planes de Continuidad'}`, href: "/dashboard/planes" },
+        { icon: "✅", label: `6. ${t('modules.tests') || 'Pruebas de Continuidad'}`, href: "/dashboard/pruebas" },
+        { icon: "🔧", label: `7. ${t('modules.maintenance') || 'Mantenimiento SGCN'}`, href: "/dashboard/mantenimiento" },
       ]
     },
     {
-      title: t('common.tools') || "Herramientas",
+      title: "COMMON.TOOLS",
       items: [
-        { icon: "📂", label: t('modules.criteria'), href: "/dashboard/criterios" },
-        { icon: "⚙️", label: t('modules.configuration'), href: "/dashboard/configuracion" },
+        { icon: "📂", label: t('modules.criteria') || 'Criterios de Estrategia', href: "/dashboard/criterios" },
+        { icon: "⚙️", label: t('modules.configuration') || 'Configuración', href: "/dashboard/configuracion" },
       ]
     }
   ];
+
+  // Función para obtener iniciales del nombre
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -43,8 +55,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
               <div>
-                <div className="text-sm font-bold text-gray-900 dark:text-white">SGCN</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">CIDE SAS</div>
+                <div className="text-sm font-bold text-gray-900 dark:text-white">Panel de Control</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Módulos del SGCN</div>
               </div>
             </Link>
           ) : (
@@ -74,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
           >
             <span className="text-lg">🏠</span>
-            {sidebarOpen && <span className="text-sm font-medium">{t('common.controlPanel') || 'Panel de Control'}</span>}
+            {sidebarOpen && <span className="text-sm font-medium">Panel de Control</span>}
           </Link>
 
           {menuItems.map((section, idx) => (
@@ -109,38 +121,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         {/* Header */}
         <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+          {/* Logo CIDE - Izquierda */}
           <div className="flex items-center gap-4">
-            <Image src="/fenix-logo.png" alt="Fenix" width={32} height={32} className="w-8 h-8" />
+            <Image src="/cide-logo.png" alt="CIDE SAS" width={32} height={32} className="w-8 h-8" />
             <div>
-              <h1 className="text-sm font-semibold text-gray-900 dark:text-white">Fenix-SGCN</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">CIDE SAS</p>
+              <h1 className="text-sm font-semibold text-gray-900 dark:text-white">CIDE SAS</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Fenix-SGCN</p>
             </div>
           </div>
 
+          {/* Usuario - Derecha */}
           <div className="flex items-center gap-4">
             {/* Settings Menu */}
             <SettingsMenu />
 
-            {/* User Menu */}
+            {/* User Info - DINÁMICO */}
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Juan Perez</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('common.systemAdmin') || 'Administrador de Sistema'}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {user?.fullName || 'Usuario'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {user?.tenant?.name || 'Empresa'}
+                </p>
               </div>
-              <button className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center font-semibold">
-                JP
+              <button className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center font-semibold text-sm">
+                {user ? getInitials(user.fullName) : 'U'}
               </button>
             </div>
 
             {/* Logout */}
             <button
-              onClick={() => {
-                document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-                window.location.href = '/auth/login';
-              }}
+              onClick={logout}
               className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
-              {t('common.logout')}
+              Salir
             </button>
           </div>
         </header>

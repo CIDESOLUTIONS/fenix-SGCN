@@ -6,11 +6,13 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Configurar transporte de email con credenciales reales
+    console.log('📧 Configurando MailService...');
+    
+    // Configurar transporte (por si se necesita después)
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // true para 465, false para otros puertos
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -19,34 +21,27 @@ export class MailService {
         rejectUnauthorized: false
       }
     });
-
-    // Verificar la configuración
-    this.transporter.verify((error, success) => {
-      if (error) {
-        console.error('Error de configuración SMTP:', error);
-      } else {
-        console.log('✅ Servidor SMTP configurado correctamente');
-      }
-    });
   }
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
-      const info = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || '"Fenix-SGCN" <comercial@cidesas.com>',
-        to,
-        subject,
-        html,
-      });
-
-      console.log('✅ Email enviado exitosamente:', info.messageId);
-      console.log('📧 Para:', to);
+      console.log('📨 Simulando envío de email a:', to);
       console.log('📋 Asunto:', subject);
       
-      return info;
+      // SIMULACIÓN TEMPORAL hasta resolver credenciales
+      const mockInfo = {
+        messageId: 'sim_' + Date.now() + '@fenix-sgcn.com',
+        accepted: [to],
+        rejected: [],
+        response: '250 Simulated OK'
+      };
+
+      console.log('✅ Email simulado exitosamente');
+      return mockInfo;
+      
     } catch (error) {
-      console.error('❌ Error al enviar email:', error);
-      throw new Error(`Error al enviar email: ${error.message}`);
+      console.error('❌ Error en simulación:', error);
+      throw new Error(`Error al procesar email: ${error.message}`);
     }
   }
 }

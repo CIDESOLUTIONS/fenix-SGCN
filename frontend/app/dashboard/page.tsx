@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import DashboardLayout from "../../components/DashboardLayout";
 import { useTranslation } from "../../lib/i18n/useTranslation";
 import { useCurrency } from "../../lib/i18n/useCurrency";
 
@@ -17,7 +16,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <DashboardLayout>
+    <>
       {/* Banner de Plan */}
       <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -149,6 +148,6 @@ export default function DashboardPage() {
       </div>
 
       {/* AI Advisor - resto igual... */}
-    </DashboardLayout>
+    </>
   );
 }

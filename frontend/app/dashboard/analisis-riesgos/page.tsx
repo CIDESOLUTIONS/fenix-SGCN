@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import DashboardLayout from "../../../components/DashboardLayout";
 
 export default function AnalisisRiesgosPage() {
   const [activeTab, setActiveTab] = useState('resumen');
@@ -36,12 +35,11 @@ export default function AnalisisRiesgosPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Análisis de Riesgos (ARA)</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Identificación y evaluación de riesgos de continuidad</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Análisis de Riesgos (ARA)</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Identificación y evaluación de riesgos de continuidad</p>
+      </div>
 
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex space-x-8 overflow-x-auto">
@@ -149,7 +147,6 @@ export default function AnalisisRiesgosPage() {
             <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo</p>
           </div>
         )}
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }
