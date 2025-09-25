@@ -1,16 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BiaAssessmentsService } from './bia-assessments.service';
 import { CreateBiaAssessmentDto } from './dto/create-bia-assessment.dto';
 import { UpdateBiaAssessmentDto } from './dto/update-bia-assessment.dto';
 import { TenantId } from '../common/tenant-id.decorator';
 
 @Controller('bia-assessments')
+@UseGuards(JwtAuthGuard)
 export class BiaAssessmentsController {
   constructor(private readonly biaAssessmentsService: BiaAssessmentsService) {}
 
   @Post()
-  create(@Body() createBiaAssessmentDto: CreateBiaAssessmentDto, @TenantId() tenantId: string) {
-    return this.biaAssessmentsService.create(createBiaAssessmentDto, tenantId);
+  create(
+    @Body() createBiaAssessmentDto: CreateBiaAssessmentDto,
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.biaAssessmentsService.create(
+      createBiaAssessmentDto,
+      tenantId,
+      req.user.userId,
+    );
   }
 
   @Get()
@@ -18,18 +38,64 @@ export class BiaAssessmentsController {
     return this.biaAssessmentsService.findAll(tenantId);
   }
 
+  @Get('coverage')
+  getCoverage(@TenantId() tenantId: string) {
+    return this.biaAssessmentsService.getCoverage(tenantId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @TenantId() tenantId: string) {
     return this.biaAssessmentsService.findOne(id, tenantId);
   }
 
+  @Get('process/:processId/suggest-rto-rpo')
+  suggestRtoRpo(@Param('processId') processId: string, @TenantId() tenantId: string) {
+    return this.biaAssessmentsService.suggestRtoRpo(processId, tenantId);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @TenantId() tenantId: string, @Body() updateBiaAssessmentDto: UpdateBiaAssessmentDto) {
-    return this.biaAssessmentsService.update(id, tenantId, updateBiaAssessmentDto);
+  update(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @Body() updateBiaAssessmentDto: UpdateBiaAssessmentDto,
+    @Request() req: any,
+  ) {
+    return this.biaAssessmentsService.update(
+      id,
+      tenantId,
+      updateBiaAssessmentDto,
+      req.user.userId,
+    );
+  }
+
+  @Post('campaign')
+  createCampaign(
+    @Body()
+    body: {
+      name: string;
+      processIds: string[];
+      reviewers: string[];
+      dueDate: string;
+    },
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.biaAssessmentsService.createCampaign(
+      body.name,
+      body.processIds,
+      body.reviewers,
+      body.dueDate,
+      tenantId,
+      req.user.userId,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @TenantId() tenantId: string) {
-    return this.biaAssessmentsService.remove(id, tenantId);
+  remove(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.biaAssessmentsService.remove(id, tenantId, req.user.userId);
   }
 }
