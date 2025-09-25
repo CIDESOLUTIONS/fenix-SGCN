@@ -27,12 +27,8 @@ export function useAuth() {
           return;
         }
 
-        // URL del backend
-        const baseURL = typeof window !== 'undefined'
-          ? 'http://localhost:3001'  // Cliente (navegador)
-          : 'http://fenix_backend:3001'; // Servidor (SSR)
-
-        const response = await fetch(`${baseURL}/auth/me`, {
+        // En el navegador, usar la ruta relativa que Next.js proxy al backend
+        const response = await fetch('/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

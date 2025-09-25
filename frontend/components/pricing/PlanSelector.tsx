@@ -81,20 +81,20 @@ export default function PlanSelector() {
     <div className="max-w-7xl mx-auto px-4 py-16">
       {/* Toggle de periodo */}
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-3xl font-bold text-white mb-4">
           Elige el plan perfecto para tu organización
         </h2>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-lg text-white/90 mb-8">
           Comienza con una prueba gratuita de 30 días. Sin tarjeta de crédito requerida.
         </p>
         
-        <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        <div className="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-lg p-1">
           <button
             onClick={() => setBillingPeriod('monthly')}
             className={`px-6 py-2 rounded-md transition ${
               billingPeriod === 'monthly'
-                ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'bg-white text-indigo-600 shadow'
+                : 'text-white'
             }`}
           >
             Mensual
@@ -103,12 +103,12 @@ export default function PlanSelector() {
             onClick={() => setBillingPeriod('yearly')}
             className={`px-6 py-2 rounded-md transition ${
               billingPeriod === 'yearly'
-                ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'bg-white text-indigo-600 shadow'
+                : 'text-white'
             }`}
           >
             Anual
-            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+            <span className="ml-2 text-xs bg-green-400 text-green-900 px-2 py-1 rounded">
               -17%
             </span>
           </button>
@@ -182,7 +182,7 @@ export default function PlanSelector() {
 
       {/* Garantía */}
       <div className="text-center mt-12">
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-white/90">
           🔒 Pago seguro • 🔄 Garantía de 30 días • ✨ Cancela cuando quieras
         </p>
       </div>

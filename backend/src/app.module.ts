@@ -17,6 +17,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { MailModule } from './mail/mail.module';
 import { ContactModule } from './contact/contact.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ContactModule } from './contact/contact.module';
     DocumentsModule,
     MailModule,
     ContactModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],
