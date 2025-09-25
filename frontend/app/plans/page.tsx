@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function PlansPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-emerald-500">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Header con logo */}
       <div className="py-8 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -15,6 +15,7 @@ export default function PlansPage() {
               width={50} 
               height={50}
               className="w-12 h-12"
+              priority
             />
             <div>
               <h1 className="text-xl font-bold text-white">Fenix SGCN</h1>
@@ -23,7 +24,7 @@ export default function PlansPage() {
           </Link>
           <Link 
             href="/auth/login"
-            className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition"
+            className="px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition"
           >
             Iniciar Sesión
           </Link>

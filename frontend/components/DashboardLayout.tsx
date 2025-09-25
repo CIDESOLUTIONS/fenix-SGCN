@@ -126,11 +126,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image 
-              src="/fenix-icono.ico" 
+              src="/fenix-logo.png" 
               alt="Fenix SGCN" 
               width={32} 
               height={32} 
-              className="w-8 h-8"
+              className="w-8 h-8 object-contain"
             />
             {sidebarOpen && (
               <div>

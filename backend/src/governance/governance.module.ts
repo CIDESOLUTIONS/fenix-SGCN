@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
-import { ContinuityPlansService } from './continuity-plans.service';
-import { ContinuityPlansController } from './continuity-plans.controller';
+import { GovernanceService } from './governance.service';
+import { GovernanceController } from './governance.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { DgraphModule } from '../dgraph/dgraph.module';
 import { WorkflowEngineModule } from '../workflow-engine/workflow-engine.module';
 
 @Module({
   imports: [PrismaModule, DgraphModule, WorkflowEngineModule],
-  controllers: [ContinuityPlansController],
-  providers: [ContinuityPlansService],
-  exports: [ContinuityPlansService],
+  controllers: [GovernanceController],
+  providers: [GovernanceService],
+  exports: [GovernanceService],
 })
-export class ContinuityPlansModule {}
+export class GovernanceModule {}

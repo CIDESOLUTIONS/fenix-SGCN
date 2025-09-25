@@ -55,6 +55,8 @@ services:
     depends_on:
       fenix_db_master:
         condition: service_healthy
+      fenix_dgraph:
+        condition: service_started
     networks:
       - fenix-net
     restart: unless-stopped
@@ -95,9 +97,46 @@ services:
       - fenix-net
     restart: unless-stopped
 
+  fenix_dgraph:
+    image: dgraph/standalone:latest
+    container_name: fenix_dgraph
+    environment:
+      - DGRAPH_ALPHA_SECURITY_WHITELIST=0.0.0.0/0
+    ports:
+      - "8080:8080"  # HTTP API & UI
+      - "9080:9080"  # gRPC
+    volumes:
+      - dgraph_data:/dgraph
+    networks:
+      - fenix-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fenix_redis:
+    image: redis:7-alpine
+    container_name: fenix_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fenix-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_master_data:
   minio_data:
+  dgraph_data:
+  redis_data:
 
 networks:
   fenix-net:

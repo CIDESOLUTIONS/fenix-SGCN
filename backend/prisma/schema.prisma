@@ -48,6 +48,9 @@ model Tenant {
   correctiveActions   CorrectiveAction[]
   documents           Document[]
   auditLogs           AuditLog[]
+  sgcnPolicies        SgcnPolicy[]
+  sgcnObjectives      SgcnObjective[]
+  raciMatrices        RaciMatrix[]
 
   @@map("tenants")
 }
@@ -515,4 +518,90 @@ enum DocumentType {
   EVIDENCE
   CERTIFICATE
   OTHER
+}
+
+// ============================================
+// MÓDULO 1: PLANEACIÓN Y GOBIERNO (ISO 22301 Cláusula 5)
+// ============================================
+
+model SgcnPolicy {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  title       String
+  content     String   @db.Text
+  version     String   @default("1.0")
+  
+  status      PolicyStatus @default(DRAFT)
+  
+  // Aprobación
+  approvedBy  String?
+  approvedAt  DateTime?
+  
+  // Publicación
+  publishedBy String?
+  publishedAt DateTime?
+  
+  // Auditoría
+  createdBy   String
+  updatedBy   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("sgcn_policies")
+}
+
+enum PolicyStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ACTIVE
+  ARCHIVED
+}
+
+model SgcnObjective {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  
+  description         String
+  measurementCriteria String
+  targetDate          DateTime?
+  owner               String
+  
+  status              ObjectiveStatus @default(NOT_STARTED)
+  progress            Int?     @default(0) // 0-100%
+  
+  createdBy           String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("sgcn_objectives")
+}
+
+enum ObjectiveStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AT_RISK
+  COMPLETED
+}
+
+model RaciMatrix {
+  id                String   @id @default(uuid())
+  tenantId          String
+  
+  processOrActivity String
+  assignments       Json     // Array de { role, responsibility, raciType }
+  
+  createdBy         String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("raci_matrices")
 }

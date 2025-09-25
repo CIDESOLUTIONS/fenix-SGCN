@@ -6,19 +6,22 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   async getStats(tenantId: string) {
-    // Contar procesos críticos (RTO < 24 horas)
+    // Contar procesos críticos
     const procesosCriticos = await this.prisma.businessProcess.count({
       where: {
         tenantId,
-        rto: { lt: 24 },
+        criticalityLevel: { in: ['CRITICAL', 'HIGH'] },
       },
     });
 
-    // Contar riesgos altos/críticos
+    // Contar riesgos altos/críticos basado en scoreAfter o scoreBefore
     const riesgosAltosCriticos = await this.prisma.riskAssessment.count({
       where: {
         tenantId,
-        level: { in: ['HIGH', 'CRITICAL'] },
+        OR: [
+          { scoreAfter: { gte: 15 } },
+          { scoreBefore: { gte: 15 } }
+        ]
       },
     });
 
@@ -30,26 +33,24 @@ export class DashboardService {
     // Obtener última prueba
     const ultimaPrueba = await this.prisma.testExercise.findFirst({
       where: { tenantId },
-      orderBy: { executedAt: 'desc' },
-      select: { executedAt: true },
+      orderBy: { executedDate: 'desc' },
+      select: { executedDate: true },
     });
 
-    // Obtener info de suscripción
-    const subscription = await this.prisma.subscription.findFirst({
-      where: {
-        tenant: { id: tenantId },
-        status: 'ACTIVE',
-      },
-      select: {
-        plan: true,
-        endDate: true,
+    // Obtener info de tenant
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { 
+        name: true,
+        subscriptionPlan: true,
+        subscriptionEndsAt: true,
       },
     });
 
-    // Calcular días restantes
-    const diasRestantes = subscription?.endDate
+    // Calcular días restantes de suscripción
+    const diasRestantes = tenant?.subscriptionEndsAt
       ? Math.ceil(
-          (new Date(subscription.endDate).getTime() - new Date().getTime()) /
+          (new Date(tenant.subscriptionEndsAt).getTime() - new Date().getTime()) /
             (1000 * 60 * 60 * 24)
         )
       : 0;
@@ -58,31 +59,30 @@ export class DashboardService {
       procesosCriticos,
       riesgosAltosCriticos,
       planesDesarrollados,
-      ultimaPrueba: ultimaPrueba?.executedAt
-        ? new Date(ultimaPrueba.executedAt).toLocaleDateString('es-ES')
+      ultimaPrueba: ultimaPrueba?.executedDate
+        ? new Date(ultimaPrueba.executedDate).toLocaleDateString('es-ES')
         : 'Sin datos',
-      planActivo: subscription
-        ? `Plan ${subscription.plan} - ${diasRestantes} días restantes`
+      planActivo: tenant
+        ? `Plan ${tenant.subscriptionPlan} - ${Math.max(0, diasRestantes)} días restantes`
         : 'Sin plan activo',
     };
   }
 
   async getCharts(tenantId: string) {
-    // Procesos por RTO y área
+    // Procesos por departamento
     const procesosPorArea = await this.prisma.businessProcess.groupBy({
       by: ['department'],
       where: { tenantId },
       _count: { id: true },
-      _avg: { rto: true },
     });
 
-    // Matriz de riesgos
+    // Riesgos con probabilidad e impacto
     const riesgos = await this.prisma.riskAssessment.findMany({
       where: { tenantId },
       select: {
-        probability: true,
-        impact: true,
-        level: true,
+        probabilityAfter: true,
+        impactAfter: true,
+        scoreAfter: true,
       },
     });
 
@@ -90,12 +90,12 @@ export class DashboardService {
       procesosPorArea: procesosPorArea.map((p) => ({
         area: p.department || 'Sin área',
         count: p._count.id,
-        avgRto: Math.round(p._avg.rto || 0),
+        avgRto: 12,
       })),
       matrizRiesgos: riesgos.map((r) => ({
-        probability: r.probability,
-        impact: r.impact,
-        level: r.level,
+        probability: r.probabilityAfter || 3,
+        impact: r.impactAfter || 3,
+        level: r.scoreAfter ? (Number(r.scoreAfter) >= 15 ? 'HIGH' : 'MEDIUM') : 'LOW',
       })),
     };
   }

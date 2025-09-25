@@ -22,6 +22,7 @@ export class AuthController {
   @UseGuards(JwtGuard)
   @Get('me')
   getMe(@Request() req) {
-    return this.authService.getMe(req.user.sub);
+    // El JWT strategy retorna el user completo, usar req.user.id en lugar de req.user.sub
+    return this.authService.getMe(req.user.id);
   }
 }

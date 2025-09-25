@@ -42,8 +42,11 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+      - DGRAPH_URL=${DGRAPH_URL}
     depends_on:
       fenix_db_master:
+        condition: service_healthy
+      fenix_dgraph:
         condition: service_healthy
     networks:
       - fenix-net
@@ -83,9 +86,41 @@ services:
       - fenix-net
     restart: unless-stopped
 
+  fenix_dgraph:
+    image: dgraph/standalone:latest
+    container_name: fenix_dgraph
+    environment:
+      - DGRAPH_ALPHA_SECURITY_WHITELIST=0.0.0.0/0
+    volumes:
+      - dgraph_data:/dgraph
+    networks:
+      - fenix-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fenix_redis:
+    image: redis:7-alpine
+    container_name: fenix_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - fenix-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_master_data:
   minio_data:
+  dgraph_data:
+  redis_data:
 
 networks:
   fenix-net:
