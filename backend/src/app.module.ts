@@ -16,6 +16,7 @@ import { CorrectiveActionsModule } from './corrective-actions/corrective-actions
 import { DocumentsModule } from './documents/documents.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { MailModule } from './mail/mail.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { MailModule } from './mail/mail.module';
     CorrectiveActionsModule,
     DocumentsModule,
     MailModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

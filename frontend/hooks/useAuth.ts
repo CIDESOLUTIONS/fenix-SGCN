@@ -8,6 +8,7 @@ interface User {
   role: string;
   tenant: {
     name: string;
+    logo?: string;
     subscriptionPlan: string;
     subscriptionStatus: string;
   };
