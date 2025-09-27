@@ -26,15 +26,6 @@ export class ExercisesService {
         status: 'PLANNED',
         createdBy: userId,
       },
-      include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            process: true,
-          },
-        },
-      },
     });
 
     this.logger.log(`Exercise created: ${exercise.id} - ${exercise.name} by ${userId}`);
@@ -108,7 +99,7 @@ export class ExercisesService {
   async startExercise(id: string, tenantId: string, userId: string) {
     const exercise = await this.prisma.exercise.findFirst({
       where: { id, tenantId },
-      include: { plan: true },
+      // include: { plan: true },
     });
 
     if (!exercise) {
@@ -124,8 +115,8 @@ export class ExercisesService {
       where: { id },
       data: {
         status: 'IN_PROGRESS',
-        actualStartTime: new Date(),
-        executionLog: {
+        startTime: new Date(),
+        scenario: {
           events: [
             {
               timestamp: new Date().toISOString(),
@@ -144,7 +135,7 @@ export class ExercisesService {
       exerciseId: id,
       name: exercise.name,
       status: 'IN_PROGRESS',
-      startTime: updated.actualStartTime,
+      startTime: updated.startTime,
       message: 'Ejercicio iniciado - Modo ejecución activo',
     };
   }
@@ -184,7 +175,7 @@ export class ExercisesService {
     await this.prisma.exercise.update({
       where: { id: exerciseId },
       data: {
-        executionLog: {
+        scenario: {
           events,
         },
       },
@@ -290,7 +281,7 @@ export class ExercisesService {
     await this.prisma.exercise.update({
       where: { id: exerciseId },
       data: {
-        executionLog: {
+        scenario: {
           events,
           completedTasks,
         },
@@ -341,17 +332,16 @@ export class ExercisesService {
 
     // Obtener RTO objetivo
     const bia = exercise.plan?.process?.biaAssessments?.[0];
-    const targetRto = bia?.rto || exercise.plan?.process?.rto || 24;
+    const targetRto = bia?.rto || 24;
 
     // Calcular score
     const score = this.calculateExerciseScore(
       actualDuration,
       targetRto,
-      exercise.executionLog,
     );
 
     // Determinar resultado
-    let result: string;
+    let result: 'SUCCESS' | 'SUCCESS_WITH_OBSERVATIONS' | 'PARTIAL_SUCCESS' | 'FAILED';
     if (actualDuration <= targetRto) {
       result = 'SUCCESS';
     } else if (actualDuration <= targetRto * 1.2) {
@@ -367,7 +357,7 @@ export class ExercisesService {
         status: 'COMPLETED',
         actualEndTime,
         actualDuration,
-        result,
+        result: result as any,
         score,
       },
     });
@@ -426,7 +416,12 @@ export class ExercisesService {
     const completedTasks = executionLog.completedTasks || [];
 
     // Identificar brechas
-    const gaps = [];
+    const gaps: Array<{
+      category: string;
+      description: string;
+      recommendation: string;
+      priority: string;
+    }> = [];
     if (exercise.result === 'FAILED' || exercise.result === 'SUCCESS_WITH_OBSERVATIONS') {
       gaps.push({
         category: 'PERFORMANCE',
@@ -462,7 +457,7 @@ export class ExercisesService {
       timeline: {
         planned: {
           start: exercise.scheduledDate,
-          duration: exercise.duration,
+          duration: exercise.actualDuration || 0,
         },
         actual: {
           start: exercise.actualStartTime,
@@ -472,7 +467,7 @@ export class ExercisesService {
       },
       performance: {
         targetRto: exercise.plan?.process?.biaAssessments?.[0]?.rto || 24,
-        actualDuration: exercise.actualDuration,
+        // actualDuration: exercise.actualDuration,
         score: exercise.score,
         result: exercise.result,
         meetsObjective: exercise.result === 'SUCCESS',
@@ -489,12 +484,14 @@ export class ExercisesService {
     };
 
     // Generar PDF
-    const pdfBuffer = await this.reportGenerator.generateExerciseReport(reportData);
+    const pdfUrl = await this.reportGenerator.generateExerciseReport(
+      `Reporte Ejercicio ${exercise.name}`,
+      reportData
+    );
 
     return {
       reportData,
-      pdfUrl: `/exercises/${exerciseId}/report.pdf`,
-      pdfBuffer,
+      pdfUrl,
     };
   }
 
@@ -524,7 +521,16 @@ export class ExercisesService {
       throw new NotFoundException(`Exercise ${exerciseId} not found`);
     }
 
-    const gaps = [];
+    const gaps: Array<{
+      id: string;
+      category: string;
+      severity: string;
+      title: string;
+      description: string;
+      impact: string;
+      recommendation: string;
+      estimatedEffort: string;
+    }> = [];
     const bia = exercise.plan?.process?.biaAssessments?.[0];
     const targetRto = bia?.rto || 24;
 
@@ -684,7 +690,6 @@ export class ExercisesService {
   private calculateExerciseScore(
     actualDuration: number,
     targetRto: number,
-    executionLog: any,
   ): number {
     let score = 100;
 
@@ -701,7 +706,7 @@ export class ExercisesService {
     }
 
     // Factor 2: Tareas completadas (peso 30%)
-    const log = executionLog || {};
+    const log: any = {};
     const completedTasks = log.completedTasks?.length || 0;
     const totalTasks = 10; // En producción, obtener del plan
 

@@ -1,11 +1,14 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { AnalyticsEngineService } from './analytics-engine.service';
 import { ReportGeneratorService, ReportFormat } from './report-generator.service';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('analytics')
-@UseGuards(JwtAuthGuard)
+
 export class AnalyticsController {
   constructor(
     private analyticsService: AnalyticsEngineService,

@@ -1,39 +1,147 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsArray, ValidateNested, IsNotEmpty, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateRiskAssessmentDto {
   @IsString()
   @IsNotEmpty()
-  processId: string;
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(['OPERATIONAL', 'TECHNOLOGICAL', 'NATURAL', 'HUMAN', 'EXTERNAL'])
+  @IsNotEmpty()
+  category: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  probabilityBefore: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  impactBefore: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  probabilityAfter?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  impactAfter?: number;
+
+  @IsString()
+  @IsOptional()
+  processId?: string;
+
+  @IsArray()
+  @IsOptional()
+  controls?: string[];
+}
+
+export class UpdateRiskAssessmentDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(['OPERATIONAL', 'TECHNOLOGICAL', 'NATURAL', 'HUMAN', 'EXTERNAL'])
+  @IsOptional()
+  category?: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  probabilityBefore?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  impactBefore?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  probabilityAfter?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  impactAfter?: number;
+
+  @IsArray()
+  @IsOptional()
+  controls?: string[];
+}
+
+class TreatmentActionDto {
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
   @IsString()
   @IsNotEmpty()
-  riskDescription: string;
-
-  @IsEnum(['Strategic', 'Operational', 'Financial', 'Compliance', 'Reputational'])
-  @IsOptional()
-  riskType?: 'Strategic' | 'Operational' | 'Financial' | 'Compliance' | 'Reputational';
-
-  @IsNumber()
-  @IsOptional()
-  likelihood?: number;
-
-  @IsNumber()
-  @IsOptional()
-  impact?: number;
-
-  @IsNumber()
-  @IsOptional()
-  riskScore?: number;
+  assignee: string;
 
   @IsString()
-  @IsOptional()
-  mitigationPlan?: string;
+  @IsNotEmpty()
+  dueDate: string;
+}
+
+export class CreateTreatmentPlanDto {
+  @IsEnum(['AVOID', 'MITIGATE', 'TRANSFER', 'ACCEPT'])
+  @IsNotEmpty()
+  strategy: 'AVOID' | 'MITIGATE' | 'TRANSFER' | 'ACCEPT';
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TreatmentActionDto)
+  actions: TreatmentActionDto[];
 
   @IsString()
-  @IsOptional()
-  owner?: string;
+  @IsNotEmpty()
+  owner: string;
+}
 
-  @IsEnum(['Open', 'Mitigated', 'Accepted', 'Transferred', 'Closed'])
+export class MonteCarloSimulationDto {
+  @IsNumber()
+  @Min(0)
+  impactMin: number;
+
+  @IsNumber()
+  @Min(0)
+  impactMost: number;
+
+  @IsNumber()
+  @Min(0)
+  impactMax: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  probabilityMin: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  probabilityMax: number;
+
+  @IsNumber()
+  @Min(1000)
+  @Max(100000)
   @IsOptional()
-  status?: 'Open' | 'Mitigated' | 'Accepted' | 'Transferred' | 'Closed';
+  iterations?: number;
 }

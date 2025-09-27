@@ -283,4 +283,11 @@ export class AnalyticsEngineService {
       probability: (count / values.length * 100).toFixed(2) + '%',
     }));
   }
+
+  /**
+   * Alias para compatibilidad - obtener cobertura BIA
+   */
+  async getBiaCoverage(tenantId: string) {
+    return this.analyzeBIACoverage(tenantId);
+  }
 }

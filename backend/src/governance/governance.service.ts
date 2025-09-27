@@ -29,7 +29,7 @@ export class GovernanceService {
         title: dto.title,
         content: dto.content,
         version: dto.version || '1.0',
-        status: dto.status || 'DRAFT',
+        status: (dto.status as any) || 'DRAFT',
         createdBy: userId,
       },
     });
@@ -70,7 +70,10 @@ export class GovernanceService {
     const policy = await this.prisma.sgcnPolicy.updateMany({
       where: { id, tenantId },
       data: {
-        ...dto,
+        title: dto.title,
+        content: dto.content,
+        version: dto.version,
+        status: dto.status as any,
         updatedBy: userId,
         updatedAt: new Date(),
       },
@@ -91,13 +94,13 @@ export class GovernanceService {
     });
 
     // Crear workflow de aprobación
-    const workflow = await this.workflowEngine.createApprovalWorkflow(
-      'sgcn-policy',
-      id,
+    const workflow = await this.workflowEngine.createApprovalWorkflow({
+      type: 'sgcn-policy',
+      entityId: id,
       approvers,
       tenantId,
-      userId,
-    );
+      requestedBy: userId,
+    });
 
     this.logger.log(`Policy ${id} submitted for approval - Workflow: ${workflow.id}`);
 
@@ -123,10 +126,9 @@ export class GovernanceService {
 
     // Notificar al creador
     await this.workflowEngine.sendNotification(
-      [userId],
-      'Política del SGCN Aprobada',
-      `La política ha sido aprobada. ${comments || ''}`,
-      tenantId,
+      userId,
+      `Política del SGCN Aprobada: ${comments || 'Sin comentarios'}`,
+      { tenantId, policyId: id },
     );
 
     this.logger.log(`Policy ${id} approved by ${userId}`);
@@ -156,10 +158,9 @@ export class GovernanceService {
 
     // Notificar a toda la organización
     await this.workflowEngine.sendNotification(
-      [], // En producción: obtener todos los usuarios del tenant
+      'all_users', // Indicador especial para notificación masiva
       `Nueva Política Publicada: ${policy.title}`,
-      'Se ha publicado una nueva política del SGCN. Por favor, revise el contenido en el sistema.',
-      tenantId,
+      { tenantId, policyId: id, action: 'published' },
     );
 
     this.logger.log(`Policy ${id} published by ${userId}`);
@@ -193,7 +194,7 @@ export class GovernanceService {
         measurementCriteria: dto.measurementCriteria,
         targetDate: dto.targetDate ? new Date(dto.targetDate) : null,
         owner: dto.owner || userId,
-        status: dto.status || 'NOT_STARTED',
+        status: (dto.status as any) || 'NOT_STARTED',
         createdBy: userId,
       },
     });
@@ -247,7 +248,11 @@ export class GovernanceService {
     const objective = await this.prisma.sgcnObjective.updateMany({
       where: { id, tenantId },
       data: {
-        ...dto,
+        description: dto.description,
+        measurementCriteria: dto.measurementCriteria,
+        owner: dto.owner,
+        status: dto.status as any,
+        progress: dto.progress,
         targetDate: dto.targetDate ? new Date(dto.targetDate) : undefined,
         updatedAt: new Date(),
       },

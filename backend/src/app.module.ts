@@ -26,6 +26,9 @@ import { WorkflowEngineModule } from './workflow-engine/workflow-engine.module';
 import { BIDashboardModule } from './bi-dashboards/bi-dashboard.module';
 import { AnalyticsEngineModule } from './analytics-engine/analytics-engine.module';
 import { GovernanceModule } from './governance/governance.module';
+import { ContinuousImprovementModule } from './continuous-improvement/continuous-improvement.module';
+import { ExercisesModule } from './exercises/exercises.module';
+import { ReportGeneratorModule } from './report-generator/report-generator.module';
 
 @Module({
   imports: [
@@ -61,6 +64,9 @@ import { GovernanceModule } from './governance/governance.module';
     MailModule,
     ContactModule,
     DashboardModule,
+    ContinuousImprovementModule,
+    ExercisesModule,
+    ReportGeneratorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

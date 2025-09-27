@@ -1,226 +1,307 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DgraphService } from '../dgraph/dgraph.service';
-
-export enum WidgetType {
-  KPI_CARD = 'KPI_CARD',
-  BAR_CHART = 'BAR_CHART',
-  PIE_CHART = 'PIE_CHART',
-  LINE_CHART = 'LINE_CHART',
-  HEATMAP = 'HEATMAP',
-  TABLE = 'TABLE',
-  RISK_MATRIX = 'RISK_MATRIX',
-}
-
-export interface Widget {
-  id: string;
-  type: WidgetType;
-  title: string;
-  query: string;
-  config?: Record<string, any>;
-}
-
-export interface Dashboard {
-  id: string;
-  name: string;
-  role?: string;
-  tenantId: string;
-  widgets: Widget[];
-  layout?: Record<string, any>;
-}
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class BIDashboardService {
-  private readonly logger = new Logger(BIDashboardService.name);
+export class BiDashboardService {
+  constructor(private prisma: PrismaService) {}
 
-  constructor(private dgraphService: DgraphService) {}
+  // ========== MÉTODOS PRINCIPALES ==========
 
-  /**
-   * Crear un dashboard personalizado
-   */
-  async createDashboard(dashboard: Omit<Dashboard, 'id'>): Promise<Dashboard> {
-    const newDashboard: Dashboard = {
-      ...dashboard,
-      id: `dash_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
+  async getMainDashboard(tenantId: string, filters?: any) {
+    const totalProcesses = await this.prisma.businessProcess.count({
+      where: { tenantId },
+    });
 
-    this.logger.log(`Dashboard created: ${newDashboard.name}`);
-    return newDashboard;
-  }
+    const totalRisks = await this.prisma.riskAssessment.count({
+      where: { tenantId },
+    });
 
-  /**
-   * Obtener KPIs del SGCN
-   */
-  async getSGCNKPIs(tenantId: string): Promise<any> {
-    const query = `
-      query kpis($tenantId: string) {
-        totalProcesses: count(func: type(BusinessProcess)) @filter(eq(tenantId, $tenantId))
-        criticalProcesses: count(func: type(BusinessProcess)) @filter(eq(tenantId, $tenantId) AND eq(criticality, "CRITICAL"))
-        totalRisks: count(func: type(Risk)) @filter(eq(tenantId, $tenantId))
-        highRisks: count(func: type(Risk)) @filter(eq(tenantId, $tenantId) AND eq(impact, "HIGH"))
-        totalPlans: count(func: type(ContinuityPlan)) @filter(eq(tenantId, $tenantId))
-        activePlans: count(func: type(ContinuityPlan)) @filter(eq(tenantId, $tenantId) AND eq(status, "ACTIVE"))
-      }
-    `;
+    const totalFindings = await this.prisma.finding.count({
+      where: { tenantId },
+    });
 
-    return this.dgraphService.query(query, { $tenantId: tenantId });
-  }
+    const totalExercises = await this.prisma.testExercise.count({
+      where: { tenantId },
+    });
 
-  /**
-   * Dashboard para CISO / Gestor del SGCN
-   */
-  async getCISODashboard(tenantId: string): Promise<Dashboard> {
+    let filteredProcesses: any[] = [];
+    if (filters?.criticalityLevel || filters?.department) {
+      filteredProcesses = await this.prisma.businessProcess.findMany({
+        where: {
+          tenantId,
+          ...(filters.criticalityLevel && {
+            criticalityLevel: filters.criticalityLevel,
+          }),
+          ...(filters.department && { department: filters.department }),
+        },
+      });
+    }
+
     return {
-      id: 'ciso_dashboard',
-      name: 'Dashboard del CISO',
-      role: 'CISO',
-      tenantId,
-      widgets: [
-        {
-          id: 'kpi_critical_processes',
-          type: WidgetType.KPI_CARD,
-          title: 'Procesos Críticos',
-          query: 'criticalProcesses',
-        },
-        {
-          id: 'kpi_high_risks',
-          type: WidgetType.KPI_CARD,
-          title: 'Riesgos Altos',
-          query: 'highRisks',
-        },
-        {
-          id: 'risk_heatmap',
-          type: WidgetType.HEATMAP,
-          title: 'Mapa de Calor de Riesgos',
-          query: 'riskMatrix',
-        },
-        {
-          id: 'plan_status',
-          type: WidgetType.PIE_CHART,
-          title: 'Estado de Planes',
-          query: 'planStatus',
-        },
-      ],
+      summary: {
+        totalProcesses,
+        totalRisks,
+        totalFindings,
+        totalExercises,
+      },
+      ...(filteredProcesses.length > 0 && { filteredProcesses }),
     };
   }
 
-  /**
-   * Dashboard para Propietario de Proceso
-   */
-  async getProcessOwnerDashboard(tenantId: string, userId: string): Promise<Dashboard> {
+  // Alias para compatibilidad con controlador antiguo
+  async getCISODashboard(tenantId: string) {
+    return this.getMainDashboard(tenantId);
+  }
+
+  async getKPIs(tenantId: string) {
+    const totalProcesses = await this.prisma.businessProcess.count({
+      where: { tenantId },
+    });
+
+    const processesWithBIA = await this.prisma.biaAssessment.count({
+      where: { tenantId },
+    });
+
+    const biaCoverage = totalProcesses > 0 
+      ? (processesWithBIA / totalProcesses) * 100 
+      : 0;
+
+    const totalRisks = await this.prisma.riskAssessment.count({
+      where: { tenantId },
+    });
+
+    const treatedRisks = await this.prisma.riskAssessment.count({
+      where: {
+        tenantId,
+        probabilityAfter: { not: null },
+      },
+    });
+
+    const riskTreatmentRate = totalRisks > 0 
+      ? (treatedRisks / totalRisks) * 100 
+      : 0;
+
+    const totalPlans = await this.prisma.continuityPlan.count({
+      where: { tenantId },
+    });
+
+    const totalExercises = await this.prisma.testExercise.count({
+      where: { tenantId },
+    });
+
+    const testSuccessRate = totalPlans > 0 && totalExercises > 0
+      ? (totalExercises / totalPlans) * 100 
+      : 0;
+
     return {
-      id: 'process_owner_dashboard',
-      name: 'Dashboard del Propietario de Proceso',
-      tenantId,
-      widgets: [
-        {
-          id: 'my_processes',
-          type: WidgetType.TABLE,
-          title: 'Mis Procesos',
-          query: `
-            query myProcesses($tenantId: string, $userId: string) {
-              processes(func: type(BusinessProcess)) @filter(eq(tenantId, $tenantId)) {
-                id
-                name
-                criticality
-                rto
-                rpo
-                ownedBy @filter(eq(id, $userId)) {
-                  id
-                }
-              }
-            }
-          `,
-        },
-        {
-          id: 'my_risks',
-          type: WidgetType.BAR_CHART,
-          title: 'Riesgos de mis Procesos',
-          query: 'myRisks',
-        },
-      ],
+      biaCoverage: Math.round(biaCoverage * 10) / 10,
+      riskTreatmentRate: Math.round(riskTreatmentRate * 10) / 10,
+      testSuccessRate: Math.round(testSuccessRate * 10) / 10,
+      totalActiveActions: await this.prisma.correctiveAction.count({
+        where: { tenantId, status: 'OPEN' },
+      }),
     };
   }
 
-  /**
-   * Obtener datos para un widget específico
-   */
-  async getWidgetData(widgetId: string, tenantId: string, params?: any): Promise<any> {
-    // Lógica para obtener datos según el tipo de widget
-    this.logger.log(`Fetching data for widget: ${widgetId}`);
-    
-    // Placeholder: implementar consultas específicas por widget
-    return { data: [], message: 'Widget data placeholder' };
+  // Alias para compatibilidad
+  async getSGCNKPIs(tenantId: string) {
+    return this.getKPIs(tenantId);
   }
 
-  /**
-   * Mapa de calor de riesgos
-   */
-  async getRiskHeatmap(tenantId: string): Promise<any> {
-    const query = `
-      query riskMatrix($tenantId: string) {
-        risks(func: type(Risk)) @filter(eq(tenantId, $tenantId)) {
-          id
-          name
-          impact
-          likelihood
-          affects {
-            id
-            name
-          }
-        }
-      }
-    `;
+  async getCharts(tenantId: string) {
+    const risks = await this.prisma.riskAssessment.findMany({
+      where: { tenantId },
+      select: {
+        probabilityBefore: true,
+        impactBefore: true,
+      },
+    });
 
-    const result = await this.dgraphService.query(query, { $tenantId: tenantId });
-    
-    // Transformar a formato de mapa de calor
-    const heatmap = this.transformToHeatmap(result.risks || []);
-    return heatmap;
-  }
+    const biaData = await this.prisma.biaAssessment.findMany({
+      where: { tenantId },
+      select: {
+        rto: true,
+        rpo: true,
+      },
+    });
 
-  private transformToHeatmap(risks: any[]): any {
-    const matrix = {
-      HIGH_HIGH: [],
-      HIGH_MEDIUM: [],
-      HIGH_LOW: [],
-      MEDIUM_HIGH: [],
-      MEDIUM_MEDIUM: [],
-      MEDIUM_LOW: [],
-      LOW_HIGH: [],
-      LOW_MEDIUM: [],
-      LOW_LOW: [],
+    return {
+      riskHeatmap: this.generateHeatmap(risks),
+      biaCoverageChart: {
+        total: await this.prisma.businessProcess.count({ where: { tenantId } }),
+        covered: biaData.length,
+      },
     };
+  }
 
-    risks.forEach(risk => {
-      const key = `${risk.impact}_${risk.likelihood}`;
-      if (matrix[key]) {
-        matrix[key].push(risk);
-      }
+  // Métodos específicos para charts
+  async getRiskHeatmap(tenantId: string) {
+    const risks = await this.prisma.riskAssessment.findMany({
+      where: { tenantId },
+      select: {
+        probabilityBefore: true,
+        impactBefore: true,
+      },
+    });
+    return this.generateHeatmap(risks);
+  }
+
+  async getPlanStatusChart(tenantId: string) {
+    const total = await this.prisma.continuityPlan.count({ where: { tenantId } });
+    const biaData = await this.prisma.biaAssessment.findMany({
+      where: { tenantId },
+    });
+    return {
+      total,
+      covered: biaData.length,
+    };
+  }
+
+  // ========== BÚSQUEDA GLOBAL ==========
+
+  async globalSearch(query: string, tenantId: string) {
+    const [processes, risks, plans] = await Promise.all([
+      this.prisma.businessProcess.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        take: 5,
+      }),
+      this.prisma.riskAssessment.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        take: 5,
+      }),
+      this.prisma.continuityPlan.findMany({
+        where: {
+          tenantId,
+          name: { contains: query, mode: 'insensitive' },
+        },
+        take: 5,
+      }),
+    ]);
+
+    return {
+      processes,
+      risks,
+      plans,
+    };
+  }
+
+  // ========== EJERCICIOS ==========
+
+  async getExercises(tenantId: string, filters?: any) {
+    const where: any = { tenantId };
+
+    if (filters?.startDate && filters?.endDate) {
+      where.scheduledDate = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    }
+
+    return this.prisma.testExercise.findMany({ where });
+  }
+
+  // ========== DASHBOARDS ESPECÍFICOS POR ROL ==========
+
+  async getProcessOwnerDashboard(tenantId: string, userId: string) {
+    // Obtener procesos donde el usuario es responsable
+    const ownedProcesses = await this.prisma.businessProcess.findMany({
+      where: {
+        tenantId,
+        // Buscar por responsable en matriz RACI
+        OR: [
+          { raciResponsibleEmail: userId },
+          { raciAccountableEmail: userId },
+        ],
+      },
+      include: {
+        biaAssessments: true,
+        riskAssessments: true,
+      },
+    });
+
+    return {
+      ownedProcesses,
+      totalProcesses: ownedProcesses.length,
+      processesWithBIA: ownedProcesses.filter(p => p.biaAssessments.length > 0).length,
+      highRisks: ownedProcesses.filter(p => 
+        p.riskAssessments.some(r => r.scoreBefore && r.scoreBefore.toNumber() > 15)
+      ).length,
+    };
+  }
+
+  // ========== WIDGETS ==========
+
+  async getWidgetData(widgetId: string, tenantId: string, params?: any) {
+    switch (widgetId) {
+      case 'risk-summary':
+        return this.getRiskHeatmap(tenantId);
+      case 'bia-coverage':
+        return this.getPlanStatusChart(tenantId);
+      case 'kpis':
+        return this.getKPIs(tenantId);
+      default:
+        return { message: 'Widget no encontrado' };
+    }
+  }
+
+  // ========== CREACIÓN DE DASHBOARDS ==========
+
+  async createDashboard(dashboardData: any) {
+    // Implementación básica - crear dashboard personalizado
+    return {
+      id: `dashboard_${Date.now()}`,
+      name: dashboardData.name || 'Nuevo Dashboard',
+      widgets: dashboardData.widgets || [],
+      createdAt: new Date(),
+    };
+  }
+
+  // ========== EXPORTACIÓN ==========
+
+  async exportPDF(tenantId: string) {
+    return {
+      pdfUrl: `/exports/dashboard-${tenantId}-${Date.now()}.pdf`,
+      generatedAt: new Date(),
+    };
+  }
+
+  async exportExcel(tenantId: string) {
+    return {
+      excelUrl: `/exports/dashboard-${tenantId}-${Date.now()}.xlsx`,
+      generatedAt: new Date(),
+    };
+  }
+
+  async exportView(viewConfig: any, tenantId: string) {
+    return {
+      downloadUrl: `/exports/view-${tenantId}-${Date.now()}.${viewConfig.format || 'pdf'}`,
+      generatedAt: new Date(),
+    };
+  }
+
+  // ========== MÉTODOS AUXILIARES ==========
+
+  private generateHeatmap(risks: any[]) {
+    const matrix = Array(5).fill(0).map(() => Array(5).fill(0));
+    
+    risks.forEach((risk) => {
+      const likelihood = Math.min(risk.probabilityBefore || 1, 5) - 1;
+      const impact = Math.min(risk.impactBefore || 1, 5) - 1;
+      matrix[likelihood][impact]++;
     });
 
     return matrix;
-  }
-
-  /**
-   * Estado de planes de continuidad
-   */
-  async getPlanStatusChart(tenantId: string): Promise<any> {
-    const query = `
-      query planStatus($tenantId: string) {
-        plans(func: type(ContinuityPlan)) @filter(eq(tenantId, $tenantId)) {
-          status
-        }
-      }
-    `;
-
-    const result = await this.dgraphService.query(query, { $tenantId: tenantId });
-    
-    // Agrupar por estado
-    const statusCount = {};
-    result.plans?.forEach(plan => {
-      statusCount[plan.status] = (statusCount[plan.status] || 0) + 1;
-    });
-
-    return statusCount;
   }
 }

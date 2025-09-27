@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE "findings" 
+ADD COLUMN "sourceReference" TEXT,
+ADD COLUMN "affectedArea" TEXT,
+ADD COLUMN "impact" TEXT,
+ADD COLUMN "recommendation" TEXT;
+
+-- AlterEnum
+ALTER TYPE "FindingSource" ADD VALUE IF NOT EXISTS 'RISK_ASSESSMENT';
+ALTER TYPE "FindingSource" ADD VALUE IF NOT EXISTS 'MANAGEMENT_REVIEW';
+ALTER TYPE "FindingSource" ADD VALUE IF NOT EXISTS 'STAKEHOLDER_FEEDBACK';

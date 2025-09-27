@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DgraphService } from '../dgraph/dgraph.service';
-import { WorkflowEngineService } from '../workflow-engine/workflow-engine.service';
+import { WorkflowEngineService, WorkflowTaskType } from '../workflow-engine/workflow-engine.service';
 import { AnalyticsEngineService } from '../analytics-engine/analytics-engine.service';
 
 @Injectable()
@@ -78,7 +78,7 @@ export class RiskAssessmentsService {
           select: {
             id: true,
             name: true,
-            criticality: true,
+            criticalityLevel: true,
           },
         },
       },
@@ -219,7 +219,7 @@ export class RiskAssessmentsService {
           select: {
             id: true,
             name: true,
-            criticality: true,
+            criticalityLevel: true,
           },
         },
       },
@@ -247,7 +247,7 @@ export class RiskAssessmentsService {
         heatmap[key].push({
           id: risk.id,
           name: risk.name,
-          process: risk.process?.name,
+          processName: risk.process?.name,
           category: risk.category,
           score: parseFloat(risk.scoreBefore.toString()),
         });
@@ -286,7 +286,7 @@ export class RiskAssessmentsService {
     if (treatment.strategy === 'MITIGATE' && treatment.actions.length > 0) {
       const steps = treatment.actions.map((action, index) => ({
         id: `action_${index}`,
-        type: 'APPROVAL' as const,
+        type: WorkflowTaskType.TASK,
         name: action.description,
         assignedTo: [action.assignee],
         dueDate: new Date(action.dueDate),

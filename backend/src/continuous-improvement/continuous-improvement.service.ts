@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowEngineService } from '../workflow-engine/workflow-engine.service';
 import { AnalyticsEngineService } from '../analytics-engine/analytics-engine.service';
 import { ReportGeneratorService } from '../report-generator/report-generator.service';
+import { ActionStatus } from '@prisma/client';
 
 @Injectable()
 export class ContinuousImprovementService {
@@ -57,17 +58,7 @@ export class ContinuousImprovementService {
     return await this.prisma.finding.findMany({
       where,
       include: {
-        correctiveActions: {
-          include: {
-            assignedToUser: {
-              select: {
-                id: true,
-                email: true,
-                name: true,
-              },
-            },
-          },
-        },
+        correctiveActions: true,
       },
       orderBy: [
         { severity: 'desc' },
@@ -83,17 +74,7 @@ export class ContinuousImprovementService {
     const finding = await this.prisma.finding.findFirst({
       where: { id, tenantId },
       include: {
-        correctiveActions: {
-          include: {
-            assignedToUser: {
-              select: {
-                id: true,
-                email: true,
-                name: true,
-              },
-            },
-          },
-        },
+        correctiveActions: true,
       },
     });
 
@@ -152,7 +133,7 @@ export class ContinuousImprovementService {
           name: 'Verificar Eficacia',
           assignedTo: [userId],
           dueDate: new Date(
-            new Date(action.targetDate).getTime() + 30 * 24 * 60 * 60 * 1000,
+            (action.targetDate ? new Date(action.targetDate).getTime() : Date.now()) + 30 * 24 * 60 * 60 * 1000,
           ), // +30 días
           metadata: { actionId: action.id, findingId },
         },
@@ -189,9 +170,9 @@ export class ContinuousImprovementService {
     const updated = await this.prisma.correctiveAction.update({
       where: { id: actionId },
       data: {
-        status,
-        completionNotes: notes,
-        completedDate: status === 'COMPLETED' ? new Date() : null,
+        status: status as ActionStatus,
+        verification: notes,
+        completedDate: status === ActionStatus.COMPLETED ? new Date() : null,
       },
     });
 
@@ -205,7 +186,7 @@ export class ContinuousImprovementService {
         (a) => a.status === 'COMPLETED' || a.id === actionId,
       );
 
-      if (allCompleted) {
+      if (allCompleted && action.findingId) {
         await this.prisma.finding.update({
           where: { id: action.findingId },
           data: { status: 'RESOLVED' },
@@ -234,14 +215,14 @@ export class ContinuousImprovementService {
     await this.prisma.finding.update({
       where: { id: findingId },
       data: {
-        rootCauseAnalysis: {
+        resolution: JSON.stringify({
           method: rcaData.method || '5 Whys',
           analysis: rcaData.analysis,
           rootCause: rcaData.rootCause,
           contributingFactors: rcaData.contributingFactors || [],
           performedBy: rcaData.performedBy,
           performedDate: new Date(),
-        },
+        }),
       },
     });
 
@@ -271,7 +252,7 @@ export class ContinuousImprovementService {
         where: { tenantId, status: 'RESOLVED' },
       }),
       highSeverityFindings: await this.prisma.finding.count({
-        where: { tenantId, severity: 'HIGH' },
+        where: { tenantId, severity: 'CRITICAL' }, // Usar CRITICAL en lugar de HIGH
       }),
     };
 
@@ -279,12 +260,12 @@ export class ContinuousImprovementService {
     const capaPerformance = {
       totalActions: await this.prisma.correctiveAction.count({ where: { tenantId } }),
       completedActions: await this.prisma.correctiveAction.count({
-        where: { tenantId, status: 'COMPLETED' },
+        where: { tenantId, status: 'COMPLETED' as any },
       }),
       overdueActions: await this.prisma.correctiveAction.count({
         where: {
           tenantId,
-          status: { not: 'COMPLETED' },
+          status: { not: 'COMPLETED' as any },
           targetDate: { lt: new Date() },
         },
       }),
@@ -467,7 +448,13 @@ export class ContinuousImprovementService {
    * Tendencias de mejora
    */
   async getImprovementTrends(tenantId: string, months: number = 12) {
-    const trends = [];
+    const trends: Array<{
+      month: string;
+      newFindings: number;
+      resolvedFindings: number;
+      completedActions: number;
+      exercisesPerformed: number;
+    }> = [];
     const now = new Date();
 
     for (let i = months - 1; i >= 0; i--) {
@@ -570,7 +557,7 @@ export class ContinuousImprovementService {
 
     if (exercises.length === 0) return 0;
 
-    const totalScore = exercises.reduce((sum, ex) => sum + (ex.score || 0), 0);
+    const totalScore = exercises.reduce((sum, ex) => sum + (Number(ex.score) || 0), 0);
     return Math.round(totalScore / exercises.length);
   }
 
@@ -627,7 +614,7 @@ export class ContinuousImprovementService {
   }
 
   private async calculateImprovementTrend(tenantId: string) {
-    const last3Months = [];
+    const last3Months: { month: string; resolvedFindings: number }[] = [];
     const now = new Date();
 
     for (let i = 2; i >= 0; i--) {
@@ -661,7 +648,7 @@ export class ContinuousImprovementService {
   }
 
   private generateManagementRecommendations(data: any): string[] {
-    const recommendations = [];
+    const recommendations: string[] = [];
 
     if (data.capaPerformance.overdueActions > 0) {
       recommendations.push(

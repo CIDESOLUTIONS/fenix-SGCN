@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsEnum, IsObject, IsOptional, IsNotEmpty, IsArray } from 'class-validator';
 
 export class CreateContinuityPlanDto {
   @IsString()
@@ -9,27 +9,65 @@ export class CreateContinuityPlanDto {
   @IsNotEmpty()
   name: string;
 
+  @IsEnum(['BCP', 'DRP', 'IT_DR', 'CRISIS_MANAGEMENT', 'INCIDENT_RESPONSE'])
+  @IsNotEmpty()
+  type: string;
+
+  @IsObject()
+  @IsOptional()
+  content?: any;
+
   @IsString()
   @IsOptional()
-  description?: string;
+  version?: string;
 
-  @IsEnum(['Draft', 'Active', 'Review', 'Archived'])
+  @IsEnum(['DRAFT', 'REVIEW', 'APPROVED', 'ACTIVE', 'ARCHIVED'])
   @IsOptional()
-  status?: 'Draft' | 'Active' | 'Review' | 'Archived';
-
-  @IsDateString()
-  @IsOptional()
-  reviewDate?: string;
+  status?: string;
 
   @IsString()
   @IsOptional()
   approvedBy?: string;
+}
 
-  @IsArray()
+export class UpdateContinuityPlanDto {
+  @IsString()
   @IsOptional()
-  activationTriggers?: string[];
+  processId?: string;
 
-  @IsArray()
+  @IsString()
   @IsOptional()
-  procedures?: any[];
+  name?: string;
+
+  @IsEnum(['BCP', 'DRP', 'IT_DR', 'CRISIS_MANAGEMENT', 'INCIDENT_RESPONSE'])
+  @IsOptional()
+  type?: string;
+
+  @IsObject()
+  @IsOptional()
+  content?: any;
+
+  @IsString()
+  @IsOptional()
+  version?: string;
+
+  @IsEnum(['DRAFT', 'REVIEW', 'APPROVED', 'ACTIVE', 'ARCHIVED'])
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  approvedBy?: string;
+}
+
+export class SubmitForReviewDto {
+  @IsArray()
+  @IsNotEmpty()
+  approvers: string[];
+}
+
+export class ActivatePlanDto {
+  @IsString()
+  @IsNotEmpty()
+  reason: string;
 }

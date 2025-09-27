@@ -10,12 +10,15 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { ExercisesService } from './exercises.service';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('exercises')
-@UseGuards(JwtAuthGuard)
+
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 

@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsEnum, ValidateNested, IsNotEmpty, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
+// DTO para Política
 export class CreatePolicyDto {
   @IsString()
   @IsNotEmpty()
@@ -16,13 +17,28 @@ export class CreatePolicyDto {
 
   @IsEnum(['DRAFT', 'REVIEW', 'APPROVED', 'ACTIVE', 'ARCHIVED'])
   @IsOptional()
-  status?: 'DRAFT' | 'REVIEW' | 'APPROVED' | 'ACTIVE' | 'ARCHIVED';
-
-  @IsArray()
-  @IsOptional()
-  approvers?: string[];
+  status?: string;
 }
 
+export class UpdatePolicyDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  content?: string;
+
+  @IsString()
+  @IsOptional()
+  version?: string;
+
+  @IsEnum(['DRAFT', 'REVIEW', 'APPROVED', 'ACTIVE', 'ARCHIVED'])
+  @IsOptional()
+  status?: string;
+}
+
+// DTO para Objetivo
 export class CreateObjectiveDto {
   @IsString()
   @IsNotEmpty()
@@ -32,7 +48,7 @@ export class CreateObjectiveDto {
   @IsNotEmpty()
   measurementCriteria: string;
 
-  @IsString()
+  @IsDateString()
   @IsOptional()
   targetDate?: string;
 
@@ -42,21 +58,44 @@ export class CreateObjectiveDto {
 
   @IsEnum(['NOT_STARTED', 'IN_PROGRESS', 'AT_RISK', 'COMPLETED'])
   @IsOptional()
-  status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'AT_RISK' | 'COMPLETED';
+  status?: string;
 }
 
-export class RoleResponsibilityDto {
+export class UpdateObjectiveDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  measurementCriteria?: string;
+
+  @IsDateString()
+  @IsOptional()
+  targetDate?: string;
+
+  @IsString()
+  @IsOptional()
+  owner?: string;
+
+  @IsEnum(['NOT_STARTED', 'IN_PROGRESS', 'AT_RISK', 'COMPLETED'])
+  @IsOptional()
+  status?: string;
+
+  @IsOptional()
+  progress?: number;
+}
+
+// DTO para Matriz RACI
+class RaciAssignmentDto {
+  @IsString()
   role: string;
 
   @IsString()
-  @IsNotEmpty()
   responsibility: string;
 
   @IsEnum(['RESPONSIBLE', 'ACCOUNTABLE', 'CONSULTED', 'INFORMED'])
-  @IsNotEmpty()
-  raciType: 'RESPONSIBLE' | 'ACCOUNTABLE' | 'CONSULTED' | 'INFORMED';
+  raciType: string;
 }
 
 export class CreateRaciMatrixDto {
@@ -66,6 +105,18 @@ export class CreateRaciMatrixDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => RoleResponsibilityDto)
-  assignments: RoleResponsibilityDto[];
+  @Type(() => RaciAssignmentDto)
+  assignments: RaciAssignmentDto[];
+}
+
+export class UpdateRaciMatrixDto {
+  @IsString()
+  @IsOptional()
+  processOrActivity?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => RaciAssignmentDto)
+  assignments?: RaciAssignmentDto[];
 }

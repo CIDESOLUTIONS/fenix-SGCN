@@ -9,14 +9,17 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { ContinuityPlansService } from './continuity-plans.service';
 import { CreateContinuityPlanDto } from './dto/create-continuity-plan.dto';
 import { UpdateContinuityPlanDto } from './dto/update-continuity-plan.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('continuity-plans')
-@UseGuards(JwtAuthGuard)
+
 export class ContinuityPlansController {
   constructor(private readonly continuityPlansService: ContinuityPlansService) {}
 
@@ -129,6 +132,6 @@ export class ContinuityPlansController {
     @TenantId() tenantId: string,
     @Request() req: any,
   ) {
-    return this.continuityPlansService.remove(id, tenantId, req.user.userId);
+    return this.continuityPlansService.remove(id, tenantId);
   }
 }

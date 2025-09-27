@@ -51,8 +51,6 @@ export class ContinuityStrategiesService {
             id: true,
             name: true,
             criticalityLevel: true,
-            rto: true,
-            rpo: true,
           },
         },
       },
@@ -87,15 +85,15 @@ export class ContinuityStrategiesService {
    */
   async update(id: string, tenantId: string, dto: any, userId: string) {
     // Recalcular score si cambió algún factor
-    let costEffectivenessScore = undefined;
+    let costEffectivenessScore: number | undefined = undefined;
     if (dto.cost !== undefined || dto.effectiveness !== undefined || dto.implementationTime !== undefined) {
       const current = await this.prisma.continuityStrategy.findFirst({
         where: { id, tenantId },
       });
       costEffectivenessScore = this.calculateCostEffectiveness(
-        dto.cost ?? current?.cost,
-        dto.effectiveness ?? current?.effectiveness,
-        dto.implementationTime ?? current?.implementationTime,
+        dto.cost ?? current?.cost ?? 0,
+        dto.effectiveness ?? current?.effectiveness ?? 0,
+        dto.implementationTime ?? current?.implementationTime ?? 0,
       );
     }
 
@@ -131,7 +129,7 @@ export class ContinuityStrategiesService {
     }
 
     const bia = process.biaAssessments[0];
-    const rto = bia?.rto || process.rto || 24;
+    const rto = bia?.rto || 24;
 
     // Obtener dependencias desde Dgraph
     const dependencies = await this.dgraphService.getDependencies(
@@ -141,7 +139,16 @@ export class ContinuityStrategiesService {
     );
 
     // Generar recomendaciones
-    const recommendations = [];
+    const recommendations: Array<{
+      type: string;
+      name: string;
+      description: string;
+      estimatedCost: number;
+      implementationTime: number;
+      effectiveness: number;
+      priority: string;
+      rationale: string;
+    }> = [];
 
     // Estrategia 1: Redundancia
     if (rto <= 4) {
@@ -245,7 +252,15 @@ export class ContinuityStrategiesService {
     }
 
     // Simular análisis de brechas (en producción, esto vendría de un inventario real)
-    const gaps = [];
+    const gaps: Array<{
+      category: string;
+      item: string;
+      required: number | string;
+      available: number | string;
+      gap: number | string;
+      estimatedCost: number;
+      priority: string;
+    }> = [];
 
     if (strategy.type === 'REDUNDANCY') {
       gaps.push({
@@ -327,11 +342,15 @@ export class ContinuityStrategiesService {
     }
 
     const bia = strategy.process?.biaAssessments[0];
-    const requiredRto = bia?.rto || strategy.process?.rto || 24;
+    const requiredRto = bia?.rto || 24;
     const strategyImplementationTime = strategy.implementationTime || 0;
 
     // Validaciones
-    const validations = [];
+    const validations: Array<{
+      type: 'ERROR' | 'WARNING' | 'SUCCESS';
+      message: string;
+      recommendation?: string;
+    }> = [];
 
     // 1. Tiempo de implementación vs RTO
     if (strategyImplementationTime > requiredRto) {
@@ -348,7 +367,7 @@ export class ContinuityStrategiesService {
     }
 
     // 2. Efectividad vs Criticidad
-    if (strategy.process?.criticalityLevel === 'CRITICAL' && strategy.effectiveness < 4) {
+    if (strategy.process?.criticalityLevel === 'CRITICAL' && (strategy.effectiveness || 0) < 4) {
       validations.push({
         type: 'WARNING',
         message: 'Proceso crítico requiere estrategia de mayor efectividad (≥4)',
@@ -448,13 +467,13 @@ export class ContinuityStrategiesService {
     }
 
     // Crear workflow de aprobación
-    const workflow = await this.workflowEngine.createApprovalWorkflow(
-      'continuity-strategy',
-      strategyId,
+    const workflow = await this.workflowEngine.createApprovalWorkflow({
+      type: 'continuity-strategy',
+      entityId: strategyId,
       approvers,
       tenantId,
-      userId,
-    );
+      requestedBy: userId,
+    });
 
     this.logger.log(`Strategy ${strategyId} submitted for approval - Workflow: ${workflow.id}`);
 

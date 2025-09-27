@@ -1,47 +1,105 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsEnum, IsArray, IsOptional, IsNotEmpty, IsNumber, Min, Max, IsDateString } from 'class-validator';
 
 export class CreateTestExerciseDto {
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @IsEnum(['Tabletop', 'Walkthrough', 'Simulation', 'FullScale'])
+  @IsEnum(['DESKTOP', 'FUNCTIONAL', 'SIMULATION', 'FULL_RECOVERY'])
   @IsNotEmpty()
-  type: 'Tabletop' | 'Walkthrough' | 'Simulation' | 'FullScale';
+  type: string;
 
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  planId: string;
 
   @IsDateString()
-  @IsNotEmpty()
-  scheduledDate: string;
-
-  @IsString()
   @IsOptional()
-  facilitator?: string;
+  scheduledDate?: string;
 
   @IsArray()
   @IsOptional()
-  participants?: string[];
-
-  @IsString()
-  @IsOptional()
-  objectives?: string;
+  objectives?: string[];
 
   @IsString()
   @IsOptional()
   scenario?: string;
 
-  @IsEnum(['Planned', 'InProgress', 'Completed', 'Cancelled'])
+  @IsArray()
   @IsOptional()
-  status?: 'Planned' | 'InProgress' | 'Completed' | 'Cancelled';
+  participants?: string[];
+}
+
+export class UpdateTestExerciseDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEnum(['DESKTOP', 'FUNCTIONAL', 'SIMULATION', 'FULL_RECOVERY'])
+  @IsOptional()
+  type?: string;
 
   @IsString()
   @IsOptional()
-  results?: string;
+  planId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  scheduledDate?: string;
+
+  @IsArray()
+  @IsOptional()
+  objectives?: string[];
 
   @IsString()
   @IsOptional()
-  lessonsLearned?: string;
+  scenario?: string;
+
+  @IsArray()
+  @IsOptional()
+  participants?: string[];
+}
+
+export class CompleteExerciseDto {
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  rtoAchieved?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  rpoAchieved?: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  successRate?: number;
+
+  @IsArray()
+  @IsOptional()
+  observations?: string[];
+
+  @IsArray()
+  @IsOptional()
+  evidence?: Array<{ type: string; url: string; description: string }>;
+}
+
+export class LogEventDto {
+  @IsString()
+  @IsNotEmpty()
+  type: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @IsString()
+  @IsOptional()
+  participantId?: string;
+
+  @IsNumber()
+  @IsOptional()
+  duration?: number;
 }

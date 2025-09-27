@@ -3,9 +3,6 @@ import { CriticalityLevel } from '@prisma/client';
 
 export class CreateBusinessProcessDto {
   @IsString()
-  tenantId: string;
-
-  @IsString()
   name: string;
 
   @IsString()

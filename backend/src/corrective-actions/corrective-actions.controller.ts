@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 import { CorrectiveActionsService } from './corrective-actions.service';
 import { CreateCorrectiveActionDto } from './dto/create-corrective-action.dto';
 import { UpdateCorrectiveActionDto } from './dto/update-corrective-action.dto';
 import { TenantId } from '../common/tenant-id.decorator';
 
+@UseGuards(JwtGuard)
 @Controller('corrective-actions')
 export class CorrectiveActionsController {
   constructor(private readonly correctiveActionsService: CorrectiveActionsService) {}

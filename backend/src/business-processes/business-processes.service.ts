@@ -7,9 +7,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class BusinessProcessesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createBusinessProcessDto: CreateBusinessProcessDto) {
+  async create(createBusinessProcessDto: CreateBusinessProcessDto, tenantId: string) {
     return this.prisma.businessProcess.create({
-      data: createBusinessProcessDto,
+      data: {
+        ...createBusinessProcessDto,
+        tenantId,
+      },
     });
   }
 

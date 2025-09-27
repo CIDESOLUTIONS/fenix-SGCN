@@ -42,16 +42,24 @@ services:
   fenix_backend:
     build:
       context: ./backend
-      target: deps
+      dockerfile: Dockerfile.dev
     container_name: fenix_backend
     working_dir: /usr/src/app
     command: npm run start:dev
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fenix_db_master:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3001
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
     volumes:
       - ./backend:/usr/src/app
-      - ./.env:/usr/src/app/.env:ro
       - /usr/src/app/node_modules
     ports:
-      - "3001:3001"   # 👉 útil para debug directo
+      - "3001:3001"
     depends_on:
       fenix_db_master:
         condition: service_healthy

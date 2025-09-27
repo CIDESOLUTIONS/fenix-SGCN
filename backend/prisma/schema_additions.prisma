@@ -1,0 +1,133 @@
+// ============================================
+// MÓDULO: MEJORA CONTINUA - HALLAZGOS (FINDINGS)
+// ============================================
+
+model Finding {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  title       String
+  description String   @db.Text
+  source      FindingSource
+  severity    Severity
+  category    String
+  
+  // Estado
+  status      FindingStatus @default(OPEN)
+  
+  // Resolución
+  resolution  String?  @db.Text
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  
+  // Auditoría
+  identifiedBy String
+  identifiedAt DateTime @default(now())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  correctiveActions CorrectiveAction[]
+
+  @@map("findings")
+}
+
+enum FindingSource {
+  AUDIT
+  EXERCISE
+  INCIDENT
+  REVIEW
+  SELF_ASSESSMENT
+}
+
+enum FindingStatus {
+  OPEN
+  IN_REVIEW
+  ACTION_PLAN
+  RESOLVED
+  VERIFIED
+  CLOSED
+}
+
+// ============================================
+// MÓDULO: PRUEBAS Y EJERCICIOS (EXERCISES)
+// ============================================
+
+model Exercise {
+  id          String   @id @default(uuid())
+  tenantId    String
+  
+  // Información básica
+  name        String
+  type        ExerciseType
+  description String?  @db.Text
+  
+  // Planificación
+  scheduledDate DateTime
+  planId      String?
+  scenario    Json?    // Escenario del ejercicio
+  
+  // Ejecución
+  startTime   DateTime?
+  endTime     DateTime?
+  status      ExerciseStatus @default(PLANNED)
+  
+  // Resultados
+  result      ExerciseResult?
+  score       Decimal?         @db.Decimal(5, 2)
+  
+  // Observaciones
+  observations String?  @db.Text
+  gaps        Json?    // Array de brechas identificadas
+  
+  // Evidencias
+  evidences   Json?    // Array de URLs de evidencias (fotos, videos)
+  
+  // Participantes
+  participants String[]
+  facilitator  String
+  
+  // Reporte
+  reportUrl    String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("exercises")
+}
+
+enum ExerciseType {
+  TABLETOP      // Ejercicio de mesa
+  WALKTHROUGH   // Revisión paso a paso
+  SIMULATION    // Simulación
+  FULL_SCALE    // Prueba a escala completa
+  DRILL         // Simulacro
+}
+
+enum ExerciseStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ExerciseResult {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+}
+
+// ============================================
+// ACTUALIZACIÓN DE CORRECTIVE ACTIONS
+// ============================================
+
+// Agregar relación con Finding
+model CorrectiveAction {
+  // ... campos existentes ...
+  
+  findingId   String?
+  finding     Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
+}

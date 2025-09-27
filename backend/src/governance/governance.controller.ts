@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { GovernanceService } from './governance.service';
 import {
   CreatePolicyDto,
@@ -22,11 +22,25 @@ import {
   UpdateRaciMatrixDto,
 } from './dto/update-governance.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('governance')
-@UseGuards(JwtAuthGuard)
+
 export class GovernanceController {
   constructor(private readonly governanceService: GovernanceService) {}
+
+  // Endpoint directo para obtener política activa
+  @Get('policy')
+  async getActivePolicy(@TenantId() tenantId: string) {
+    const policies = await this.governanceService.findAllPolicies(tenantId);
+    const activePolicy = policies.find(p => p.status === 'APPROVED' || p.status === 'ACTIVE');
+    if (!activePolicy && policies.length > 0) {
+      return policies[0]; // Retornar la primera si no hay activa
+    }
+    return activePolicy;
+  }
 
   // ============================================
   // POLÍTICAS DEL SGCN

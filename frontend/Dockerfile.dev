@@ -1,43 +1,15 @@
-# ============================
-# STAGE 1: Dependencias
-# ============================
-FROM node:18-alpine AS deps
+# Dockerfile simplificado para desarrollo
+FROM node:18-alpine
+
 WORKDIR /usr/src/app
 
-# Crear usuario seguro
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Copiar manifiestos de dependencias
-COPY package*.json ./
-
-# Instalar dependencias (con flags para evitar problemas de permisos)
-RUN npm install --legacy-peer-deps --unsafe-perm
-
-# Corrección automática de vulnerabilidades
-RUN npm audit fix --force || true
-
-# ============================
-# STAGE 2: Desarrollo
-# ============================
-FROM node:18-alpine AS dev
-WORKDIR /usr/src/app
-
-# Crear usuario seguro
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Copiar node_modules desde deps
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-
-# Copiar todo el código del proyecto
-COPY . .
-
-# 🔑 Corrección de permisos
-RUN chown -R appuser:appgroup /usr/src/app
-
-USER appuser
-
-EXPOSE 3000
+# Variables de entorno
+ENV NODE_ENV=development
 ENV PORT=3000
 
-# Comando por defecto en modo dev
+# Exponer puerto
+EXPOSE 3000
+
+# El código y node_modules vienen del bind mount
+# Solo ejecutar next dev
 CMD ["npm", "run", "dev"]

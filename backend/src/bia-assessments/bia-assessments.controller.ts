@@ -9,14 +9,17 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { BiaAssessmentsService } from './bia-assessments.service';
 import { CreateBiaAssessmentDto } from './dto/create-bia-assessment.dto';
 import { UpdateBiaAssessmentDto } from './dto/update-bia-assessment.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('bia-assessments')
-@UseGuards(JwtAuthGuard)
+
 export class BiaAssessmentsController {
   constructor(private readonly biaAssessmentsService: BiaAssessmentsService) {}
 

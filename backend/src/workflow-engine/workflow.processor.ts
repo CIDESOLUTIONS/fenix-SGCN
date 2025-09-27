@@ -37,7 +37,7 @@ export class WorkflowProcessor {
     return { status: 'reminder_sent', jobId: job.id };
   }
 
-  @Process(WorkflowTaskType.ESCALATION)
+  @Process(WorkflowTaskType.IMPLEMENTATION)
   async handleEscalation(job: Job) {
     this.logger.log(`Processing escalation: ${job.data.step.name}`);
     

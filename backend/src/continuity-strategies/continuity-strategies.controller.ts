@@ -10,14 +10,17 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { ContinuityStrategiesService } from './continuity-strategies.service';
 import { CreateContinuityStrategyDto } from './dto/create-continuity-strategy.dto';
 import { UpdateContinuityStrategyDto } from './dto/update-continuity-strategy.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('continuity-strategies')
-@UseGuards(JwtAuthGuard)
+
 export class ContinuityStrategiesController {
   constructor(
     private readonly continuityStrategiesService: ContinuityStrategiesService,

@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common';
-import { BIDashboardService } from './bi-dashboard.service';
+import { BiDashboardService } from './bi-dashboard.service';
 import { BIDashboardController } from './bi-dashboard.controller';
 import { DgraphModule } from '../dgraph/dgraph.module';
 
@@ -7,7 +7,7 @@ import { DgraphModule } from '../dgraph/dgraph.module';
 @Module({
   imports: [DgraphModule],
   controllers: [BIDashboardController],
-  providers: [BIDashboardService],
-  exports: [BIDashboardService],
+  providers: [BiDashboardService],
+  exports: [BiDashboardService],
 })
 export class BIDashboardModule {}

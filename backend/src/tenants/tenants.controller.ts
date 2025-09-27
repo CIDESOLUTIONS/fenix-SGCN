@@ -1,7 +1,13 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param , UseGuards } from '@nestjs/common';
+
+
 import { TenantsService } from './tenants.service';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+
+@UseGuards(JwtGuard)
 @Controller('tenants')
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}

@@ -1,9 +1,12 @@
-import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { WorkflowEngineService } from './workflow-engine.service';
+import { Controller, Post, Get, Body, Param , UseGuards } from '@nestjs/common';
 
+import { WorkflowEngineService } from './workflow-engine.service';
+import { JwtGuard } from '../auth/guard/jwt.guard';
+
+
+@UseGuards(JwtGuard)
 @Controller('workflows')
-@UseGuards(JwtAuthGuard)
+
 export class WorkflowController {
   constructor(private workflowService: WorkflowEngineService) {}
 
@@ -15,42 +18,38 @@ export class WorkflowController {
   @Post(':id/advance')
   async advanceWorkflow(
     @Param('id') workflowId: string,
-    @Body() body: { approved: boolean; userId: string; comments?: string },
+    @Body() body: { completedBy: string },
   ) {
+    // Firma correcta: (workflowId: string, completedBy: string)
     return this.workflowService.advanceWorkflow(
       workflowId,
-      body.approved,
-      body.userId,
-      body.comments,
+      body.completedBy,
     );
   }
 
   @Post('approval')
-  async createApprovalWorkflow(@Body() body: any) {
-    return this.workflowService.createApprovalWorkflow(
-      body.entityType,
-      body.entityId,
-      body.approvers,
-      body.tenantId,
-      body.createdBy,
-    );
+  async createApprovalWorkflow(@Body() config: any) {
+    // Firma correcta: (config: any)
+    return this.workflowService.createApprovalWorkflow(config);
   }
 
   @Post('notify')
-  async sendNotification(@Body() body: any) {
+  async sendNotification(@Body() body: { recipientId: string; message: string; metadata?: any }) {
+    // Firma correcta: (recipientId: string, message: string, metadata?: any)
     return this.workflowService.sendNotification(
-      body.recipients,
-      body.subject,
+      body.recipientId,
       body.message,
-      body.tenantId,
+      body.metadata,
     );
   }
 
   @Post(':id/cancel')
   async cancelWorkflow(
     @Param('id') workflowId: string,
-    @Body() body: { userId: string; reason?: string },
+    @Body() body: { userId: string; reason: string },
   ) {
-    return this.workflowService.cancelWorkflow(workflowId, body.userId, body.reason);
+    // Firma correcta: (workflowId: string, userId: string, reason: string)
+    // Ahora reason es obligatorio
+    return this.workflowService.cancelWorkflow(workflowId, body.userId, body.reason || 'Sin razón especificada');
   }
 }

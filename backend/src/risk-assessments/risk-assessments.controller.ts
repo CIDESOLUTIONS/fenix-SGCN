@@ -9,14 +9,17 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 import { RiskAssessmentsService } from './risk-assessments.service';
 import { CreateRiskAssessmentDto } from './dto/create-risk-assessment.dto';
 import { UpdateRiskAssessmentDto } from './dto/update-risk-assessment.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+@UseGuards(JwtGuard)
 @Controller('risk-assessments')
-@UseGuards(JwtAuthGuard)
+
 export class RiskAssessmentsController {
   constructor(private readonly riskAssessmentsService: RiskAssessmentsService) {}
 

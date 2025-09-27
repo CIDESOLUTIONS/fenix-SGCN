@@ -1,35 +1,83 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsArray, IsNotEmpty, Min, Max } from 'class-validator';
 
 export class CreateContinuityStrategyDto {
   @IsString()
   @IsNotEmpty()
   processId: string;
 
-  @IsString()
+  @IsEnum(['PREVENTION', 'MITIGATION', 'RECOVERY', 'REDUNDANCY'])
   @IsNotEmpty()
-  name: string;
+  type: string;
 
   @IsString()
   @IsNotEmpty()
-  type: string;
+  scenario: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  cost?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  implementationTime?: number; // días
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  effectiveness?: number; // 1-5
+
+  @IsArray()
+  @IsOptional()
+  requiredResources?: string[];
+}
+
+export class UpdateContinuityStrategyDto {
+  @IsEnum(['PREVENTION', 'MITIGATION', 'RECOVERY', 'REDUNDANCY'])
+  @IsOptional()
+  type?: string;
+
+  @IsString()
+  @IsOptional()
+  scenario?: string;
 
   @IsString()
   @IsOptional()
   description?: string;
 
-  @IsEnum(['Immediate', 'Short-term', 'Long-term'])
+  @IsNumber()
+  @Min(0)
   @IsOptional()
-  recoveryTimeframe?: 'Immediate' | 'Short-term' | 'Long-term';
+  cost?: number;
 
   @IsNumber()
+  @Min(0)
   @IsOptional()
-  estimatedCost?: number;
+  implementationTime?: number;
 
-  @IsString()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
   @IsOptional()
-  implementationSteps?: string;
+  effectiveness?: number;
 
-  @IsString()
+  @IsArray()
   @IsOptional()
-  requiredResources?: string;
+  requiredResources?: string[];
+}
+
+export class CompareStrategiesDto {
+  @IsString()
+  @IsNotEmpty()
+  processId: string;
+
+  @IsArray()
+  @IsNotEmpty()
+  strategyIds: string[];
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DgraphService } from '../dgraph/dgraph.service';
-import { WorkflowEngineService } from '../workflow-engine/workflow-engine.service';
+import { WorkflowEngineService, WorkflowTaskType } from '../workflow-engine/workflow-engine.service';
 import { AnalyticsEngineService } from '../analytics-engine/analytics-engine.service';
 import { CreateBiaAssessmentDto } from './dto/create-bia-assessment.dto';
 import { UpdateBiaAssessmentDto } from './dto/update-bia-assessment.dto';
@@ -31,7 +31,17 @@ export class BiaAssessmentsService {
     // Crear en PostgreSQL
     const bia = await this.prisma.biaAssessment.create({
       data: {
-        ...createDto,
+        processId: createDto.processId,
+        rto: createDto.rto,
+        rpo: createDto.rpo,
+        mtpd: createDto.mtpd,
+        financialImpact1h: createDto.financialImpact1h,
+        financialImpact24h: createDto.financialImpact24h,
+        financialImpact1w: createDto.financialImpact1week,
+        operationalImpact: createDto.operationalImpact,
+        reputationImpact: createDto.reputationalImpact,
+        regulatoryImpact: createDto.legalRegulatoryImpact,
+        dependencyMap: createDto.dependencyMap as any,
         tenantId,
         priorityScore,
       },
@@ -39,13 +49,17 @@ export class BiaAssessmentsService {
     });
 
     // Actualizar proceso en Dgraph con RTO/RPO
+    const process = await this.prisma.businessProcess.findFirst({
+      where: { id: bia.processId },
+    });
+
     await this.dgraphService.upsertNode(
       'BusinessProcess',
       {
         id: bia.processId,
         rto: bia.rto,
         rpo: bia.rpo,
-        criticality: bia.process?.criticalityLevel,
+        criticality: process?.criticalityLevel,
       },
       tenantId,
     );
@@ -140,22 +154,31 @@ export class BiaAssessmentsService {
     userId: string,
   ) {
     // Recalcular priority score si cambió algún factor
-    let priorityScore = undefined;
+    let priorityScore: number | undefined = undefined;
     if (updateDto.rto || updateDto.financialImpact24h || updateDto.operationalImpact) {
       const current = await this.prisma.biaAssessment.findFirst({
         where: { id, tenantId },
       });
       priorityScore = this.calculatePriorityScore(
-        updateDto.rto ?? current?.rto,
-        updateDto.financialImpact24h ?? current?.financialImpact24h,
-        updateDto.operationalImpact ?? current?.operationalImpact,
+        (updateDto.rto ?? current?.rto) || undefined,
+        updateDto.financialImpact24h ?? current?.financialImpact24h ?? undefined,
+        updateDto.operationalImpact ?? current?.operationalImpact ?? undefined,
       );
     }
 
     const bia = await this.prisma.biaAssessment.updateMany({
       where: { id, tenantId },
       data: {
-        ...updateDto,
+        rto: updateDto.rto,
+        rpo: updateDto.rpo,
+        mtpd: updateDto.mtpd,
+        financialImpact1h: updateDto.financialImpact1h,
+        financialImpact24h: updateDto.financialImpact24h,
+        financialImpact1w: updateDto.financialImpact1week,
+        operationalImpact: updateDto.operationalImpact,
+        reputationImpact: updateDto.reputationalImpact,
+        regulatoryImpact: updateDto.legalRegulatoryImpact,
+        dependencyMap: updateDto.dependencyMap as any,
         priorityScore,
       },
     });
@@ -263,7 +286,7 @@ export class BiaAssessmentsService {
     userId: string,
   ) {
     // Crear workflow para cada proceso
-    const workflows = [];
+    const workflows: any[] = [];
 
     for (const processId of processIds) {
       const process = await this.prisma.businessProcess.findFirst({
@@ -279,7 +302,7 @@ export class BiaAssessmentsService {
           steps: [
             {
               id: 'complete_bia',
-              type: 'APPROVAL',
+              type: WorkflowTaskType.APPROVAL,
               name: 'Completar BIA',
               assignedTo: [process.responsiblePerson || userId],
               dueDate: new Date(dueDate),
@@ -287,7 +310,7 @@ export class BiaAssessmentsService {
             },
             {
               id: 'review_bia',
-              type: 'APPROVAL',
+              type: WorkflowTaskType.APPROVAL,
               name: 'Revisar BIA',
               assignedTo: reviewers,
               dueDate: new Date(
@@ -416,3 +439,5 @@ export class BiaAssessmentsService {
     return score;
   }
 }
+
+

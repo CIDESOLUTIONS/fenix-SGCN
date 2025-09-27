@@ -1,0 +1,28 @@
+# Dockerfile.dev - Para desarrollo con hot-reload
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+# Librerías necesarias para Prisma
+RUN apk add --no-cache openssl libc6-compat bash
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+COPY prisma ./prisma
+
+# Instalar TODAS las dependencias (incluye devDependencies)
+RUN npm install --legacy-peer-deps
+
+# Generar Prisma Client
+RUN npx prisma generate
+
+# Copiar entrypoint
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+ENV NODE_ENV=development
+ENV PORT=3001
+
+EXPOSE 3001
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

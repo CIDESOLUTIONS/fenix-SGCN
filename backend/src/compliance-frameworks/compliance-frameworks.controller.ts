@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 import { ComplianceFrameworksService } from './compliance-frameworks.service';
 import { CreateComplianceFrameworkDto } from './dto/create-compliance-framework.dto';
 import { UpdateComplianceFrameworkDto } from './dto/update-compliance-framework.dto';
 import { TenantId } from '../common/tenant-id.decorator';
 
+@UseGuards(JwtGuard)
 @Controller('compliance-frameworks')
 export class ComplianceFrameworksController {
   constructor(private readonly complianceFrameworksService: ComplianceFrameworksService) {}

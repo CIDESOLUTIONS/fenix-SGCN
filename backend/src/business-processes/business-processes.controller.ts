@@ -1,16 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete , UseGuards } from '@nestjs/common';
 import { BusinessProcessesService } from './business-processes.service';
 import { CreateBusinessProcessDto } from './dto/create-business-process.dto';
 import { UpdateBusinessProcessDto } from './dto/update-business-process.dto';
 import { TenantId } from '../common/tenant-id.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
 
+
+
+@UseGuards(JwtGuard)
 @Controller('business-processes')
+
 export class BusinessProcessesController {
   constructor(private readonly businessProcessesService: BusinessProcessesService) {}
 
   @Post()
-  create(@Body() createBusinessProcessDto: CreateBusinessProcessDto) {
-    return this.businessProcessesService.create(createBusinessProcessDto);
+  create(@Body() createBusinessProcessDto: CreateBusinessProcessDto, @TenantId() tenantId: string) {
+    return this.businessProcessesService.create(createBusinessProcessDto, tenantId);
   }
 
   @Get()
