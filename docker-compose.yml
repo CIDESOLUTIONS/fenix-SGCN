@@ -1,0 +1,77 @@
+# FENIX-SGCN DOCKER-COMPOSE
+# Version de la sintaxis
+version: '3.9'
+
+# Definicion de los servicios
+services:
+  # PROXY INVERSO (NGINX)
+  proxy:
+    image: nginx:stable-alpine
+    container_name: fenix_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
+  # FRONTEND (NEXT.JS)
+  frontend:
+    container_name: fenix_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Placeholder para iniciar un servidor de desarrollo simple
+    command: sh -c 'npm install -g http-server && http-server ./public -p 3000'
+
+  # BACKEND (NEST.JS)
+  backend:
+    container_name: fenix_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - MASTER_DATABASE_URL=postgresql://admin:password123@db_master:5432/master_db
+    depends_on:
+      - db_master
+    restart: always
+
+  # BASE DE DATOS MAESTRA (Gestiona los tenants)
+  db_master:
+    image: postgres:15-alpine
+    container_name: fenix_db_master
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=master_db
+    volumes:
+      - master_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  # ALMACENAMIENTO DE DOCUMENTOS (MINIO S3)
+  storage:
+    image: minio/minio:latest
+    container_name: fenix_storage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=miniopassword
+    command: server /data --console-address ":9001"
+    volumes:
+      - storage_data:/data
+    restart: always
+
+# Volumenes para persistencia de datos
+volumes:
+  master_db_data:
+  storage_data:

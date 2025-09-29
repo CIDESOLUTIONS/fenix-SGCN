@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestión SGCN - ICETEX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Slate & Teal -->
+    <!-- Application Structure Plan: Se ha diseñado una aplicación de página única (SPA) con una navegación lateral persistente que representa las fases del ciclo de vida del SGCN (PHVA). Esta estructura es superior a la del informe original porque es funcional y orientada a tareas, permitiendo al usuario navegar por el proceso de implementación y gestión de forma lógica. El Dashboard inicial ofrece una vista gerencial inmediata, mientras que las secciones dedicadas (Planificar, Analizar, Estrategia, Pruebas) agrupan herramientas y datos relevantes para cada etapa, facilitando la gestión y consulta. El flujo del usuario es: 1. Ver estado general. 2. Profundizar en una fase. 3. Interactuar con los datos (tablas, gráficos). 4. Acceder a plantillas/documentos. Esta arquitectura centrada en el usuario mejora drásticamente la usabilidad frente a un documento estático. -->
+    <!-- Visualization & Content Choices: 
+        - Resumen de Procesos Críticos (Dashboard): Report Info -> Criticidad de procesos del BIA. Goal -> Informar rápidamente. Viz -> Tarjetas con KPIs. Interaction -> Clic para ir a la sección BIA. Justification -> Vista gerencial de alto nivel. Method -> HTML/Tailwind.
+        - Criticidad de Procesos por RTO (Dashboard): Report Info -> Datos del BIA (Proceso vs RTO). Goal -> Comparar urgencia de recuperación. Viz -> Gráfico de Barras. Interaction -> Hover para ver detalles. Justification -> Visualiza la prioridad de manera instantánea. Library -> Chart.js.
+        - Matriz de Riesgos (Dashboard): Report Info -> Datos del ARA (Riesgo vs Probabilidad/Impacto). Goal -> Organizar y priorizar riesgos. Viz -> Gráfico de Burbujas (simulando heatmap). Interaction -> Hover para ver detalles del riesgo. Justification -> Estándar de la industria para visualización de riesgos. Library -> Chart.js.
+        - Cronograma del Proyecto (Planificación): Report Info -> Fases y duración del proyecto. Goal -> Mostrar el progreso y planificación. Viz -> Gráfico de Barras Horizontales (Gantt). Interaction -> Hover para ver duración. Justification -> Claridad en la planificación del proyecto. Library -> Chart.js.
+        - Tablas y Formularios Interactivos (BIA/ARA/Etc): Report Info -> Formatos de captura de datos. Goal -> Simular la entrada y procesamiento de datos. Viz -> Formularios HTML estilizados. Interaction -> Botones con cálculos JS simulados, mensajes de confirmación. Justification -> Prototipar la funcionalidad clave de la aplicación final. Method -> HTML/Tailwind/JS.
+        -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .sidebar-icon { width: 1.5rem; height: 1.5rem; }
+        .chart-container { position: relative; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        .main-content > div { display: none; }
+        .main-content > div.active { display: block; }
+        .stat-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .form-label { @apply block text-sm font-medium text-slate-700 mb-1; }
+        .form-input { @apply block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm; }
+        .btn-primary { @apply inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #1f2937;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.5s;
+            transform: translateY(100%);
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="toast-notification" class="toast"></div>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <nav class="w-64 bg-slate-800 text-white flex flex-col">
+            <div class="p-4 border-b border-slate-700 flex items-center">
+                <span class="bg-teal-500 text-white rounded-full h-10 w-10 flex items-center justify-center text-lg font-bold">I</span>
+                <div class="ml-3">
+                    <h1 class="text-lg font-bold">SGCN ICETEX</h1>
+                    <p class="text-xs text-slate-400">Panel de Resiliencia</p>
+                </div>
+            </div>
+            <ul class="flex-grow mt-4 text-sm overflow-y-auto">
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item active" onclick="showSection('dashboard')">
+                    <a href="#" class="flex items-center space-x-3">
+                        <span class="sidebar-icon">📊</span><span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="px-4 pt-4 pb-2 text-xs uppercase text-slate-400 font-bold">Planificar</li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('plan-gobierno')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">🏛️</span><span>Gobierno y Política</span>
+                    </a>
+                </li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('plan-alcance')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">🎯</span><span>Alcance y Cronograma</span>
+                    </a>
+                </li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('plan-procesos')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">🗂️</span><span>Inventario de Procesos</span>
+                    </a>
+                </li>
+
+                <li class="px-4 pt-4 pb-2 text-xs uppercase text-slate-400 font-bold">Hacer</li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('hacer-bia')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">💔</span><span>Análisis de Impacto (BIA)</span>
+                    </a>
+                </li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('hacer-ara')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">🔥</span><span>Análisis de Riesgos (ARA)</span>
+                    </a>
+                </li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('hacer-estrategia')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">🛡️</span><span>Estrategias y Planes</span>
+                    </a>
+                </li>
+
+                <li class="px-4 pt-4 pb-2 text-xs uppercase text-slate-400 font-bold">Verificar</li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('verificar-pruebas')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">✅</span><span>Pruebas y Ejercicios</span>
+                    </a>
+                </li>
+
+                <li class="px-4 pt-4 pb-2 text-xs uppercase text-slate-400 font-bold">Actuar</li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('actuar-mejora')">
+                    <a href="#" class="flex items-center space-x-3 pl-2">
+                        <span class="sidebar-icon">📈</span><span>Acciones y Mejora</span>
+                    </a>
+                </li>
+                
+                <li class="px-4 pt-4 pb-2 text-xs uppercase text-slate-400 font-bold">Recursos</li>
+                <li class="px-4 py-2.5 hover:bg-slate-700 cursor-pointer nav-item" onclick="showSection('documentos')">
+                    <a href="#" class="flex items-center space-x-3">
+                        <span class="sidebar-icon">📂</span><span>Repositorio</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="p-4 border-t border-slate-700 text-xs text-slate-400">
+                <p>&copy; 2025 CIDE S.A.S.</p>
+                <p>Asesoría para ICETEX</p>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            <div class="main-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="active">
+                    <h2 class="text-3xl font-bold text-slate-900">Dashboard de Resiliencia Organizacional</h2>
+                    <p class="mt-1 text-slate-600">Vista consolidada del estado del Sistema de Gestión de Continuidad del Negocio.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                        <div class="stat-card bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="text-sm font-medium text-slate-500">Procesos Críticos</h3>
+                            <p class="text-3xl font-bold text-teal-600">12</p>
+                            <p class="text-xs text-slate-400 mt-1">Identificados en el BIA</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="text-sm font-medium text-slate-500">Riesgos Altos/Críticos</h3>
+                            <p class="text-3xl font-bold text-amber-600">5</p>
+                            <p class="text-xs text-slate-400 mt-1">Antes de tratamiento</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="text-sm font-medium text-slate-500">Planes Desarrollados</h3>
+                            <p class="text-3xl font-bold text-blue-600">8</p>
+                            <p class="text-xs text-slate-400 mt-1">Pendiente de aprobación</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="text-sm font-medium text-slate-500">Última Prueba</h3>
+                            <p class="text-3xl font-bold text-slate-800">15/11/25</p>
+                            <p class="text-xs text-slate-400 mt-1">Próxima: 28/02/26</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="font-bold text-lg">Criticidad de Procesos por RTO</h3>
+                            <div class="chart-container mt-4"><canvas id="rtoChart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h3 class="font-bold text-lg">Matriz de Riesgos (Residual)</h3>
+                             <div class="chart-container mt-4"><canvas id="riskMatrixChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planificar: Gobierno y Política -->
+                <div id="plan-gobierno">
+                    <h2 class="text-3xl font-bold text-slate-900">Planificar: Gobierno y Política</h2>
+                    <p class="mt-1 text-slate-600">Establecimiento del liderazgo, compromiso, roles y la política del SGCN.</p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Política de Continuidad de Negocio</h3>
+                        <p class="mt-2 text-sm text-slate-600">"ICETEX se compromete a implementar, mantener y mejorar continuamente un Sistema de Gestión de Continuidad de Negocio para asegurar la disponibilidad de sus procesos críticos, proteger a su personal, activos y reputación, y cumplir con sus obligaciones legales y contractuales ante cualquier evento disruptivo." - <a href="#" class="text-teal-600 font-semibold hover:underline">Ver documento completo</a></p>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-bold text-lg mb-4">Roles y Responsabilidades Clave (Matriz RACI)</h3>
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-2">Actividad / Rol</th>
+                                        <th class="px-4 py-2 text-center">Sponsor Ejecutivo</th>
+                                        <th class="px-4 py-2 text-center">Gerente SGCN</th>
+                                        <th class="px-4 py-2 text-center">Líder de Proceso</th>
+                                        <th class="px-4 py-2 text-center">Líder de TI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b"><td class="px-4 py-2 font-medium">Aprobar Política</td><td class="text-center font-bold text-blue-600">A</td><td class="text-center font-bold text-green-600">R</td><td class="text-center">C</td><td class="text-center">I</td></tr>
+                                    <tr class="border-b bg-slate-50"><td class="px-4 py-2 font-medium">Realizar BIA</td><td class="text-center">A</td><td class="text-center font-bold text-green-600">R</td><td class="text-center font-bold text-green-600">R</td><td class="text-center">C</td></tr>
+                                    <tr class="border-b"><td class="px-4 py-2 font-medium">Aprobar Estrategias</td><td class="text-center font-bold text-blue-600">A</td><td class="text-center font-bold text-green-600">R</td><td class="text-center">C</td><td class="text-center">C</td></tr>
+                                </tbody>
+                            </table>
+                            <p class="text-xs text-slate-500 mt-2">R: Responsable, A: Accountable (Aprobador), C: Consultado, I: Informado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planificar: Alcance y Cronograma -->
+                <div id="plan-alcance">
+                    <h2 class="text-3xl font-bold text-slate-900">Planificar: Alcance y Cronograma</h2>
+                    <p class="mt-1 text-slate-600">Definición de los límites del SGCN y la planificación del proyecto de implementación.</p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Declaración de Alcance del SGCN</h3>
+                        <p class="text-sm text-slate-600 mt-2">"El SGCN de ICETEX aplica a todos los procesos misionales críticos que soportan el otorgamiento y seguimiento de créditos educativos, incluyendo sus dependencias tecnológicas, de personal y proveedores clave, operados desde la sede principal en Bogotá D.C. y bajo la modalidad de teletrabajo."</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Cronograma de Implementación del Proyecto</h3>
+                        <p class="text-sm text-slate-500 mb-4">Fases y duración estimada en semanas.</p>
+                        <div class="chart-container" style="height: 400px; max-height: 500px;"><canvas id="ganttChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Planificar: Inventario de Procesos -->
+                <div id="plan-procesos">
+                    <h2 class="text-3xl font-bold text-slate-900">Planificar: Inventario y Priorización de Procesos</h2>
+                    <p class="mt-1 text-slate-600">Identificación y selección de procesos críticos del negocio que formarán el alcance del BIA.</p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <div class="flex justify-between items-center">
+                             <h3 class="font-bold text-lg">Listado de Procesos de la Organización</h3>
+                             <button class="btn-primary text-sm">Añadir Proceso</button>
+                        </div>
+                       
+                        <div class="overflow-x-auto mt-4">
+                            <table class="w-full text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Nombre del Proceso</th>
+                                        <th scope="col" class="px-6 py-3">Tipo</th>
+                                        <th scope="col" class="px-6 py-3">Criticidad Inicial (1-5)</th>
+                                        <th scope="col" class="px-6 py-3 text-center">Incluir en BIA</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <td class="px-6 py-4 font-medium text-slate-900">Gestión de Desembolsos de Créditos</td>
+                                        <td class="px-6 py-4">Misional</td>
+                                        <td class="px-6 py-4"><input type="number" class="form-input w-20" value="5" min="1" max="5"></td>
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked></td>
+                                    </tr>
+                                    <tr class="bg-slate-50 border-b">
+                                        <td class="px-6 py-4 font-medium text-slate-900">Atención al Ciudadano</td>
+                                        <td class="px-6 py-4">Misional</td>
+                                        <td class="px-6 py-4"><input type="number" class="form-input w-20" value="5" min="1" max="5"></td>
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked></td>
+                                    </tr>
+                                     <tr class="bg-white border-b">
+                                        <td class="px-6 py-4 font-medium text-slate-900">Gestión de Cartera</td>
+                                        <td class="px-6 py-4">Misional</td>
+                                        <td class="px-6 py-4"><input type="number" class="form-input w-20" value="4" min="1" max="5"></td>
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked></td>
+                                    </tr>
+                                    <tr class="bg-slate-50 border-b">
+                                        <td class="px-6 py-4 font-medium text-slate-900">Gestión de Nómina</td>
+                                        <td class="px-6 py-4">Apoyo</td>
+                                        <td class="px-6 py-4"><input type="number" class="form-input w-20" value="3" min="1" max="5"></td>
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"></td>
+                                    </tr>
+                                     <tr class="bg-white border-b">
+                                        <td class="px-6 py-4 font-medium text-slate-900">Planeación Estratégica</td>
+                                        <td class="px-6 py-4">Estratégico</td>
+                                        <td class="px-6 py-4"><input type="number" class="form-input w-20" value="2" min="1" max="5"></td>
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                         <div class="mt-6 text-right">
+                           <button onclick="showToast('Selección de procesos para BIA guardada.')" class="btn-primary">Guardar Priorización</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hacer: BIA -->
+                <div id="hacer-bia">
+                    <h2 class="text-3xl font-bold text-slate-900">Hacer: Análisis de Impacto al Negocio (BIA)</h2>
+                    <p class="mt-1 text-slate-600">Identificación de procesos críticos, sus dependencias y los impactos derivados de una interrupción.</p>
+                    
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Formulario de Captura de BIA</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div><label class="form-label">Nombre del Proceso</label><input type="text" class="form-input" value="Gestión de Desembolsos de Créditos"></div>
+                            <div><label class="form-label">Responsable (Cargo)</label><input type="text" class="form-input" value="Director Financiero"></div>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-md">Análisis de Impacto Cualitativo</h4>
+                            <div class="overflow-x-auto mt-2">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-slate-50"><tr class="text-left"><th class="p-2">Impacto</th><th class="p-2">1-4h</th><th class="p-2">4-8h</th><th class="p-2">8-24h</th><th class="p-2">1-3d</th><th class="p-2">&gt;3d</th></tr></thead>
+                                    <tbody>
+                                        <tr class="border-t">
+                                            <td class="p-2 font-medium">Financiero</td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option></select></td>
+                                        </tr>
+                                        <tr class="border-t bg-slate-50">
+                                            <td class="p-2 font-medium">Reputacional</td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option></select></td>
+                                            <td><select class="form-input bia-score"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option></select></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                             <div class="mt-4 flex items-center gap-4">
+                                <button onclick="calculateBiaScore()" class="btn-primary">Calcular Criticidad</button>
+                                <div id="bia-result" class="font-bold"></div>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-md">Requerimientos de Recuperación</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                <div><label class="form-label">RTO (Horas)</label><input type="number" class="form-input" value="8"></div>
+                                <div><label class="form-label">RPO (Horas)</label><input type="number" class="form-input" value="4"></div>
+                                <div><label class="form-label">MTPD (Días)</label><input type="number" class="form-input" value="3"></div>
+                                <div><label class="form-label">MBCO (%)</label><input type="number" class="form-input" value="70"></div>
+                            </div>
+                        </div>
+                        <div class="mt-6 text-right">
+                            <button onclick="showToast('Proceso guardado en la base de datos.')" class="btn-primary">Guardar BIA</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hacer: ARA -->
+                <div id="hacer-ara">
+                    <h2 class="text-3xl font-bold text-slate-900">Hacer: Análisis de Riesgos (ARA)</h2>
+                    <p class="mt-1 text-slate-600">Identificación, análisis y evaluación de riesgos que podrían causar disrupciones en los procesos críticos.</p>
+                     <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Formulario de Captura de Riesgos</h3>
+                         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div><label class="form-label">Proceso Asociado</label><select class="form-input"><option>Gestión de Desembolsos de Créditos</option><option>Atención al Ciudadano</option></select></div>
+                            <div><label class="form-label">Descripción de la Amenaza</label><input class="form-input" type="text" value="Falla del sistema Core Bancario"></div>
+                            <div>
+                                <label class="form-label">Probabilidad (Inherente)</label>
+                                <select id="prob-inh" class="form-input" onchange="calculateRiskScore()"><option value="1">1 (Raro)</option><option value="2">2 (Poco Probable)</option><option value="3" selected>3 (Posible)</option><option value="4">4 (Probable)</option><option value="5">5 (Casi Seguro)</option></select>
+                            </div>
+                            <div>
+                                <label class="form-label">Impacto (Inherente)</label>
+                                <select id="imp-inh" class="form-input" onchange="calculateRiskScore()"><option value="1">1 (Insignificante)</option><option value="2">2 (Menor)</option><option value="3">3 (Moderado)</option><option value="4">4 (Mayor)</option><option value="5" selected>5 (Catastrófico)</option></select>
+                            </div>
+                         </div>
+                         <div class="mt-4 p-3 bg-slate-100 rounded-md">
+                             <span class="font-medium">Nivel de Riesgo Inherente:</span>
+                             <span id="risk-result-inh" class="font-bold text-lg">15 (ALTO)</span>
+                         </div>
+                         <div class="mt-4">
+                             <label class="form-label">Controles Actuales</label>
+                             <textarea class="form-input">Servidor en clúster de alta disponibilidad, Backup diario.</textarea>
+                         </div>
+                          <div class="mt-6 text-right">
+                            <button onclick="showToast('Riesgo guardado en la base de datos.')" class="btn-primary">Guardar Riesgo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hacer: Estrategia y Planes -->
+                <div id="hacer-estrategia">
+                    <h2 class="text-3xl font-bold text-slate-900">Hacer: Estrategias y Planes</h2>
+                    <p class="mt-1 text-slate-600">Diseño de estrategias y desarrollo de planes para la recuperación de capacidades.</p>
+                     <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Evaluación y Selección de Estrategias</h3>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="form-label">Componente a Recuperar</label><select class="form-input"><option>Personal y Espacio de Trabajo</option><option selected>Tecnología y Datos</option><option>Proveedores</option></select></div>
+                            <div><label class="form-label">Descripción de la Estrategia Propuesta</label><input type="text" class="form-input" placeholder="Ej: Sitio de contingencia en la nube (DRPaaS)"></div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div><label class="form-label">Costo Estimado</label><select class="form-input"><option>Bajo</option><option selected>Medio</option><option>Alto</option></select></div>
+                             <div><label class="form-label">Tiempo de Implementación</label><select class="form-input"><option>&lt; 1 hora</option><option selected>2-6 horas</option><option>&gt; 12 horas</option></select></div>
+                             <div><label class="form-label">Cumple RTO Requerido</label><select class="form-input"><option>No</option><option selected>Sí</option></select></div>
+                        </div>
+                        <div class="mt-6 text-right">
+                           <button onclick="showToast('Estrategia guardada en la base de datos.')" class="btn-primary">Guardar y Evaluar Estrategia</button>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Verificar: Pruebas -->
+                <div id="verificar-pruebas">
+                    <h2 class="text-3xl font-bold text-slate-900">Verificar: Pruebas y Ejercicios</h2>
+                    <p class="mt-1 text-slate-600">Validación de los planes y capacidades de continuidad a través de un programa de pruebas.</p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                         <h3 class="font-bold text-lg">Diseñar Nuevo Plan de Prueba</h3>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                            <div><label class="form-label">Nombre de la Prueba</label><input type="text" class="form-input" value="Prueba de Escritorio - Falla Sede Principal"></div>
+                            <div><label class="form-label">Tipo de Prueba</label><select class="form-input"><option selected>Prueba de Escritorio</option><option>Prueba Funcional</option><option>Simulación</option></select></div>
+                            <div><label class="form-label">Fecha Programada</label><input type="date" class="form-input"></div>
+                         </div>
+                         <div class="mt-4">
+                             <label class="form-label">Objetivos de la Prueba</label>
+                             <textarea class="form-input">1. Validar roles y responsabilidades.
+2. Evaluar plan de comunicaciones.
+3. Verificar viabilidad de la estrategia de teletrabajo.</textarea>
+                         </div>
+                         <div class="mt-4">
+                             <label class="form-label">Escenario</label>
+                             <textarea class="form-input" rows="3">Fuego en edificio adyacente y orden de evacuación indefinida. Acceso al edificio no será posible por un mínimo de 48 horas.</textarea>
+                         </div>
+                         <div class="mt-6 text-right">
+                           <button onclick="showToast('Plan de prueba guardado en la base de datos.')" class="btn-primary">Guardar Plan de Prueba</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actuar: Mejora Continua -->
+                <div id="actuar-mejora">
+                    <h2 class="text-3xl font-bold text-slate-900">Actuar: Acciones Correctivas y Mejora</h2>
+                    <p class="mt-1 text-slate-600">Gestión de las no conformidades y oportunidades de mejora para fortalecer el SGCN.</p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 mt-6">
+                        <h3 class="font-bold text-lg">Registrar Nueva Acción Correctiva (CAPA)</h3>
+                        <div class="mt-4">
+                             <label class="form-label">Hallazgo / No Conformidad</label>
+                             <textarea class="form-input" placeholder="Describa la debilidad o el incumplimiento identificado..."></textarea>
+                        </div>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                            <div><label class="form-label">Fuente</label><select class="form-input"><option>Auditoría Interna</option><option>Prueba de Continuidad</option><option>Incidente Real</option><option>Revisión por Dirección</option></select></div>
+                            <div><label class="form-label">Responsable</label><input type="text" class="form-input" placeholder="Cargo del responsable"></div>
+                            <div><label class="form-label">Estado</label><select class="form-input"><option>Abierta</option><option>En Proceso</option><option>Cerrada</option></select></div>
+                         </div>
+                         <div class="mt-6 text-right">
+                           <button onclick="showToast('Acción correctiva guardada en la base de datos.')" class="btn-primary">Guardar Acción</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentos Section -->
+                <div id="documentos">
+                    <h2 class="text-3xl font-bold text-slate-900">Repositorio de Documentos</h2>
+                    <p class="mt-1 text-slate-600">Acceso centralizado a las políticas, planes y plantillas del SGCN.</p>
+                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">📄</span>
+                            <div>
+                                <h4 class="font-bold">Política del SGCN</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Ver Documento</a>
+                            </div>
+                        </div>
+                         <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">📋</span>
+                            <div>
+                                <h4 class="font-bold">Informe de BIA</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Ver Documento</a>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">📈</span>
+                            <div>
+                                <h4 class="font-bold">Informe de Riesgos</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Ver Documento</a>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">🛡️</span>
+                            <div>
+                                <h4 class="font-bold">Plan de Continuidad: Desembolsos</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Ver Documento</a>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">📢</span>
+                            <div>
+                                <h4 class="font-bold">Plan de Comunicaciones de Crisis</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Ver Documento</a>
+                            </div>
+                        </div>
+                         <div class="stat-card bg-white p-5 rounded-xl border border-slate-200 flex items-center space-x-4">
+                            <span class="text-3xl">⚙️</span>
+                            <div>
+                                <h4 class="font-bold">Formato de Entrevista BIA</h4>
+                                <a href="#" class="text-sm text-teal-600 hover:underline">Descargar Plantilla</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- DATA MOCKUP ---
+        const biaData = [
+            { process: 'Gestión de Desembolsos', impact: 'Reputacional', rto: 8, rpo: 4 },
+            { process: 'Atención al Ciudadano', impact: 'Reputacional', rto: 4, rpo: 1 },
+            { process: 'Gestión de Cartera', impact: 'Financiero', rto: 24, rpo: 8 },
+            { process: 'Tesorería', impact: 'Financiero', rto: 2, rpo: 0.5 },
+            { process: 'Nómina', impact: 'Operacional', rto: 72, rpo: 24 },
+            { process: 'Contratación', impact: 'Legal', rto: 120, rpo: 48 },
+            { process: 'Plataforma Tecnológica', impact: 'Operacional', rto: 4, rpo: 1 },
+        ];
+        
+        const projectGanttData = {
+            labels: ['Definición Alcance', 'Análisis BIA/ARA', 'Estrategias y Planes', 'Pruebas', 'Revisión y Mejora'],
+            datasets: [{
+                label: 'Semanas',
+                data: [ { x: [0, 3], y: 'Definición Alcance' }, { x: [3, 12], y: 'Análisis BIA/ARA' }, { x: [8, 14], y: 'Estrategias y Planes' }, { x: [14, 16], y: 'Pruebas' }, { x: [16, 17], y: 'Revisión y Mejora' }, ],
+                backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                borderColor: 'rgba(15, 118, 110, 1)',
+                borderWidth: 1, barPercentage: 0.5,
+            }]
+        };
+
+        const riskMatrixData = {
+            datasets: [
+                { label: 'Bajo', data: [{x: 1, y: 2, r:10}, {x: 2, y: 2, r:10}], backgroundColor: 'rgba(34, 197, 94, 0.7)' },
+                { label: 'Medio', data: [{x: 3, y: 4, r:15}, {x: 4, y: 3, r:15}], backgroundColor: 'rgba(251, 191, 36, 0.7)' },
+                { label: 'Alto', data: [{x: 4, y: 5, r:20}], backgroundColor: 'rgba(239, 68, 68, 0.7)' },
+            ],
+        };
+
+        // --- NAVIGATION ---
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.main-content > div');
+
+        function showSection(id) {
+            sections.forEach(section => section.classList.remove('active'));
+            const activeSection = document.getElementById(id);
+            if(activeSection) activeSection.classList.add('active');
+            
+            navItems.forEach(item => item.classList.remove('active'));
+            const activeNavItem = document.querySelector(`.nav-item[onclick="showSection('${id}')"]`);
+            if(activeNavItem) activeNavItem.classList.add('active');
+        }
+        
+        // --- SIMULATION FUNCTIONS ---
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function calculateBiaScore() {
+            const scores = document.querySelectorAll('.bia-score');
+            let totalScore = 0;
+            scores.forEach(select => {
+                totalScore += parseInt(select.value, 10);
+            });
+            const resultDiv = document.getElementById('bia-result');
+            let criticality = '';
+            if (totalScore >= 40) criticality = 'MUY ALTA';
+            else if (totalScore >= 30) criticality = 'ALTA';
+            else if (totalScore >= 20) criticality = 'MEDIA';
+            else criticality = 'BAJA';
+            resultDiv.innerHTML = `Puntaje Total: ${totalScore} - Nivel de Criticidad: <span class="text-red-600">${criticality}</span>`;
+            showToast('Cálculo de criticidad simulado.');
+        }
+
+        function calculateRiskScore() {
+            const prob = parseInt(document.getElementById('prob-inh').value, 10);
+            const imp = parseInt(document.getElementById('imp-inh').value, 10);
+            const score = prob * imp;
+            const resultDiv = document.getElementById('risk-result-inh');
+            let level = '';
+            let color = 'text-slate-800';
+            if (score >= 20) { level = 'CRÍTICO'; color = 'text-red-700'; }
+            else if (score >= 13) { level = 'ALTO'; color = 'text-red-600'; }
+            else if (score >= 6) { level = 'MEDIO'; color = 'text-amber-600'; }
+            else { level = 'BAJO'; color = 'text-green-600'; }
+            resultDiv.innerHTML = `${score} (<span class="${color}">${level}</span>)`;
+        }
+
+
+        // --- CHARTS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const rtoCtx = document.getElementById('rtoChart').getContext('2d');
+            new Chart(rtoCtx, {
+                type: 'bar',
+                data: {
+                    labels: biaData.map(d => d.process),
+                    datasets: [{
+                        label: 'RTO (Horas)',
+                        data: biaData.map(d => d.rto),
+                        backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                        borderColor: 'rgba(15, 118, 110, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Horas' } }, x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } } }, plugins: { legend: { display: false } } }
+            });
+
+            const riskMatrixCtx = document.getElementById('riskMatrixChart').getContext('2d');
+            new Chart(riskMatrixCtx, {
+                type: 'bubble',
+                data: riskMatrixData,
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 6, title: { display: true, text: 'Impacto' } }, x: { min: 0, max: 6, title: { display: true, text: 'Probabilidad' } } }, plugins: { tooltip: { callbacks: { label: function(context) { return `Riesgo: ${context.dataset.label} (P: ${context.parsed.x}, I: ${context.parsed.y})`; } } } } }
+            });
+            
+            const ganttCtx = document.getElementById('ganttChart').getContext('2d');
+            new Chart(ganttCtx, {
+                type: 'bar', data: projectGanttData,
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { min: 0, max: 20, title: { display: true, text: 'Semanas del Proyecto' } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { const d = context.raw; return `Duración: ${d.x[1] - d.x[0]} semanas (Sem ${d.x[0]} a Sem ${d.x[1]})`; } } } } }
+            });
+        });
+    </script>
+</body>
+</html>
