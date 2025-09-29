@@ -1,238 +1,325 @@
-# 🚀 GUÍA RÁPIDA DE DEPLOYMENT - FENIX SGCN
+# ========================================
+# FASE 4: DEPLOYMENT GUIDE - FENIX-SGCN
+# ========================================
 
-## ⚡ INICIO RÁPIDO (5 minutos)
+## 📋 Pre-requisitos
 
-### Método 1: Script Automatizado (RECOMENDADO)
+- Docker y Docker Compose instalados
+- Node.js 20+ (para desarrollo local)
+- PostgreSQL 16+
+- Dgraph 21+
+- Mínimo 4GB RAM disponible
+- 10GB de espacio en disco
+
+## 🏗️ Arquitectura de Producción
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    NGINX (Puerto 80/443)                │
+├─────────────────┬────────────────┬─────────────────────┤
+│                 │                 │                     │
+│   Frontend      │   Backend API   │    MinIO Storage    │
+│   (Next.js)     │   (NestJS)     │    (Archivos)      │
+│   Puerto 3000   │   Puerto 3001   │    Puerto 9000     │
+└─────────────────┴────────────────┴─────────────────────┘
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+   PostgreSQL         Dgraph            Redis
+   (Datos)           (Grafos)          (Cache)
+   Puerto 5432       Puerto 8080       Puerto 6379
+```
+
+## 🚀 Despliegue Rápido
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/fenix-sgcn/fenix-sgcn.git
+cd fenix-sgcn
+```
+
+### 2. Configurar variables de entorno
+```bash
+cp .env.example .env
+# Editar .env con tus configuraciones
+```
+
+### 3. Construir y levantar servicios
+```bash
+# Desarrollo
+docker-compose -f docker-compose.dev.yml up -d
+
+# Producción
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### 4. Inicializar base de datos
+```bash
+# Ejecutar migraciones
+docker exec fenix_backend_prod npx prisma migrate deploy
+
+# Cargar datos semilla (opcional)
+docker exec fenix_backend_prod npm run seed
+```
+
+## 🔧 Configuración de Producción
+
+### Variables de Entorno Críticas
+
+```env
+# Database
+DATABASE_URL=postgresql://user:pass@fenix_db_master:5432/fenix_sgcn
+
+# Security
+JWT_SECRET=your-secure-jwt-secret-min-32-chars
+JWT_EXPIRES_IN=7d
+
+# Dgraph
+DGRAPH_URL=http://fenix_dgraph:8080
+DGRAPH_GRPC_URL=fenix_dgraph:9080
+
+# Redis
+REDIS_HOST=fenix_redis
+REDIS_PORT=6379
+
+# Storage
+MINIO_ENDPOINT=fenix_storage
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=your-minio-access-key
+MINIO_SECRET_KEY=your-minio-secret-key
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@fenix-sgcn.com
+
+# Frontend
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+```
+
+## 📊 Monitoreo y Logs
+
+### Ver logs de servicios
+```bash
+# Todos los servicios
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Servicio específico
+docker-compose -f docker-compose.prod.yml logs -f fenix_backend_prod
+```
+
+### Health Checks
+```bash
+# Backend
+curl http://localhost:3001/health
+
+# Frontend
+curl http://localhost:3000
+
+# Dgraph
+curl http://localhost:8080/health
+
+# PostgreSQL
+docker exec fenix_db_master_prod pg_isready
+```
+
+## 🔒 Seguridad en Producción
+
+### 1. Configurar HTTPS con Let's Encrypt
+```bash
+# Instalar certbot
+docker exec fenix_proxy_prod apk add certbot certbot-nginx
+
+# Obtener certificado
+docker exec fenix_proxy_prod certbot --nginx -d yourdomain.com
+```
+
+### 2. Configurar Firewall
+```bash
+# Solo permitir puertos necesarios
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 22/tcp
+ufw enable
+```
+
+### 3. Backups Automáticos
+```bash
+# Script de backup (agregar a cron)
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+docker exec fenix_db_master_prod pg_dump -U fenix fenix_sgcn > backup_$DATE.sql
+```
+
+## 🎯 Optimización de Performance
+
+### 1. Configuración de PostgreSQL
+```sql
+-- En postgresql.conf
+shared_buffers = 256MB
+effective_cache_size = 1GB
+maintenance_work_mem = 64MB
+work_mem = 4MB
+```
+
+### 2. Índices de Base de Datos
+```sql
+-- Índices críticos ya incluidos en migraciones
+CREATE INDEX idx_findings_tenant_status ON findings(tenant_id, status);
+CREATE INDEX idx_corrective_actions_finding ON corrective_actions(finding_id);
+CREATE INDEX idx_business_processes_tenant ON business_processes(tenant_id);
+```
+
+### 3. Cache Redis
+- TTL configurado: 5 minutos para queries frecuentes
+- Invalidación automática en escrituras
+
+## 📈 Escalamiento
+
+### Horizontal Scaling con Docker Swarm
+```bash
+# Inicializar swarm
+docker swarm init
+
+# Desplegar stack
+docker stack deploy -c docker-compose.prod.yml fenix
+
+# Escalar servicios
+docker service scale fenix_backend=3
+docker service scale fenix_frontend=2
+```
+
+### Load Balancing con Nginx
+```nginx
+upstream backend {
+    least_conn;
+    server backend1:3001;
+    server backend2:3001;
+    server backend3:3001;
+}
+```
+
+## 🔄 Actualizaciones sin Downtime
 
 ```bash
-# 1. Hacer scripts ejecutables
-chmod +x /mnt/c/Users/meciz/Documents/fenix-sgcn/scripts/*.sh
+# 1. Construir nueva imagen
+docker-compose -f docker-compose.prod.yml build --no-cache fenix_backend
 
-# 2. Ejecutar instalación y deployment completo
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn/scripts
-./quick-commands.sh install
-./quick-commands.sh all
+# 2. Actualizar servicio con rolling update
+docker-compose -f docker-compose.prod.yml up -d --no-deps --build fenix_backend
+
+# 3. Verificar health
+docker exec fenix_backend_prod curl http://localhost:3001/health
 ```
 
-### Método 2: Manual
+## 📝 Troubleshooting
 
+### Problema: Base de datos no conecta
 ```bash
-# 1. Instalar dependencias
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn/frontend
-npm install
-npx playwright install chromium
+# Verificar conectividad
+docker exec fenix_backend_prod nc -zv fenix_db_master 5432
 
-# 2. Ejecutar pruebas (opcional pero recomendado)
-npm run test:e2e
-
-# 3. Build y deploy
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn
-docker compose -f docker-compose.prod.yml build fenix_frontend
-docker compose -f docker-compose.prod.yml up -d
-
-# 4. Verificar
-docker logs -f fenix_frontend
+# Ver logs de PostgreSQL
+docker logs fenix_db_master_prod
 ```
 
-## ✅ VERIFICACIÓN POST-DEPLOYMENT
-
-### 1. Acceder a la aplicación
-```
-http://localhost
-```
-
-### 2. Probar Internacionalización
-- Click en ⚙️ (Configuración)
-- Cambiar idioma a English → Verificar textos en inglés
-- Cambiar idioma a Português → Verificar textos en portugués
-- Cambiar idioma a Español → Verificar textos en español
-
-### 3. Probar Conversión de Monedas
-- Click en ⚙️ (Configuración)
-- Cambiar a Pesos (COP) → Verificar formato $XXX,XXX
-- Cambiar a Dollars (USD) → Verificar formato USD$XXX
-- Cambiar a Reales (BRL) → Verificar formato R$XXX
-
-### 4. Configurar Tasas de Conversión
-- Navegar a `/dashboard/configuracion`
-- Modificar tasas de conversión
-- Click "Guardar Tasas"
-- Verificar que los valores se actualizan
-
-### 5. Navegar por los Módulos
-- Click en cada módulo del menú lateral
-- Verificar que cargan correctamente
-- Verificar estadísticas en cada módulo
-- Probar cambio entre tabs
-
-## 📋 COMANDOS ÚTILES
-
-### Scripts Rápidos
-
+### Problema: Frontend no carga
 ```bash
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn/scripts
+# Verificar build de Next.js
+docker exec fenix_frontend_prod npm run build
 
-# Ver ayuda
-./quick-commands.sh help
-
-# Ejecutar pruebas
-./quick-commands.sh test
-
-# Ver pruebas en modo UI
-./quick-commands.sh test:ui
-
-# Build frontend
-./quick-commands.sh build
-
-# Deploy completo
-./quick-commands.sh deploy
-
-# Ver logs
-./quick-commands.sh logs
-
-# Reiniciar servicios
-./quick-commands.sh restart
-
-# TODO (test + build + deploy)
-./quick-commands.sh all
+# Revisar variables de entorno
+docker exec fenix_frontend_prod env | grep NEXT_PUBLIC
 ```
 
-### Docker
-
+### Problema: Dgraph no sincroniza
 ```bash
-# Ver logs
-docker logs -f fenix_frontend
+# Reiniciar Dgraph
+docker-compose -f docker-compose.prod.yml restart fenix_dgraph
 
-# Reiniciar contenedor
-docker restart fenix_frontend
-
-# Ver estado
-docker ps
-
-# Detener todo
-docker compose -f docker-compose.prod.yml down
-
-# Iniciar todo
-docker compose -f docker-compose.prod.yml up -d
+# Verificar schema
+curl -X POST http://localhost:8080/admin/schema -d '@dgraph-schema.graphql'
 ```
 
-### Frontend
+## 📊 Métricas de Performance
 
+### Objetivos SLA
+- Disponibilidad: 99.95%
+- Tiempo de respuesta API: < 200ms (p95)
+- Tiempo de carga frontend: < 2s
+- RTO: < 1 hora
+- RPO: < 15 minutos
+
+### Herramientas de Monitoreo Recomendadas
+- **Prometheus + Grafana**: Métricas del sistema
+- **ELK Stack**: Logs centralizados
+- **Sentry**: Error tracking
+- **New Relic**: APM completo
+
+## 🚨 Plan de Recuperación ante Desastres
+
+### Backup Completo
 ```bash
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn/frontend
+#!/bin/bash
+# backup.sh - Ejecutar diariamente
+DATE=$(date +%Y%m%d)
 
-# Modo desarrollo
-npm run dev
+# Backup PostgreSQL
+docker exec fenix_db_master_prod pg_dump -U fenix fenix_sgcn | gzip > postgres_$DATE.sql.gz
 
-# Ejecutar pruebas E2E
-npm run test:e2e
+# Backup Dgraph
+docker exec fenix_dgraph dgraph export -o /dgraph/export
+docker cp fenix_dgraph:/dgraph/export ./dgraph_$DATE
 
-# Modo UI interactivo
-npm run test:e2e:ui
+# Backup archivos MinIO
+docker run --rm -v fenix-sgcn_minio_prod_data:/data -v $(pwd):/backup alpine tar czf /backup/minio_$DATE.tar.gz /data
 
-# Ver reporte de pruebas
-npm run test:e2e:report
+# Subir a S3/Cloud Storage
+aws s3 cp postgres_$DATE.sql.gz s3://fenix-backups/
+aws s3 cp dgraph_$DATE s3://fenix-backups/ --recursive
+aws s3 cp minio_$DATE.tar.gz s3://fenix-backups/
 ```
 
-## 🎯 CARACTERÍSTICAS IMPLEMENTADAS
-
-### ✅ Internacionalización
-- [x] 3 idiomas (ES/EN/PT)
-- [x] Cambio dinámico sin recargar
-- [x] Persistencia en localStorage
-- [x] Todos los módulos traducidos
-- [x] Hook useTranslation()
-
-### ✅ Conversión de Monedas
-- [x] 3 monedas (COP/USD/BRL)
-- [x] Tasas configurables
-- [x] Conversión automática
-- [x] Sin decimales (redondeado)
-- [x] Hook useCurrency()
-
-### ✅ Dashboard y Módulos
-- [x] Dashboard principal con estadísticas
-- [x] 7 módulos funcionales con tabs
-- [x] Sidebar colapsable
-- [x] Modo oscuro
-- [x] Responsive design
-
-### ✅ Pruebas E2E
-- [x] 30+ casos de prueba
-- [x] Playwright configurado
-- [x] Cobertura completa
-- [x] Reportes automáticos
-
-### ✅ Documentación
-- [x] README completo
-- [x] Guía de implementación
-- [x] Scripts automatizados
-- [x] Troubleshooting
-
-## 🐛 SOLUCIÓN DE PROBLEMAS
-
-### Error: "Cannot find module"
+### Restauración
 ```bash
-cd /mnt/c/Users/meciz/Documents/fenix-sgcn/frontend
-rm -rf node_modules package-lock.json
-npm install
+#!/bin/bash
+# restore.sh
+DATE=$1
+
+# Restaurar PostgreSQL
+gunzip < postgres_$DATE.sql.gz | docker exec -i fenix_db_master_prod psql -U fenix fenix_sgcn
+
+# Restaurar Dgraph
+docker cp dgraph_$DATE fenix_dgraph:/dgraph/import
+docker exec fenix_dgraph dgraph live -f /dgraph/import
+
+# Restaurar MinIO
+docker run --rm -v fenix-sgcn_minio_prod_data:/data -v $(pwd):/backup alpine tar xzf /backup/minio_$DATE.tar.gz -C /
 ```
 
-### Error: Playwright no encuentra navegadores
-```bash
-npx playwright install --force
-```
+## 📞 Soporte
 
-### Error: Puerto 3000 en uso
-```bash
-# Detener proceso en puerto 3000
-lsof -ti:3000 | xargs kill -9
+- **Documentación**: https://docs.fenix-sgcn.com
+- **Issues**: https://github.com/fenix-sgcn/fenix-sgcn/issues
+- **Email**: soporte@fenix-sgcn.com
+- **Slack**: fenix-sgcn.slack.com
 
-# O cambiar puerto en docker-compose.prod.yml
-```
+## ✅ Checklist de Producción
 
-### Traducciones no aparecen
-```bash
-# En consola del navegador:
-localStorage.clear()
-# Recargar página
-```
-
-### Monedas no se convierten
-```bash
-# En consola del navegador:
-localStorage.setItem('exchangeRates', '{"COP":4000,"USD":1,"BRL":5.30}')
-# Recargar página
-```
-
-## 📊 CHECKLIST DE DEPLOYMENT
-
-- [ ] Dependencias instaladas (`npm install`)
-- [ ] Playwright instalado (`npx playwright install chromium`)
-- [ ] Pruebas E2E pasando (`npm run test:e2e`)
-- [ ] Frontend construido (`docker build`)
-- [ ] Servicios iniciados (`docker up -d`)
-- [ ] Logs verificados (`docker logs`)
-- [ ] Aplicación accesible (http://localhost)
-- [ ] Cambio de idioma funcional
-- [ ] Conversión de monedas funcional
-- [ ] Navegación entre módulos funcional
-- [ ] Modo oscuro funcional
-- [ ] Sidebar colapsable funcional
-
-## 🎉 SIGUIENTES PASOS
-
-1. **Configurar tasas de conversión** según mercado actual
-2. **Revisar traducciones** y ajustar si es necesario
-3. **Ejecutar pruebas E2E** regularmente
-4. **Monitorear logs** para detectar errores
-5. **Documentar** cualquier cambio adicional
+- [ ] Variables de entorno configuradas
+- [ ] HTTPS habilitado
+- [ ] Backups automáticos configurados
+- [ ] Monitoreo activo
+- [ ] Firewall configurado
+- [ ] Logs centralizados
+- [ ] Health checks funcionando
+- [ ] Plan de DR documentado
+- [ ] Equipo de soporte notificado
 
 ---
 
-**Sistema 100% funcional y probado** ✅
-
-Para soporte adicional, revisar:
-- `/docs/README_i18n_Monedas.md`
-- `/docs/Implementacion_i18n_Monedas_Tests.md`
-- `/docs/IMPLEMENTACION_FINAL_COMPLETA.md`
+**Versión**: 1.0.0
+**Última actualización**: Septiembre 2025
+**Licencia**: MIT

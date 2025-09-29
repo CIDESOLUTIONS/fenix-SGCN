@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro  # Certificados SSL
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - fenix_backend
       - fenix_frontend
@@ -50,18 +50,23 @@ services:
     container_name: fenix_backend_prod
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fenix_db_master:5432/${POSTGRES_DB}?schema=public
-      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fenix}:${POSTGRES_PASSWORD:-fenix2024}@fenix_db_master:5432/${POSTGRES_DB:-fenix_sgcn}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 3001
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@fenix-sgcn.com}
       DGRAPH_URL: http://fenix_dgraph:8080
       DGRAPH_GRPC_URL: fenix_dgraph:9080
       REDIS_HOST: fenix_redis
       REDIS_PORT: 6379
+      MINIO_ENDPOINT: fenix_storage
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
       - "3001:3001"
     depends_on:
@@ -84,42 +89,69 @@ services:
     image: postgres:16-alpine
     container_name: fenix_db_master_prod
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-fenix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fenix2024}
+      POSTGRES_DB: ${POSTGRES_DB:-fenix_sgcn}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
-      - ./backups:/backups  # Para backups automáticos
+      - ./backups:/backups
     ports:
       - "5432:5432"
     networks:
       - fenix-net
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fenix} -d ${POSTGRES_DB:-fenix_sgcn}"]
+      interval: 30s
+      timeout: 10s
       retries: 5
-    command:
-      - "postgres"
-      - "-c"
-      - "max_connections=200"
-      - "-c"
-      - "shared_buffers=256MB"
-      - "-c"
-      - "effective_cache_size=1GB"
-      - "-c"
-      - "work_mem=16MB"
+      start_period: 30s
+
+  fenix_dgraph:
+    image: dgraph/dgraph:v21.03.2
+    container_name: fenix_dgraph_prod
+    volumes:
+      - dgraph_prod_data:/dgraph
+    ports:
+      - "5080:5080"
+      - "6080:6080"
+      - "8080:8080"
+      - "9080:9080"
+      - "8000:8000"
+    networks:
+      - fenix-net
+    restart: always
+    command: dgraph alpha --my=fenix_dgraph:7080 --zero=fenix_dgraph:5080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  fenix_redis:
+    image: redis:7-alpine
+    container_name: fenix_redis_prod
+    volumes:
+      - redis_prod_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - fenix-net
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   fenix_storage:
     image: minio/minio:latest
     container_name: fenix_storage_prod
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9001}
-    command: server /data --console-address ":9001"
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
       - minio_prod_data:/data
     ports:
@@ -128,60 +160,26 @@ services:
     networks:
       - fenix-net
     restart: always
+    command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
-      timeout: 20s
-      retries: 3
-
-  fenix_dgraph:
-    image: dgraph/standalone:latest
-    container_name: fenix_dgraph_prod
-    environment:
-      - DGRAPH_ALPHA_SECURITY_WHITELIST=0.0.0.0/0
-    ports:
-      - "8080:8080"
-      - "9080:9080"
-    volumes:
-      - dgraph_prod_data:/dgraph
-    networks:
-      - fenix-net
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 30s
       timeout: 10s
-      retries: 3
-
-  fenix_redis:
-    image: redis:7-alpine
-    container_name: fenix_redis_prod
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-sgcn2025}
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-sgcn2025}
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_prod_data:/data
-    networks:
-      - fenix-net
-    restart: always
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 5s
       retries: 5
+
+networks:
+  fenix-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   postgres_prod_data:
-    driver: local
-  minio_prod_data:
     driver: local
   dgraph_prod_data:
     driver: local
   redis_prod_data:
     driver: local
-
-networks:
-  fenix-net:
-    driver: bridge
+  minio_prod_data:
+    driver: local

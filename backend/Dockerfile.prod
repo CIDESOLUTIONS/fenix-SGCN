@@ -1,14 +1,15 @@
-# Stage 1: Build
+# Production Dockerfile for Backend (NestJS)
 FROM node:20-alpine AS builder
 
+# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files (use install instead of ci if no lock file)
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -16,42 +17,41 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build TypeScript
+# Build the application
 RUN npm run build
 
-# Stage 2: Production
+# === Production stage ===
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
-# Install production dependencies only
+# Copy package files and prisma
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --only=production && \
+
+# Install only production dependencies
+RUN npm install --omit=dev && \
     npx prisma generate && \
     npm cache clean --force
 
-# Copy built app from builder
+# Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Create entrypoint script
-RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
-    echo 'echo "🔄 Esperando a que la base de datos esté lista..."' >> /app/docker-entrypoint.sh && \
-    echo 'while ! nc -z fenix_db_master 5432; do sleep 1; done' >> /app/docker-entrypoint.sh && \
-    echo 'echo "✅ Base de datos lista"' >> /app/docker-entrypoint.sh && \
-    echo 'echo "🔄 Ejecutando migraciones de Prisma..."' >> /app/docker-entrypoint.sh && \
-    echo 'npx prisma migrate deploy' >> /app/docker-entrypoint.sh && \
-    echo 'echo "✅ Migraciones aplicadas"' >> /app/docker-entrypoint.sh && \
-    echo 'echo "🚀 Iniciando aplicación..."' >> /app/docker-entrypoint.sh && \
-    echo 'exec node dist/main' >> /app/docker-entrypoint.sh && \
-    chmod +x /app/docker-entrypoint.sh
+# Create non-root user
+RUN addgroup -g 1001 nodejs && \
+    adduser -S -u 1001 -G nodejs nodejs
 
-# Install netcat for healthcheck
-RUN apk add --no-cache netcat-openbsd
+# Set ownership
+RUN chown -R nodejs:nodejs /app
 
+USER nodejs
+
+# Expose port
 EXPOSE 3001
 
-CMD ["/app/docker-entrypoint.sh"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"
+
+# Start the application
+CMD ["node", "dist/main"]
