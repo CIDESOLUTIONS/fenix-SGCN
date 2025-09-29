@@ -55,7 +55,7 @@ export function StrategyComparison({
   };
 
   const getTypeIcon = (type: string) => {
-    const icons = {
+    const icons: Record<string, string> = {
       PREVENTION: '🛡️',
       MITIGATION: '⚠️',
       RECOVERY: '🔄',
@@ -68,91 +68,105 @@ export function StrategyComparison({
     <div className="space-y-6">
       {/* Gráfico Comparativo */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Comparación Visual</h3>
+        <h3 className="text-lg font-semibold mb-4">Comparación Visual de Estrategias</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+            <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="Costo" fill="#3b82f6" name="Costo (miles USD)" />
-            <Bar dataKey="Tiempo (días)" fill="#8b5cf6" name="Tiempo (días)" />
-            <Bar dataKey="Efectividad" fill="#f59e0b" name="Efectividad (×10)" />
+            <Bar dataKey="Costo" fill="#8884d8" />
+            <Bar dataKey="Tiempo (días)" fill="#82ca9d" />
+            <Bar dataKey="Efectividad" fill="#ffc658" />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Tabla Comparativa */}
+      {/* Tabla de Estrategias */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Estrategia</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold">Costo (USD)</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold">Tiempo (días)</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold">Efectividad</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold">Score</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold">Acción</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Estrategia
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Costo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tiempo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Efectividad
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Score C/E
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Estado
+              </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200">
             {strategies.map((strategy) => (
-              <tr
-                key={strategy.id}
-                className={`border-t hover:bg-gray-50 ${
-                  strategy.id === recommendation ? 'bg-green-50' : ''
-                }`}
+              <tr 
+                key={strategy.id} 
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => onSelectStrategy?.(strategy.id)}
               >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span>{getTypeIcon(strategy.type)}</span>
-                    <div>
-                      <div className="font-medium text-sm">{strategy.name}</div>
-                      {strategy.id === recommendation && (
-                        <span className="text-xs text-green-600 font-semibold">
-                          ⭐ Recomendada
-                        </span>
-                      )}
-                    </div>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">
+                    {strategy.name}
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs border ${getBadgeColor(strategy.id)}`}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-lg">{getTypeIcon(strategy.type)}</span>
+                  <span className="ml-2 text-sm text-gray-600">
                     {strategy.type}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  ${strategy.cost?.toLocaleString() || 'N/A'}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  ${strategy.cost.toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-right">{strategy.implementationTime || 'N/A'}</td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <span
-                        key={i}
-                        className={`text-lg ${
-                          i < strategy.effectiveness ? 'text-yellow-400' : 'text-gray-300'
-                        }`}
-                      >
-                        ★
-                      </span>
-                    ))}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {strategy.implementationTime} días
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-1 mr-2">
+                      <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-blue-500 h-2"
+                          style={{ width: `${strategy.effectiveness * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {(strategy.effectiveness * 100).toFixed(0)}%
+                    </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right font-semibold">
-                  {strategy.costEffectivenessScore?.toFixed(2) || 'N/A'}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {strategy.costEffectivenessScore.toFixed(2)}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-center">
-                  {onSelectStrategy && (
-                    <button
-                      onClick={() => onSelectStrategy(strategy.id)}
-                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded"
-                    >
-                      Seleccionar
-                    </button>
-                  )}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getBadgeColor(strategy.id)}`}>
+                    {strategy.id === recommendation ? 'Recomendada' : 
+                     strategy.id === bestOptions.leastExpensive.id ? 'Más Económica' :
+                     strategy.id === bestOptions.fastestImplementation.id ? 'Más Rápida' :
+                     strategy.id === bestOptions.mostEffective.id ? 'Más Efectiva' :
+                     strategy.id === bestOptions.bestValue.id ? 'Mejor Valor' :
+                     'Opción'}
+                  </span>
                 </td>
               </tr>
             ))}
@@ -160,39 +174,77 @@ export function StrategyComparison({
         </table>
       </div>
 
-      {/* Mejores Opciones */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="text-sm text-blue-600 font-semibold mb-1">💰 Más Económica</div>
-          <div className="text-lg font-bold text-blue-900">{bestOptions.leastExpensive.name}</div>
-          <div className="text-sm text-blue-700 mt-1">
-            ${bestOptions.leastExpensive.cost?.toLocaleString()}
+      {/* Resumen de Mejores Opciones */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          📊 Resumen de Análisis
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">
+              Más Económica
+            </div>
+            <div className="text-sm font-bold text-blue-600">
+              {bestOptions.leastExpensive.name}
+            </div>
+            <div className="text-xs text-gray-600">
+              ${bestOptions.leastExpensive.cost.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">
+              Más Rápida
+            </div>
+            <div className="text-sm font-bold text-purple-600">
+              {bestOptions.fastestImplementation.name}
+            </div>
+            <div className="text-xs text-gray-600">
+              {bestOptions.fastestImplementation.implementationTime} días
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">
+              Más Efectiva
+            </div>
+            <div className="text-sm font-bold text-orange-600">
+              {bestOptions.mostEffective.name}
+            </div>
+            <div className="text-xs text-gray-600">
+              {(bestOptions.mostEffective.effectiveness * 100).toFixed(0)}% efectividad
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">
+              Mejor Valor
+            </div>
+            <div className="text-sm font-bold text-green-600">
+              {bestOptions.bestValue.name}
+            </div>
+            <div className="text-xs text-gray-600">
+              Score: {bestOptions.bestValue.costEffectivenessScore.toFixed(2)}
+            </div>
           </div>
         </div>
 
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div className="text-sm text-purple-600 font-semibold mb-1">⚡ Más Rápida</div>
-          <div className="text-lg font-bold text-purple-900">{bestOptions.fastestImplementation.name}</div>
-          <div className="text-sm text-purple-700 mt-1">
-            {bestOptions.fastestImplementation.implementationTime} días
+        {recommendation && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start">
+              <span className="text-2xl mr-3">💡</span>
+              <div>
+                <h4 className="font-semibold text-green-900 mb-1">
+                  Recomendación del Sistema
+                </h4>
+                <p className="text-sm text-green-700">
+                  Basado en el análisis costo-efectividad y los requisitos de recuperación, 
+                  se recomienda implementar la estrategia: <strong>{strategies.find(s => s.id === recommendation)?.name}</strong>
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <div className="text-sm text-orange-600 font-semibold mb-1">🎯 Más Efectiva</div>
-          <div className="text-lg font-bold text-orange-900">{bestOptions.mostEffective.name}</div>
-          <div className="text-sm text-orange-700 mt-1">
-            {bestOptions.mostEffective.effectiveness}/5 estrellas
-          </div>
-        </div>
-
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="text-sm text-green-600 font-semibold mb-1">⭐ Mejor Valor</div>
-          <div className="text-lg font-bold text-green-900">{bestOptions.bestValue.name}</div>
-          <div className="text-sm text-green-700 mt-1">
-            Score: {bestOptions.bestValue.costEffectivenessScore?.toFixed(2)}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

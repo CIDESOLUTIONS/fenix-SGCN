@@ -22,7 +22,7 @@ const likelihoodLabels = ['Bajo', 'Medio', 'Alto'];
 
 const getColorClass = (impact: string, likelihood: string) => {
   const key = `${impact}_${likelihood}`;
-  const colors = {
+  const colors: Record<string, string> = {
     'HIGH_HIGH': 'bg-red-600',
     'HIGH_MEDIUM': 'bg-red-500',
     'HIGH_LOW': 'bg-orange-500',
@@ -41,126 +41,111 @@ export function RiskHeatmap({ data, onRiskClick }: RiskHeatmapProps) {
   const likelihoodLevels = ['LOW', 'MEDIUM', 'HIGH'];
 
   const getRiskCount = (impact: string, likelihood: string) => {
-    const key = `${impact}_${likelihood}`;
+    const key = `${impact}_${likelihood}` as keyof typeof data;
     return data[key]?.length || 0;
   };
 
-  const handleCellClick = (impact: string, likelihood: string) => {
-    const key = `${impact}_${likelihood}`;
-    const risks = data[key] || [];
-    if (risks.length > 0 && onRiskClick) {
-      // Si solo hay un riesgo, abrir directamente
-      if (risks.length === 1) {
-        onRiskClick(risks[0].id);
-      } else {
-        // Mostrar lista de riesgos en modal (implementar según necesidad)
-        console.log('Riesgos en esta celda:', risks);
-      }
-    }
+  const getRisks = (impact: string, likelihood: string) => {
+    const key = `${impact}_${likelihood}` as keyof typeof data;
+    return data[key] || [];
   };
 
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-        <p className="text-gray-500">No hay datos de riesgos disponibles</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Leyenda */}
-      <div className="flex items-center gap-4 text-sm">
-        <span className="font-semibold">Leyenda:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-600 rounded"></div>
-          <span>Crítico</span>
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-6">Mapa de Calor de Riesgos</h3>
+      
+      <div className="relative">
+        {/* Y-axis label */}
+        <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-sm font-semibold text-gray-600">
+          Impacto
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-orange-500 rounded"></div>
-          <span>Alto</span>
+        
+        {/* X-axis label */}
+        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm font-semibold text-gray-600">
+          Probabilidad
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-          <span>Moderado</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span>Bajo</span>
-        </div>
-      </div>
-
-      {/* Mapa de Calor */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 p-2 bg-gray-100"></th>
-              {likelihoodLabels.map((label, index) => (
-                <th
-                  key={index}
-                  className="border border-gray-300 p-3 bg-gray-100 font-semibold text-sm"
-                >
-                  {label}
-                  <br />
-                  <span className="text-xs text-gray-500">Probabilidad</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {impactLevels.map((impact, impactIndex) => (
-              <tr key={impact}>
-                <td className="border border-gray-300 p-3 bg-gray-100 font-semibold text-sm">
-                  {impactLabels[impactIndex]}
-                  <br />
-                  <span className="text-xs text-gray-500">Impacto</span>
-                </td>
-                {likelihoodLevels.map((likelihood) => {
-                  const count = getRiskCount(impact, likelihood);
-                  const colorClass = getColorClass(impact, likelihood);
-                  return (
-                    <td
-                      key={`${impact}-${likelihood}`}
-                      className={`border border-gray-300 p-4 text-center cursor-pointer transition-opacity hover:opacity-80 ${colorClass}`}
-                      onClick={() => handleCellClick(impact, likelihood)}
-                      title={`${count} riesgo(s) - Click para ver detalles`}
-                    >
-                      <div className="text-white font-bold text-2xl">
-                        {count}
+        
+        {/* Grid container */}
+        <div className="grid grid-cols-4 gap-2">
+          {/* Empty cell for axis labels */}
+          <div></div>
+          
+          {/* Likelihood labels */}
+          {likelihoodLabels.map((label, index) => (
+            <div key={index} className="text-center text-sm font-medium text-gray-700 pb-2">
+              {label}
+            </div>
+          ))}
+          
+          {/* Impact levels with risk cells */}
+          {impactLevels.map((impact, impactIndex) => (
+            <React.Fragment key={impact}>
+              {/* Impact label */}
+              <div className="text-right text-sm font-medium text-gray-700 pr-2 flex items-center justify-end">
+                {impactLabels[impactIndex]}
+              </div>
+              
+              {/* Risk cells */}
+              {likelihoodLevels.map((likelihood) => {
+                const risks = getRisks(impact, likelihood);
+                const count = getRiskCount(impact, likelihood);
+                const colorClass = getColorClass(impact, likelihood);
+                
+                return (
+                  <div
+                    key={`${impact}_${likelihood}`}
+                    className={`
+                      ${colorClass} 
+                      h-24 
+                      rounded-lg 
+                      flex 
+                      flex-col 
+                      items-center 
+                      justify-center 
+                      cursor-pointer 
+                      hover:opacity-90 
+                      transition-opacity
+                      relative
+                      group
+                    `}
+                    onClick={() => risks.forEach(risk => onRiskClick?.(risk.id))}
+                  >
+                    <span className="text-2xl font-bold text-white">{count}</span>
+                    <span className="text-xs text-white/90 mt-1">
+                      {count === 1 ? 'Riesgo' : 'Riesgos'}
+                    </span>
+                    
+                    {/* Tooltip on hover */}
+                    {count > 0 && (
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        {risks.slice(0, 3).map(risk => risk.title || risk.name).join(', ')}
+                        {count > 3 && ` +${count - 3} más`}
                       </div>
-                      {count > 0 && (
-                        <div className="text-white text-xs mt-1">
-                          riesgo{count > 1 ? 's' : ''}
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-          <div className="text-sm text-red-600 font-semibold">Riesgos Críticos</div>
-          <div className="text-3xl font-bold text-red-700 mt-2">
-            {(data.HIGH_HIGH?.length || 0) + (data.HIGH_MEDIUM?.length || 0)}
-          </div>
+                    )}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
         </div>
-        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-          <div className="text-sm text-orange-600 font-semibold">Riesgos Altos</div>
-          <div className="text-3xl font-bold text-orange-700 mt-2">
-            {(data.HIGH_LOW?.length || 0) + (data.MEDIUM_HIGH?.length || 0)}
+        
+        {/* Legend */}
+        <div className="mt-8 flex items-center justify-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-red-600 rounded"></div>
+            <span className="text-sm text-gray-600">Crítico</span>
           </div>
-        </div>
-        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-          <div className="text-sm text-green-600 font-semibold">Riesgos Bajos</div>
-          <div className="text-3xl font-bold text-green-700 mt-2">
-            {(data.LOW_MEDIUM?.length || 0) + (data.LOW_LOW?.length || 0)}
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-orange-500 rounded"></div>
+            <span className="text-sm text-gray-600">Alto</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+            <span className="text-sm text-gray-600">Medio</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <span className="text-sm text-gray-600">Bajo</span>
           </div>
         </div>
       </div>

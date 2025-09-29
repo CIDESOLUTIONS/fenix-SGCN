@@ -86,7 +86,7 @@ services:
       retries: 3
 
   fenix_db_master:
-    image: postgres:16-alpine
+    image: postgres:17.5-alpine
     container_name: fenix_db_master_prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fenix}
@@ -94,7 +94,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-fenix_sgcn}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     volumes:
-      - postgres_prod_data:/var/lib/postgresql/data
+      - fenix_postgres_prod_data:/var/lib/postgresql/data
       - ./backups:/backups
     ports:
       - "5432:5432"
@@ -109,10 +109,10 @@ services:
       start_period: 30s
 
   fenix_dgraph:
-    image: dgraph/dgraph:v21.03.2
+    image: dgraph/dgraph:v24.1.5
     container_name: fenix_dgraph_prod
     volumes:
-      - dgraph_prod_data:/dgraph
+      - fenix_dgraph_prod_data:/dgraph
     ports:
       - "5080:5080"
       - "6080:6080"
@@ -130,10 +130,10 @@ services:
       retries: 5
 
   fenix_redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: fenix_redis_prod
     volumes:
-      - redis_prod_data:/data
+      - fenix_redis_prod_data:/data
     ports:
       - "6379:6379"
     networks:
@@ -153,7 +153,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
-      - minio_prod_data:/data
+      - fenix_minio_prod_data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -175,11 +175,11 @@ networks:
         - subnet: 172.20.0.0/16
 
 volumes:
-  postgres_prod_data:
+  fenix_postgres_prod_data:
     driver: local
-  dgraph_prod_data:
+  fenix_dgraph_prod_data:
     driver: local
-  redis_prod_data:
+  fenix_redis_prod_data:
     driver: local
-  minio_prod_data:
+  fenix_minio_prod_data:
     driver: local
