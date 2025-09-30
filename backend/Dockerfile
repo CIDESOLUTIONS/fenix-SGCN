@@ -29,8 +29,8 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 
-# Librerías necesarias
-RUN apk add --no-cache bash openssl libc6-compat
+# Librerías necesarias - INCLUIR libssl1.1 para Prisma
+RUN apk add --no-cache bash openssl openssl1.1-compat libc6-compat
 
 # Crear usuario no-root
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

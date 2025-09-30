@@ -1,171 +1,326 @@
 "use client";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { FileText, Target, Users, Upload, CheckCircle, AlertCircle } from "lucide-react";
+
+interface Policy {
+  id: string;
+  title: string;
+  version: string;
+  status: string;
+  approvedAt: string | null;
+}
+
+interface Objective {
+  id: string;
+  description: string;
+  status: string;
+  progress: number;
+  owner: string;
+}
 
 export default function PlaneacionPage() {
-  const [activeTab, setActiveTab] = useState('resumen');
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'policies' | 'objectives' | 'raci'>('policies');
 
-  const tabs = [
-    { id: 'resumen', label: 'Resumen', icon: '📋' },
-    { id: 'politicas', label: 'Políticas y Procedimientos', icon: '📜' },
-    { id: 'objetivos', label: 'Objetivos Estratégicos', icon: '🎯' },
-    { id: 'estructura', label: 'Estructura Organizacional', icon: '👥' },
-    { id: 'procesos', label: 'Procesos Críticos', icon: '⚙️' },
-    { id: 'recursos', label: 'Recursos y Presupuesto', icon: '💰' },
-    { id: 'cronograma', label: 'Cronograma', icon: '📅' },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const stats = {
-    politicasActivas: 1,
-    objetivosPendientes: 1,
-    rolesDefinidos: 1,
-    progresoGeneral: 35
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      // Fetch policies
+      const policiesRes = await fetch(`${API_URL}/api/governance/policies`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (policiesRes.ok) {
+        const data = await policiesRes.json();
+        setPolicies(data);
+      }
+
+      // Fetch objectives  
+      const objectivesRes = await fetch(`${API_URL}/api/governance/objectives`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (objectivesRes.ok) {
+        const data = await objectivesRes.json();
+        setObjectives(data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const actividadesRecientes = [
-    { tipo: 'success', titulo: 'Política actualizada', tiempo: 'Hace 2 horas' },
-    { tipo: 'info', titulo: 'Nuevo objetivo creado', tiempo: 'Hace 1 día' },
-    { tipo: 'warning', titulo: 'Rol asignado', tiempo: 'Hace 3 días' },
-  ];
-
-  const proximasFechas = [
-    { titulo: 'Revisión de políticas', fecha: '31 de diciembre, 2024', tipo: 'politica' },
-    { titulo: 'Objetivo: SGCN completo', fecha: '31 de diciembre, 2024', tipo: 'objetivo' },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Módulo de Planeación</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Planificación Estratégica de Continuidad de Negocio</p>
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <Link href="/dashboard" className="hover:text-indigo-600">Dashboard</Link>
+          <span>/</span>
+          <span>Módulo 1: Planeación</span>
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Planeación y Gobierno
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          ISO 22301 Cláusula 5: Liderazgo y Compromiso - Establezca el marco fundamental del SGCN
+        </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex gap-4 px-6" aria-label="Tabs">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-1 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition ${
-                activeTab === tab.id
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              onClick={() => setActiveTab('policies')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'policies'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <span className="text-lg">{tab.icon}</span>
-              {tab.label}
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Políticas del SGCN
+              </div>
             </button>
-          ))}
-        </nav>
+            <button
+              onClick={() => setActiveTab('objectives')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'objectives'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Objetivos SMART
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('raci')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'raci'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Matriz RACI
+              </div>
+            </button>
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === 'policies' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    Gestión de Políticas
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Defina y apruebe la política de continuidad de negocio de su organización
+                  </p>
+                </div>
+                <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                  <Upload className="w-4 h-4" />
+                  Nueva Política
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                </div>
+              ) : policies.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                    No hay políticas creadas
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Comience creando su primera política de continuidad de negocio
+                  </p>
+                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Crear Primera Política
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {policies.map((policy) => (
+                    <div key={policy.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                            {policy.title}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            <span>Versión {policy.version}</span>
+                            {policy.approvedAt && (
+                              <span className="flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                Aprobado {new Date(policy.approvedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            policy.status === 'APPROVED' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          }`}>
+                            {policy.status === 'APPROVED' ? 'Aprobado' : 'En Revisión'}
+                          </span>
+                          <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
+                            Ver Detalles →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'objectives' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    Objetivos del SGCN
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Defina objetivos SMART (Específicos, Medibles, Alcanzables, Relevantes, Temporales)
+                  </p>
+                </div>
+                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                  + Nuevo Objetivo
+                </button>
+              </div>
+
+              {objectives.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                    No hay objetivos definidos
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Establezca los objetivos estratégicos de su programa de resiliencia
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {objectives.map((objective) => (
+                    <div key={objective.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                        {objective.description}
+                      </h3>
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                          <span>Progreso</span>
+                          <span className="font-medium">{objective.progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-indigo-600 h-2 rounded-full transition-all"
+                            style={{ width: `${objective.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Responsable: <span className="font-medium">{objective.owner}</span>
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          objective.status === 'ON_TRACK' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {objective.status === 'ON_TRACK' ? 'En Curso' : 'En Riesgo'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'raci' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    Matriz RACI
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Defina roles y responsabilidades: Responsable, Aprobador, Consultado, Informado
+                  </p>
+                </div>
+                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                  Editar Matriz
+                </button>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
+                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Editor de Matriz RACI
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  Funcionalidad en desarrollo. Próximamente podrá definir y gestionar roles 
+                  y responsabilidades de forma visual e interactiva.
+                </p>
+                <div className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
+                  <AlertCircle className="w-4 h-4" />
+                  Disponible en la próxima actualización
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Content */}
-      {activeTab === 'resumen' && (
-        <div className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-600 dark:text-gray-400">Políticas Activas</h3>
-                <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.politicasActivas}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">de 1 totales</p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-600 dark:text-gray-400">Objetivos Pendientes</h3>
-                <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" />
-                </svg>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.objetivosPendientes}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">de 1 totales</p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-600 dark:text-gray-400">Roles Definidos</h3>
-                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                </svg>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.rolesDefinidos}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">roles configurados</p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-600 dark:text-gray-400">Progreso General</h3>
-                <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.progresoGeneral}%</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">completado</p>
-            </div>
-          </div>
-
-          {/* Activities and Dates */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Actividades Recientes */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actividades Recientes</h3>
-              <div className="space-y-3">
-                {actividadesRecientes.map((act, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      act.tipo === 'success' ? 'bg-green-500' : 
-                      act.tipo === 'info' ? 'bg-blue-500' : 
-                      'bg-yellow-500'
-                    }`} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{act.titulo}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{act.tiempo}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Próximas Fechas */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Próximas Fechas Importantes</h3>
-              <div className="space-y-3">
-                {proximasFechas.map((fecha, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <svg className={`w-5 h-5 mt-0.5 ${fecha.tipo === 'politica' ? 'text-red-500' : 'text-orange-500'}`} fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{fecha.titulo}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{fecha.fecha}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Other Tabs - Placeholder */}
-      {activeTab !== 'resumen' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700 text-center">
-          <div className="text-4xl mb-4">{tabs.find(t => t.id === activeTab)?.icon}</div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {tabs.find(t => t.id === activeTab)?.label}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo</p>
-          <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-            Comenzar Configuración
-          </button>
-        </div>
-      )}
+      {/* Help Card */}
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-2">
+          💡 Guía Rápida: Módulo de Planeación
+        </h3>
+        <ul className="space-y-2 text-sm text-indigo-800 dark:text-indigo-200">
+          <li className="flex items-start gap-2">
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span><strong>Paso 1:</strong> Cree y apruebe la política de continuidad de negocio con el compromiso de la alta dirección</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span><strong>Paso 2:</strong> Defina objetivos SMART medibles y alineados con la estrategia organizacional</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span><strong>Paso 3:</strong> Asigne roles y responsabilidades claras mediante la matriz RACI</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span><strong>Siguiente:</strong> Proceda al <Link href="/dashboard/analisis-riesgos" className="underline font-medium">Módulo 2: Análisis de Riesgos</Link></span>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }

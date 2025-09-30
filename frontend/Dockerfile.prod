@@ -1,42 +1,46 @@
-# Production Dockerfile for Frontend (Next.js)
+# ============================
+# STAGE 1: Builder
+# ============================
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy package files
+# Copiar archivos de configuración
 COPY package*.json ./
 
-# Install dependencies (use install instead of ci if no lock file)
-RUN npm install
+# Instalar dependencias
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
-# Copy app source
+# Copiar código fuente
 COPY . .
 
-# Build the application
+# Build argument para la URL de API
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
+# Compilar Next.js con output standalone
 RUN npm run build
 
-# === Production stage ===
+# ============================
+# STAGE 2: Runner (Producción)
+# ============================
 FROM node:20-alpine AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user
+# Instalar tini para manejo de señales
+RUN apk add --no-cache tini curl
+
+# Crear usuario no-root
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copiar archivos estáticos y build
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Set correct permissions
-RUN chown -R nextjs:nodejs /app
-
+# Cambiar a usuario no-root
 USER nextjs
 
 EXPOSE 3000
@@ -44,8 +48,10 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"
 
+# Usar tini como init
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server.js"]

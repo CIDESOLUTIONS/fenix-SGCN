@@ -4,175 +4,109 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
-  Rocket, 
-  Target, 
-  Building, 
+  Target,
   AlertTriangle, 
   Activity, 
-  Shield, 
+  Lightbulb,
   FileText, 
-  AlertCircle, 
   TestTube, 
   TrendingUp,
-  Briefcase,
-  ChevronDown,
-  ChevronRight
+  Home
 } from 'lucide-react';
-import { useState } from 'react';
 
 const menuItems = [
   { 
-    name: 'Dashboard', 
+    name: 'Panel de Control', 
     path: '/dashboard', 
-    icon: "/cide-icono.png",
-    section: 'main'
+    icon: Home,
   },
   { 
-    name: '1. CONFIGURACIÓN INICIAL', 
-    icon: Rocket,
-    section: 'fundacional',
-    submenu: [
-      { name: 'Kick-off y Setup', path: '/dashboard/setup', icon: Rocket },
-      { name: 'Contexto Organizacional', path: '/dashboard/context', icon: Target },
-      { name: 'Identificación de Procesos', path: '/dashboard/processes', icon: Building },
-    ]
+    name: '1. Planning', 
+    path: '/dashboard/planeacion',
+    icon: LayoutDashboard,
+    description: 'Cláusula 5: Liderazgo y Gobierno'
   },
   { 
-    name: '2. ANÁLISIS DE RIESGOS (ARA)', 
+    name: '2. Risk Analysis ARA', 
+    path: '/dashboard/analisis-riesgos',
     icon: AlertTriangle,
-    section: 'analisis',
-    submenu: [
-      { name: 'Gestión de Riesgos', path: '/dashboard/ara/risks', icon: AlertTriangle },
-      { name: 'Matriz de Evaluación', path: '/dashboard/ara/matrix', icon: Activity },
-      { name: 'Dashboard Resiliencia', path: '/dashboard/ara/scoring', icon: TrendingUp },
-    ]
+    description: 'Cláusula 8.2.3: Evaluación de Riesgos'
   },
   { 
-    name: '3. ANÁLISIS DE IMPACTO (BIA)', 
+    name: '3. Impact Analysis BIA', 
+    path: '/dashboard/analisis-impacto',
     icon: Activity,
-    section: 'analisis',
-    submenu: [
-      { name: 'Evaluaciones BIA', path: '/dashboard/bia/assessments', icon: Activity },
-      { name: 'Asistente BIA con IA', path: '/dashboard/bia/wizard', icon: Rocket },
-    ]
+    description: 'Cláusula 8.2.2: Análisis de Impacto'
   },
   { 
-    name: '4. ESTRATEGIAS Y PLANES', 
-    icon: Shield,
-    section: 'planes',
-    submenu: [
-      { name: 'Escenarios de Contingencia', path: '/dashboard/scenarios', icon: AlertCircle },
-      { name: 'Planes de Continuidad', path: '/dashboard/plans', icon: FileText },
-      { name: 'Gestión de Crisis', path: '/dashboard/crisis', icon: AlertTriangle },
-    ]
+    name: '4. Escenarios y Estrategia', 
+    path: '/dashboard/estrategia',
+    icon: Lightbulb,
+    description: 'Cláusula 8.3: Estrategias de Continuidad'
   },
   { 
-    name: '5. PRUEBAS Y MEJORA', 
+    name: '5. Planes Continuidad', 
+    path: '/dashboard/planes',
+    icon: FileText,
+    description: 'Cláusula 8.4: Procedimientos de Continuidad'
+  },
+  { 
+    name: '6. Pruebas Continuidad', 
+    path: '/dashboard/pruebas',
     icon: TestTube,
-    section: 'mejora',
-    submenu: [
-      { name: 'Ejercicios y Simulacros', path: '/dashboard/exercises', icon: TestTube },
-      { name: 'Mejora Continua', path: '/dashboard/improvements', icon: TrendingUp },
-    ]
+    description: 'Cláusula 8.5: Ejercicios y Pruebas'
   },
   { 
-    name: '6. GESTIÓN EMPRESARIAL', 
-    icon: Briefcase,
-    section: 'gestion',
-    submenu: [
-      { name: 'Portafolio Multi-tenant', path: '/dashboard/portfolio', icon: Briefcase },
-    ]
+    name: '7. Mejora Continua', 
+    path: '/dashboard/mantenimiento',
+    icon: TrendingUp,
+    description: 'Cláusula 10: Mejora'
   },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [expandedSections, setExpandedSections] = useState<string[]>([
-    'fundacional', 'analisis', 'planes', 'mejora', 'gestion'
-  ]);
-
-  const toggleSection = (section: string) => {
-    if (expandedSections.includes(section)) {
-      setExpandedSections(expandedSections.filter(s => s !== section));
-    } else {
-      setExpandedSections([...expandedSections, section]);
-    }
-  };
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen p-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-blue-400">FENIX SGCN</h1>
-        <p className="text-xs text-gray-400 mt-1">ISO 22301 Platform</p>
+    <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 min-h-screen">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">F</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Fenix</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">SGCN ISO 22301</p>
+          </div>
+        </div>
       </div>
 
-      <nav className="space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isExpanded = item.section && expandedSections.includes(item.section);
-          const hasSubmenu = item.submenu && item.submenu.length > 0;
-
-          if (hasSubmenu) {
+      <nav className="p-4">
+        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          MÓDULOS DEL SGCN
+        </div>
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.path;
+            
             return (
-              <div key={item.name}>
-                <button
-                  onClick={() => item.section && toggleSection(item.section)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm font-semibold">{item.name}</span>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </button>
-                
-                {isExpanded && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.submenu.map((subitem) => {
-                      const SubIcon = subitem.icon;
-                      const isActive = pathname === subitem.path;
-                      
-                      return (
-                        <Link
-                          key={subitem.path}
-                          href={subitem.path}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                            isActive 
-                              ? 'bg-blue-600 text-white' 
-                              : 'hover:bg-gray-800 text-gray-300'
-                          }`}
-                        >
-                          <SubIcon className="w-4 h-4" />
-                          <span className="text-sm">{subitem.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                  isActive 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/50' 
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                title={item.description}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium">{item.name}</span>
+              </Link>
             );
-          }
-
-          const isActive = pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              href={item.path!}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-800 text-gray-300'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm font-medium">{item.name}</span>
-            </Link>
-          );
-        })}
+          })}
+        </div>
       </nav>
     </aside>
   );

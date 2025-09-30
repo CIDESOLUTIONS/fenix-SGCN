@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,16 +46,16 @@ function RegisterContent() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/auth/register", {
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          tenantName: company,
           email,
           password,
           fullName,
-          company,
           position,
           phone,
           subscriptionPlan: selectedPlan
