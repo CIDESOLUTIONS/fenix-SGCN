@@ -1,0 +1,90 @@
+// Nuevos modelos agregados al final del schema.prisma
+
+// ============================================
+// CONTEXTO DE NEGOCIO Y ANÁLISIS FODA
+// ============================================
+
+model BusinessContext {
+  id              String   @id @default(uuid())
+  tenantId        String
+  
+  // Información básica
+  title           String
+  description     String?  @db.Text
+  elaborationDate DateTime @default(now())
+  
+  // Contenido
+  content         String   @db.Text
+  
+  // Archivo adjunto
+  fileUrl         String?  // URL del PDF/documento original
+  fileName        String?
+  fileSize        Int?
+  
+  // Estado y aprobación
+  status          PolicyStatus @default(DRAFT)
+  approvedBy      String?
+  approvedAt      DateTime?
+  
+  // Auditoría
+  createdBy       String
+  updatedBy       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  swotAnalyses SwotAnalysis[]
+
+  @@map("business_contexts")
+}
+
+model SwotAnalysis {
+  id              String   @id @default(uuid())
+  tenantId        String
+  contextId       String   // Relación con BusinessContext
+  
+  // Información básica
+  title           String
+  description     String?
+  analysisDate    DateTime @default(now())
+  
+  // FODA
+  strengths       Json     // Array de fortalezas
+  weaknesses      Json     // Array de debilidades
+  opportunities   Json     // Array de oportunidades
+  threats         Json     // Array de amenazas
+  
+  // Estrategias derivadas
+  strategies      Json?    // Array de estrategias FO, FA, DO, DA
+  
+  // Participantes
+  participants    String[] // Array de nombres/emails
+  facilitator     String
+  
+  // Estado
+  status          SwotStatus @default(IN_PROGRESS)
+  
+  // Auditoría
+  createdBy       String
+  updatedBy       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  context BusinessContext @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  @@map("swot_analyses")
+}
+
+enum SwotStatus {
+  IN_PROGRESS
+  COMPLETED
+  APPROVED
+  ARCHIVED
+}
+
+// Agregar las relaciones al modelo Tenant (ya existe, solo agregar las líneas)
+// businessContexts BusinessContext[]
+// swotAnalyses     SwotAnalysis[]

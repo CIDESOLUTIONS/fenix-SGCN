@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { PreferencesProvider } from "../contexts/PreferencesContext";
+import { PreferencesProvider } from "@/context/PreferencesContext";
 
 export const metadata: Metadata = {
   title: "FENIX-SGCN",

@@ -1,4 +1,5 @@
 import DashboardLayout from '@/components/DashboardLayout';
+import { PreferencesProvider } from '@/context/PreferencesContext';
 
 export default function Layout({
   children,
@@ -6,8 +7,10 @@ export default function Layout({
   children: React.ReactNode;
 }) {
   return (
-    <DashboardLayout>
-      {children}
-    </DashboardLayout>
+    <PreferencesProvider>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </PreferencesProvider>
   );
 }

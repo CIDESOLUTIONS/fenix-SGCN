@@ -29,6 +29,7 @@ import { GovernanceModule } from './governance/governance.module';
 import { ContinuousImprovementModule } from './continuous-improvement/continuous-improvement.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { ReportGeneratorModule } from './report-generator/report-generator.module';
+import { BusinessContextModule } from './business-context/business-context.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { ReportGeneratorModule } from './report-generator/report-generator.modul
     ContinuousImprovementModule,
     ExercisesModule,
     ReportGeneratorModule,
+    BusinessContextModule,
   ],
   controllers: [AppController],
   providers: [AppService],

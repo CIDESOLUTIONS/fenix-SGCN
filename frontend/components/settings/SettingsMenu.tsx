@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from 'react';
-import { usePreferences } from '../../contexts/PreferencesContext';
+import { usePreferences } from '@/context/PreferencesContext';
 
 export default function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { language, currency, theme, setLanguage, setCurrency, setTheme } = usePreferences();
+  const { preferences, updatePreferences } = usePreferences();
+  const { locale, currency, theme } = preferences;
 
   const languages = [
     { code: 'es', name: 'Español', flag: '🇪🇸' },
@@ -62,16 +63,16 @@ export default function SettingsMenu() {
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
-                    onClick={() => setLanguage(lang.code as any)}
+                    onClick={() => updatePreferences({ locale: lang.code as any })}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                      language === lang.code
+                      locale === lang.code
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
                         : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                     }`}
                   >
                     <span className="text-lg">{lang.flag}</span>
                     <span className="flex-1 text-left text-sm">{lang.name}</span>
-                    {language === lang.code && (
+                    {locale === lang.code && (
                       <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -94,7 +95,7 @@ export default function SettingsMenu() {
                 {currencies.map((curr) => (
                   <button
                     key={curr.code}
-                    onClick={() => setCurrency(curr.code as any)}
+                    onClick={() => updatePreferences({ currency: curr.code as any })}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
                       currency === curr.code
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
@@ -125,7 +126,7 @@ export default function SettingsMenu() {
                 {themes.map((themeOption) => (
                   <button
                     key={themeOption.code}
-                    onClick={() => setTheme(themeOption.code as any)}
+                    onClick={() => updatePreferences({ theme: themeOption.code as any })}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
                       theme === themeOption.code
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'

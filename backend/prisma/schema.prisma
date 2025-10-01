@@ -22,17 +22,17 @@ model Tenant {
   logo      String?
   colors    Json?
   
-  // Sistema de suscripción
+  // Sistema de suscripciÃ³n
   subscriptionPlan    SubscriptionPlan @default(TRIAL)
   subscriptionStatus  SubscriptionStatus @default(ACTIVE)
   trialEndsAt         DateTime?
   subscriptionEndsAt  DateTime?
-  gracePeriodEndsAt   DateTime?  // 30 días después de vencimiento
+  gracePeriodEndsAt   DateTime?  // 30 dÃ­as despuÃ©s de vencimiento
   
-  // Backup y eliminación
+  // Backup y eliminaciÃ³n
   lastBackupAt        DateTime?
-  backupUrl           String?    // URL del último backup
-  scheduledDeletionAt DateTime?  // Fecha programada de eliminación
+  backupUrl           String?    // URL del Ãºltimo backup
+  scheduledDeletionAt DateTime?  // Fecha programada de eliminaciÃ³n
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -53,13 +53,15 @@ model Tenant {
   raciMatrices        RaciMatrix[]
   findings            Finding[]
   exercises           Exercise[]
+  businessContexts    BusinessContext[]
+  swotAnalyses        SwotAnalysis[]
 
   @@map("tenants")
 }
 
 enum SubscriptionPlan {
-  TRIAL          // 30 días gratis
-  STANDARD       // Plan básico
+  TRIAL          // 30 dÃ­as gratis
+  STANDARD       // Plan bÃ¡sico
   PROFESSIONAL   // Plan profesional
   PREMIUM        // Plan premium
   ENTERPRISE     // Plan empresarial
@@ -67,10 +69,10 @@ enum SubscriptionPlan {
 
 enum SubscriptionStatus {
   ACTIVE         // Activa
-  EXPIRED        // Vencida (en período de gracia)
+  EXPIRED        // Vencida (en perÃ­odo de gracia)
   SUSPENDED      // Suspendida (no pago)
   CANCELLED      // Cancelada por usuario
-  DELETED        // Eliminada (después de período de gracia)
+  DELETED        // Eliminada (despuÃ©s de perÃ­odo de gracia)
 }
 
 model User {
@@ -87,6 +89,11 @@ model User {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // Preferencias de usuario
+  locale      String?  @default("es")    // es, en, pt
+  currency    String?  @default("COP")  // COP, USD, BRL
+  theme       String?  @default("light") // light, dark, system
+
   @@map("users")
 }
 
@@ -98,7 +105,7 @@ enum UserRole {
 }
 
 // ============================================
-// AUDITORÍA Y LOGS
+// AUDITORÃA Y LOGS
 // ============================================
 
 model AuditLog {
@@ -119,7 +126,7 @@ model AuditLog {
 }
 
 // ============================================
-// MÓDULO: PROCESOS CRÍTICOS
+// MÃ“DULO: PROCESOS CRÃTICOS
 // ============================================
 
 model BusinessProcess {
@@ -162,7 +169,7 @@ enum CriticalityLevel {
 }
 
 // ============================================
-// MÓDULO: BIA (Business Impact Analysis)
+// MÃ“DULO: BIA (Business Impact Analysis)
 // ============================================
 
 model BiaAssessment {
@@ -170,7 +177,7 @@ model BiaAssessment {
   tenantId    String
   processId   String
   
-  // Métricas tiempo (en horas)
+  // MÃ©tricas tiempo (en horas)
   rto         Int?     // Recovery Time Objective
   rpo         Int?     // Recovery Point Objective
   mtpd        Int?     // Maximum Tolerable Period of Disruption
@@ -202,7 +209,7 @@ model BiaAssessment {
 }
 
 // ============================================
-// MÓDULO: RIESGO DE CONTINUIDAD (ARA)
+// MÃ“DULO: RIESGO DE CONTINUIDAD (ARA)
 // ============================================
 
 model RiskAssessment {
@@ -214,7 +221,7 @@ model RiskAssessment {
   description String?
   category    RiskCategory
   
-  // Evaluación sin controles
+  // EvaluaciÃ³n sin controles
   probabilityBefore Int      // 1-5
   impactBefore      Int      // 1-5
   scoreBefore       Decimal  // Calculado
@@ -222,7 +229,7 @@ model RiskAssessment {
   // Controles
   controls          String[]
   
-  // Evaluación con controles
+  // EvaluaciÃ³n con controles
   probabilityAfter  Int?
   impactAfter       Int?
   scoreAfter        Decimal?
@@ -251,7 +258,7 @@ enum RiskCategory {
 }
 
 // ============================================
-// MÓDULO: ESCENARIOS Y ESTRATEGIAS
+// MÃ“DULO: ESCENARIOS Y ESTRATEGIAS
 // ============================================
 
 model ContinuityStrategy {
@@ -263,10 +270,10 @@ model ContinuityStrategy {
   description String?
   type        StrategyType
   
-  // Evaluación
+  // EvaluaciÃ³n
   cost              Decimal?
   effectiveness     Int?     // 1-5
-  implementationTime Int?    // días
+  implementationTime Int?    // dÃ­as
   
   // Scoring
   costEffectivenessScore Decimal?
@@ -290,7 +297,7 @@ enum StrategyType {
 }
 
 // ============================================
-// MÓDULO: PLANES DE CONTINUIDAD
+// MÃ“DULO: PLANES DE CONTINUIDAD
 // ============================================
 
 model ContinuityPlan {
@@ -308,7 +315,7 @@ model ContinuityPlan {
   approvedBy  String?
   approvedAt  DateTime?
   
-  // Ejecución
+  // EjecuciÃ³n
   lastActivated DateTime?
   executionLog  Json?
   
@@ -339,31 +346,31 @@ enum PlanStatus {
 }
 
 // ============================================
-// MÓDULO: PRUEBAS DE CONTINUIDAD
+// MÃ“DULO: PRUEBAS DE CONTINUIDAD
 // ============================================
 
 model TestExercise {
   id          String   @id @default(uuid())
   tenantId    String
-  planId      String?  // Relación con plan
+  planId      String?  // RelaciÃ³n con plan
   
   name        String
   type        TestType
   description String?
   scenario    Json?    // Escenario del ejercicio
   
-  // Planificación
+  // PlanificaciÃ³n
   scheduledDate DateTime
   duration      Int?     // minutos planificados
   participants  String[]
   objectives    Json?    // Objetivos del ejercicio
   
-  // Ejecución
+  // EjecuciÃ³n
   executedDate     DateTime?
   executedBy       String?
   actualStartTime  DateTime?  // Hora real de inicio
   actualEndTime    DateTime?  // Hora real de fin
-  actualDuration   Decimal?   // Duración real en horas
+  actualDuration   Decimal?   // DuraciÃ³n real en horas
   executionLog     Json?      // Log de eventos
   
   // Resultados
@@ -399,7 +406,7 @@ enum TestType {
 }
 
 // ============================================
-// MÓDULO: CUMPLIMIENTO NORMATIVO
+// MÃ“DULO: CUMPLIMIENTO NORMATIVO
 // ============================================
 
 model ComplianceFramework {
@@ -410,7 +417,7 @@ model ComplianceFramework {
   version     String?
   description String?
   
-  // Certificación
+  // CertificaciÃ³n
   certificationDate DateTime?
   expiryDate        DateTime?
   certifyingBody    String?
@@ -432,7 +439,7 @@ model ComplianceFramework {
 }
 
 // ============================================
-// MÓDULO: MEJORA CONTINUA
+// MÃ“DULO: MEJORA CONTINUA
 // ============================================
 
 model CorrectiveAction {
@@ -443,12 +450,12 @@ model CorrectiveAction {
   description String?
   category    ActionCategory
   
-  // NC/Hallazgo (relación con Finding)
+  // NC/Hallazgo (relaciÃ³n con Finding)
   findingId   String?
   finding     Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
   severity    Severity
   
-  // Plan de acción
+  // Plan de acciÃ³n
   actionPlan  String
   responsible String
   assignedTo  String?  // Para workflows
@@ -504,11 +511,11 @@ model Finding {
   title       String
   description String   @db.Text
   source      FindingSource
-  sourceReference String?  // ID del ejercicio, auditoría, etc.
+  sourceReference String?  // ID del ejercicio, auditorÃ­a, etc.
   severity    Severity
   category    String
   
-  // Impacto y recomendación
+  // Impacto y recomendaciÃ³n
   affectedArea    String?
   impact          String?  @db.Text
   recommendation  String?  @db.Text
@@ -516,12 +523,12 @@ model Finding {
   // Estado
   status      FindingStatus @default(OPEN)
   
-  // Resolución
+  // ResoluciÃ³n
   resolution  String?  @db.Text
   resolvedBy  String?
   resolvedAt  DateTime?
   
-  // Auditoría
+  // AuditorÃ­a
   identifiedBy String
   identifiedAt DateTime @default(now())
   
@@ -562,17 +569,17 @@ model Exercise {
   id          String   @id @default(uuid())
   tenantId    String
   
-  // Información básica
+  // InformaciÃ³n bÃ¡sica
   name        String
   type        ExerciseType
   description String?  @db.Text
   
-  // Planificación
+  // PlanificaciÃ³n
   scheduledDate DateTime
   planId      String?
   scenario    Json?    // Escenario del ejercicio
   
-  // Ejecución
+  // EjecuciÃ³n
   startTime   DateTime?
   endTime     DateTime?
   actualEndTime DateTime?  // Alias para exercises.service.ts
@@ -582,11 +589,11 @@ model Exercise {
   result      ExerciseResult?
   score       Decimal?         @db.Decimal(5, 2)
   
-  // Tiempos y duración
+  // Tiempos y duraciÃ³n
   actualStartTime DateTime?
-  actualDuration  Float?     // Duración real en horas
+  actualDuration  Float?     // DuraciÃ³n real en horas
   
-  // Objetivos y log de ejecución
+  // Objetivos y log de ejecuciÃ³n
   objectives     Json?      // Array de objetivos del ejercicio
   executionLog   Json?      // Log completo de eventos durante ejercicio
   
@@ -615,8 +622,8 @@ model Exercise {
 
 enum ExerciseType {
   TABLETOP      // Ejercicio de mesa
-  WALKTHROUGH   // Revisión paso a paso
-  SIMULATION    // Simulación
+  WALKTHROUGH   // RevisiÃ³n paso a paso
+  SIMULATION    // SimulaciÃ³n
   FULL_SCALE    // Prueba a escala completa
   DRILL         // Simulacro
 }
@@ -684,7 +691,7 @@ enum DocumentType {
 }
 
 // ============================================
-// MÓDULO 1: PLANEACIÓN Y GOBIERNO (ISO 22301 Cláusula 5)
+// MÃ“DULO 1: PLANEACIÃ“N Y GOBIERNO (ISO 22301 ClÃ¡usula 5)
 // ============================================
 
 model SgcnPolicy {
@@ -697,15 +704,15 @@ model SgcnPolicy {
   
   status      PolicyStatus @default(DRAFT)
   
-  // Aprobación
+  // AprobaciÃ³n
   approvedBy  String?
   approvedAt  DateTime?
   
-  // Publicación
+  // PublicaciÃ³n
   publishedBy String?
   publishedAt DateTime?
   
-  // Auditoría
+  // AuditorÃ­a
   createdBy   String
   updatedBy   String?
   
@@ -767,4 +774,90 @@ model RaciMatrix {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("raci_matrices")
+}
+
+
+// ============================================
+// CONTEXTO DE NEGOCIO Y ANÁLISIS FODA
+// ============================================
+
+model BusinessContext {
+  id              String   @id @default(uuid())
+  tenantId        String
+  
+  // Información básica
+  title           String
+  description     String?  @db.Text
+  elaborationDate DateTime @default(now())
+  
+  // Contenido
+  content         String   @db.Text
+  
+  // Archivo adjunto
+  fileUrl         String?  // URL del PDF/documento original
+  fileName        String?
+  fileSize        Int?
+  
+  // Estado y aprobación
+  status          PolicyStatus @default(DRAFT)
+  approvedBy      String?
+  approvedAt      DateTime?
+  
+  // Auditoría
+  createdBy       String
+  updatedBy       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  swotAnalyses SwotAnalysis[]
+
+  @@map("business_contexts")
+}
+
+model SwotAnalysis {
+  id              String   @id @default(uuid())
+  tenantId        String
+  contextId       String   // Relación con BusinessContext
+  
+  // Información básica
+  title           String
+  description     String?
+  analysisDate    DateTime @default(now())
+  
+  // FODA
+  strengths       Json     // Array de fortalezas
+  weaknesses      Json     // Array de debilidades
+  opportunities   Json     // Array de oportunidades
+  threats         Json     // Array de amenazas
+  
+  // Estrategias derivadas
+  strategies      Json?    // Array de estrategias FO, FA, DO, DA
+  
+  // Participantes
+  participants    String[] // Array de nombres/emails
+  facilitator     String
+  
+  // Estado
+  status          SwotStatus @default(IN_PROGRESS)
+  
+  // Auditoría
+  createdBy       String
+  updatedBy       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  context BusinessContext @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  @@map("swot_analyses")
+}
+
+enum SwotStatus {
+  IN_PROGRESS
+  COMPLETED
+  APPROVED
+  ARCHIVED
 }
