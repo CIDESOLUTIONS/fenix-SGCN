@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePreferences } from '@/context/PreferencesContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { 
   Home,
   LayoutDashboard,
@@ -15,58 +16,60 @@ import {
   Settings
 } from 'lucide-react';
 
-const menuItems = [
-  { 
-    name: 'Panel de Control', 
-    path: '/dashboard', 
-    icon: Home,
-  },
-  { 
-    name: '1. Planning', 
-    path: '/dashboard/planeacion',
-    icon: LayoutDashboard,
-    description: 'Cláusula 5: Liderazgo'
-  },
-  { 
-    name: '2. Risk Analysis', 
-    path: '/dashboard/analisis-riesgos',
-    icon: AlertTriangle,
-    description: 'ISO 31000'
-  },
-  { 
-    name: '3. Impact Analysis', 
-    path: '/dashboard/analisis-impacto',
-    icon: Activity,
-    description: 'BIA ISO 22317'
-  },
-  { 
-    name: '4. Strategies', 
-    path: '/dashboard/estrategia',
-    icon: Lightbulb,
-    description: 'Cláusula 8.3'
-  },
-  { 
-    name: '5. Continuity Plans', 
-    path: '/dashboard/planes',
-    icon: FileText,
-    description: 'BCP/DRP/IRP'
-  },
-  { 
-    name: '6. Testing', 
-    path: '/dashboard/pruebas',
-    icon: TestTube,
-    description: 'Cláusula 8.5'
-  },
-  { 
-    name: '7. Improvement', 
-    path: '/dashboard/mantenimiento',
-    icon: TrendingUp,
-    description: 'CAPA & KPIs'
-  },
-];
-
 export default function Sidebar() {
   const pathname = usePathname();
+  const { preferences } = usePreferences();
+  const { t } = useTranslation();
+
+  const menuItems = [
+    { 
+      name: t('modules.dashboard'),
+      path: '/dashboard', 
+      icon: Home,
+    },
+    { 
+      name: t('modules.planning'),
+      path: '/dashboard/planeacion',
+      icon: LayoutDashboard,
+      description: t('modules.planning_desc')
+    },
+    { 
+      name: t('modules.risk'),
+      path: '/dashboard/analisis-riesgos',
+      icon: AlertTriangle,
+      description: t('modules.risk_desc')
+    },
+    { 
+      name: t('modules.bia'),
+      path: '/dashboard/analisis-impacto',
+      icon: Activity,
+      description: t('modules.bia_desc')
+    },
+    { 
+      name: t('modules.strategies'),
+      path: '/dashboard/estrategia',
+      icon: Lightbulb,
+      description: t('modules.strategies_desc')
+    },
+    { 
+      name: t('modules.plans'),
+      path: '/dashboard/planes',
+      icon: FileText,
+      description: t('modules.plans_desc')
+    },
+    { 
+      name: t('modules.testing'),
+      path: '/dashboard/pruebas',
+      icon: TestTube,
+      description: t('modules.testing_desc')
+    },
+    { 
+      name: t('modules.improvement'),
+      path: '/dashboard/mantenimiento',
+      icon: TrendingUp,
+      description: t('modules.improvement_desc')
+    },
+  ];
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 min-h-screen flex flex-col">
@@ -76,15 +79,15 @@ export default function Sidebar() {
             <span className="text-white font-bold text-lg">F</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Fenix</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">SGCN ISO 22301</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">{t('sidebar.title')}</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('sidebar.subtitle')}</p>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto">
         <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-          MÓDULOS DEL SGCN
+          {t('sidebar.modules')}
         </div>
         <div className="space-y-1">
           {menuItems.map((item) => {
@@ -116,7 +119,7 @@ export default function Sidebar() {
 
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-            ADMINISTRACIÓN
+            {t('sidebar.administration')}
           </div>
           <Link
             href="/dashboard/configuracion"
@@ -127,7 +130,7 @@ export default function Sidebar() {
             }`}
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Configuración</span>
+            <span className="text-sm font-medium">{t('common.settings')}</span>
           </Link>
         </div>
       </nav>
@@ -135,10 +138,10 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3">
           <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">
-            💡 Consejo
+            {t('sidebar.tip')}
           </p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Complete los módulos en orden para aprovechar la integración automática de datos
+            {t('sidebar.tipMessage')}
           </p>
         </div>
       </div>

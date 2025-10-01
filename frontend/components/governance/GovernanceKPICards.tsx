@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { FileText, Target, Users } from "lucide-react";
+import { FileText, Target, Users, Network } from "lucide-react";
 
 interface KPICardsProps {
   policiesCount: number;
@@ -11,11 +11,25 @@ interface KPICardsProps {
     consulted: number;
     informed: number;
   };
+  processesStats?: {
+    total: number;
+    inAnalysis: number;
+    byType: {
+      strategic: number;
+      core: number;
+      support: number;
+    };
+  };
 }
 
-export default function GovernanceKPICards({ policiesCount, objectivesCount, raciStats }: KPICardsProps) {
+export default function GovernanceKPICards({ 
+  policiesCount, 
+  objectivesCount, 
+  raciStats,
+  processesStats 
+}: KPICardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Políticas */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 border-indigo-600">
         <div className="flex items-center justify-between">
@@ -73,6 +87,40 @@ export default function GovernanceKPICards({ policiesCount, objectivesCount, rac
           </div>
         </div>
       </div>
+
+      {/* Procesos de Negocio */}
+      {processesStats && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 border-blue-600">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Procesos de Negocio</p>
+              <div className="flex items-baseline gap-2 mt-2">
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{processesStats.total}</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                  {processesStats.inAnalysis} en análisis
+                </p>
+              </div>
+              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  E: {processesStats.byType.strategic}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  M: {processesStats.byType.core}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  S: {processesStats.byType.support}
+                </span>
+              </div>
+            </div>
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg ml-3">
+              <Network className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

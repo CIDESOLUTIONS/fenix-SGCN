@@ -1,0 +1,48 @@
+{
+  "common": {
+    "dashboard": "Painel de Controle",
+    "settings": "Configurações",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "logout": "Sair",
+    "welcome": "Bem-vindo"
+  },
+  "sidebar": {
+    "title": "Fenix SGCN",
+    "subtitle": "ISO 22301",
+    "modules": "MÓDULOS DO SGCN",
+    "administration": "ADMINISTRAÇÃO",
+    "tip": "💡 Dica",
+    "tipMessage": "Complete os módulos em ordem para aproveitar a integração automática de dados"
+  },
+  "modules": {
+    "dashboard": "Painel de Controle",
+    "planning": "1. Planejamento",
+    "planning_desc": "Cláusula 5: Liderança",
+    "risk": "2. Análise de Riscos",
+    "risk_desc": "ISO 31000",
+    "bia": "3. Análise de Impacto",
+    "bia_desc": "BIA ISO 22317",
+    "strategies": "4. Estratégias",
+    "strategies_desc": "Cláusula 8.3",
+    "plans": "5. Planos de Continuidade",
+    "plans_desc": "BCP/DRP/IRP",
+    "testing": "6. Testes",
+    "testing_desc": "Cláusula 8.5",
+    "improvement": "7. Melhoria Contínua",
+    "improvement_desc": "CAPA & KPIs"
+  },
+  "header": {
+    "alerts": "Alertas",
+    "preferences": "Preferências",
+    "profile": "Perfil",
+    "company": "Empresa"
+  }
+}

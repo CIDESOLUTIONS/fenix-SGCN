@@ -23,6 +23,11 @@ export class BusinessProcessesController {
     return this.businessProcessesService.findAll(tenantId);
   }
 
+  @Get('continuity/selected')
+  findForContinuityAnalysis(@TenantId() tenantId: string) {
+    return this.businessProcessesService.findForContinuityAnalysis(tenantId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @TenantId() tenantId: string) {
     return this.businessProcessesService.findOne(id, tenantId);

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network } from "lucide-react";
+import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb } from "lucide-react";
 import { usePreferences } from "@/context/PreferencesContext";
 import CreatePolicyModal from "@/components/governance/CreatePolicyModal";
 import CreateObjectiveModal from "@/components/governance/CreateObjectiveModal";
@@ -11,7 +11,6 @@ import RaciMatrixEditor from "@/components/governance/RaciMatrixEditor";
 import GovernanceKPICards from "@/components/governance/GovernanceKPICards";
 import CreateContextModal from "@/components/business-context/CreateContextModal";
 import SwotEditor from "@/components/business-context/SwotEditor";
-import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
 
 interface Policy {
   id: string;
@@ -51,34 +50,14 @@ interface BusinessContext {
   swotAnalyses?: any[];
 }
 
-interface BusinessProcess {
-  id: string;
-  name: string;
-  description?: string;
-  highLevelCharacterization?: string;
-  processType?: 'STRATEGIC' | 'CORE' | 'SUPPORT';
-  includeInContinuityAnalysis: boolean;
-  prioritizationCriteria?: {
-    strategic: number;
-    operational: number;
-    financial: number;
-    regulatory: number;
-  };
-  priorityScore?: number;
-  fileUrl?: string;
-  fileName?: string;
-  createdAt: string;
-}
-
 export default function PlaneacionPage() {
   const { t } = usePreferences();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [raciMatrices, setRaciMatrices] = useState<RaciMatrix[]>([]);
   const [contexts, setContexts] = useState<BusinessContext[]>([]);
-  const [businessProcesses, setBusinessProcesses] = useState<BusinessProcess[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'context' | 'policies' | 'objectives' | 'raci' | 'processes'>('context');
+  const [activeTab, setActiveTab] = useState<'context' | 'policies' | 'objectives' | 'raci'>('context');
   const [selectedContextForSwot, setSelectedContextForSwot] = useState<string | null>(null);
   
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -97,7 +76,7 @@ export default function PlaneacionPage() {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
       
-      const [policiesRes, objectivesRes, raciRes, contextsRes, processesRes] = await Promise.all([
+      const [policiesRes, objectivesRes, raciRes, contextsRes] = await Promise.all([
         fetch(`${API_URL}/api/governance/policies`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
@@ -109,9 +88,6 @@ export default function PlaneacionPage() {
         }),
         fetch(`${API_URL}/api/business-context/contexts`, {
           headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_URL}/api/business-processes`, {
-          headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
       
@@ -119,7 +95,6 @@ export default function PlaneacionPage() {
       if (objectivesRes.ok) setObjectives(await objectivesRes.json());
       if (raciRes.ok) setRaciMatrices(await raciRes.json());
       if (contextsRes.ok) setContexts(await contextsRes.json());
-      if (processesRes.ok) setBusinessProcesses(await processesRes.json());
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -195,32 +170,6 @@ export default function PlaneacionPage() {
     }
   };
 
-  const handleDeleteProcess = async (id: string) => {
-    if (!confirm('¿Eliminar este proceso?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-processes/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        alert('Proceso eliminado');
-        fetchData();
-      }
-    } catch (error) {
-      alert('Error al eliminar');
-    }
-  };
-
-  const getProcessTypeLabel = (type?: string) => {
-    const labels: Record<string, string> = {
-      'STRATEGIC': 'Estratégico',
-      'CORE': 'Misional',
-      'SUPPORT': 'Soporte',
-    };
-    return type ? labels[type] || type : '-';
-  };
-
   const raciStats = raciMatrices.reduce((acc, matrix) => {
     matrix.assignments.forEach((assignment: any) => {
       if (assignment.raciType === 'RESPONSIBLE') acc.responsible++;
@@ -286,8 +235,7 @@ export default function PlaneacionPage() {
               { id: 'context', icon: Building2, label: t('business_context') },
               { id: 'policies', icon: FileText, label: t('policies') },
               { id: 'objectives', icon: Target, label: t('objectives') },
-              { id: 'raci', icon: Users, label: t('raci_matrix') },
-              { id: 'processes', icon: Network, label: 'Procesos de Negocio' }
+              { id: 'raci', icon: Users, label: t('raci_matrix') }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -533,66 +481,6 @@ export default function PlaneacionPage() {
                       </button>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'processes' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Procesos de Negocio</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Caracterización y priorización de procesos para análisis de continuidad</p>
-              </div>
-              <BusinessProcessEditor onSuccess={fetchData} />
-              {businessProcesses.length > 0 && (
-                <div className="mt-8 space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Procesos Registrados ({businessProcesses.length})</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    {businessProcesses.map((process) => (
-                      <div key={process.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-semibold text-gray-900 dark:text-white">{process.name}</h4>
-                              {process.processType && (
-                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                  {getProcessTypeLabel(process.processType)}
-                                </span>
-                              )}
-                              {process.includeInContinuityAnalysis && (
-                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                  ✓ En Análisis
-                                </span>
-                              )}
-                            </div>
-                            {process.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{process.description}</p>
-                            )}
-                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                              <span>📅 {new Date(process.createdAt).toLocaleDateString()}</span>
-                              {process.priorityScore && (
-                                <span className="flex items-center gap-1">
-                                  <span className="font-medium">Score:</span> {process.priorityScore.toFixed(2)}/10
-                                </span>
-                              )}
-                              {process.fileName && (
-                                <span className="flex items-center gap-1">
-                                  📎 {process.fileName}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => handleDeleteProcess(process.id)} className="flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>

@@ -149,6 +149,26 @@ model BusinessProcess {
   raciInformed          String?
   raciInformedEmail     String?
   
+  // NUEVO: Caracterización de Alto Nivel
+  highLevelCharacterization String?  @db.Text
+  
+  // NUEVO: Tipo de Proceso
+  processType      ProcessType?
+  
+  // NUEVO: Inclusión en Análisis de Continuidad
+  includeInContinuityAnalysis Boolean @default(false)
+  
+  // NUEVO: Criterios de Priorización (JSON con pesos)
+  prioritizationCriteria Json?  // { strategic: 0-10, operational: 0-10, financial: 0-10, regulatory: 0-10 }
+  
+  // NUEVO: Score calculado de priorización
+  priorityScore    Decimal? @db.Decimal(5, 2)
+  
+  // NUEVO: Archivo adjunto (caracterización completa)
+  fileUrl          String?
+  fileName         String?
+  fileSize         Int?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -166,6 +186,12 @@ enum CriticalityLevel {
   HIGH
   MEDIUM
   LOW
+}
+
+enum ProcessType {
+  STRATEGIC    // Estratégico
+  CORE         // Misional
+  SUPPORT      // Soporte
 }
 
 // ============================================

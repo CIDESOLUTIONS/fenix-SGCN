@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsEmail } from 'class-validator';
-import { CriticalityLevel } from '@prisma/client';
+import { IsString, IsOptional, IsEnum, IsArray, IsEmail, IsBoolean, IsObject, IsNumber } from 'class-validator';
+import { CriticalityLevel, ProcessType } from '@prisma/client';
 
 export class CreateBusinessProcessDto {
   @IsString()
@@ -56,4 +56,42 @@ export class CreateBusinessProcessDto {
   @IsEmail()
   @IsOptional()
   raciInformedEmail?: string;
+
+  // NUEVO: Caracterización de Alto Nivel
+  @IsString()
+  @IsOptional()
+  highLevelCharacterization?: string;
+
+  // NUEVO: Tipo de Proceso
+  @IsEnum(ProcessType)
+  @IsOptional()
+  processType?: ProcessType;
+
+  // NUEVO: Inclusión en Análisis de Continuidad
+  @IsBoolean()
+  @IsOptional()
+  includeInContinuityAnalysis?: boolean;
+
+  // NUEVO: Criterios de Priorización
+  @IsObject()
+  @IsOptional()
+  prioritizationCriteria?: {
+    strategic?: number;    // 0-10
+    operational?: number;  // 0-10
+    financial?: number;    // 0-10
+    regulatory?: number;   // 0-10
+  };
+
+  // NUEVO: Archivo adjunto
+  @IsString()
+  @IsOptional()
+  fileUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  fileName?: string;
+
+  @IsNumber()
+  @IsOptional()
+  fileSize?: number;
 }

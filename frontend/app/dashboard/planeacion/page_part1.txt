@@ -1,0 +1,252 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network } from "lucide-react";
+import { usePreferences } from "@/context/PreferencesContext";
+import CreatePolicyModal from "@/components/governance/CreatePolicyModal";
+import CreateObjectiveModal from "@/components/governance/CreateObjectiveModal";
+import EditPolicyModal from "@/components/governance/EditPolicyModal";
+import EditObjectiveModal from "@/components/governance/EditObjectiveModal";
+import RaciMatrixEditor from "@/components/governance/RaciMatrixEditor";
+import GovernanceKPICards from "@/components/governance/GovernanceKPICards";
+import CreateContextModal from "@/components/business-context/CreateContextModal";
+import SwotEditor from "@/components/business-context/SwotEditor";
+import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
+
+interface Policy {
+  id: string;
+  title: string;
+  version: string;
+  status: string;
+  content: string;
+  approvedAt: string | null;
+  createdAt: string;
+}
+
+interface Objective {
+  id: string;
+  description: string;
+  measurementCriteria: string;
+  status: string;
+  progress: number;
+  owner: string;
+  targetDate: string;
+}
+
+interface RaciMatrix {
+  id: string;
+  processOrActivity: string;
+  assignments: any[];
+  createdAt: string;
+}
+
+interface BusinessContext {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  elaborationDate: string;
+  status: string;
+  createdAt: string;
+  swotAnalyses?: any[];
+}
+
+interface BusinessProcess {
+  id: string;
+  name: string;
+  description?: string;
+  highLevelCharacterization?: string;
+  processType?: 'STRATEGIC' | 'CORE' | 'SUPPORT';
+  includeInContinuityAnalysis: boolean;
+  prioritizationCriteria?: {
+    strategic: number;
+    operational: number;
+    financial: number;
+    regulatory: number;
+  };
+  priorityScore?: number;
+  fileUrl?: string;
+  fileName?: string;
+  createdAt: string;
+}
+
+export default function PlaneacionPage() {
+  const { t } = usePreferences();
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [raciMatrices, setRaciMatrices] = useState<RaciMatrix[]>([]);
+  const [contexts, setContexts] = useState<BusinessContext[]>([]);
+  const [businessProcesses, setBusinessProcesses] = useState<BusinessProcess[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'context' | 'policies' | 'objectives' | 'raci' | 'processes'>('context');
+  const [selectedContextForSwot, setSelectedContextForSwot] = useState<string | null>(null);
+  
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showObjectiveModal, setShowObjectiveModal] = useState(false);
+  const [showContextModal, setShowContextModal] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
+  const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      const [policiesRes, objectivesRes, raciRes, contextsRes, processesRes] = await Promise.all([
+        fetch(`${API_URL}/api/governance/policies`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/governance/objectives`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/governance/raci-matrix`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/business-context/contexts`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/business-processes`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+      
+      if (policiesRes.ok) setPolicies(await policiesRes.json());
+      if (objectivesRes.ok) setObjectives(await objectivesRes.json());
+      if (raciRes.ok) setRaciMatrices(await raciRes.json());
+      if (contextsRes.ok) setContexts(await contextsRes.json());
+      if (processesRes.ok) setBusinessProcesses(await processesRes.json());
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePolicy = async (id: string) => {
+    if (!confirm('¿Eliminar esta política?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/policies/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        alert('Política eliminada');
+        fetchData();
+      }
+    } catch (error) {
+      alert('Error al eliminar');
+    }
+  };
+
+  const handleDeleteObjective = async (id: string) => {
+    if (!confirm('¿Eliminar este objetivo?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/objectives/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        alert('Objetivo eliminado');
+        fetchData();
+      }
+    } catch (error) {
+      alert('Error al eliminar');
+    }
+  };
+
+  const handleDeleteRaciMatrix = async (id: string) => {
+    if (!confirm('¿Eliminar esta matriz RACI?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/raci-matrix/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        alert('Matriz eliminada');
+        fetchData();
+      }
+    } catch (error) {
+      alert('Error al eliminar');
+    }
+  };
+
+  const handleDeleteContext = async (id: string) => {
+    if (!confirm('¿Eliminar este contexto?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/contexts/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        alert('Contexto eliminado');
+        fetchData();
+      }
+    } catch (error) {
+      alert('Error al eliminar');
+    }
+  };
+
+  const handleDeleteProcess = async (id: string) => {
+    if (!confirm('¿Eliminar este proceso?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-processes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        alert('Proceso eliminado');
+        fetchData();
+      }
+    } catch (error) {
+      alert('Error al eliminar');
+    }
+  };
+
+  const raciStats = raciMatrices.reduce((acc, matrix) => {
+    matrix.assignments.forEach((assignment: any) => {
+      if (assignment.raciType === 'RESPONSIBLE') acc.responsible++;
+      if (assignment.raciType === 'ACCOUNTABLE') acc.accountable++;
+      if (assignment.raciType === 'CONSULTED') acc.consulted++;
+      if (assignment.raciType === 'INFORMED') acc.informed++;
+    });
+    return acc;
+  }, { responsible: 0, accountable: 0, consulted: 0, informed: 0 });
+
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, string> = {
+      'DRAFT': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
+      'REVIEW': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+      'APPROVED': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      'ACTIVE': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    };
+    return badges[status] || badges['DRAFT'];
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'DRAFT': 'Borrador',
+      'REVIEW': 'En Revisión',
+      'APPROVED': 'Aprobado',
+      'ACTIVE': 'Activo',
+    };
+    return labels[status] || status;
+  };
+
+  const getProcessTypeLabel = (type?: string) => {
+    const labels: Record<string, string> = {
+      'STRATEGIC': 'Estratégico',
+      'CORE': 'Misional',
+      'SUPPORT': 'Soporte',
+    };
+    return type ? labels[type] || type : '-';
+  };

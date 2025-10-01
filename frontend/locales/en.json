@@ -1,0 +1,48 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "logout": "Logout",
+    "welcome": "Welcome"
+  },
+  "sidebar": {
+    "title": "Fenix SGCN",
+    "subtitle": "ISO 22301",
+    "modules": "SGCN MODULES",
+    "administration": "ADMINISTRATION",
+    "tip": "💡 Tip",
+    "tipMessage": "Complete modules in order to leverage automatic data integration"
+  },
+  "modules": {
+    "dashboard": "Dashboard",
+    "planning": "1. Planning",
+    "planning_desc": "Clause 5: Leadership",
+    "risk": "2. Risk Analysis",
+    "risk_desc": "ISO 31000",
+    "bia": "3. Impact Analysis",
+    "bia_desc": "BIA ISO 22317",
+    "strategies": "4. Strategies",
+    "strategies_desc": "Clause 8.3",
+    "plans": "5. Continuity Plans",
+    "plans_desc": "BCP/DRP/IRP",
+    "testing": "6. Testing",
+    "testing_desc": "Clause 8.5",
+    "improvement": "7. Continuous Improvement",
+    "improvement_desc": "CAPA & KPIs"
+  },
+  "header": {
+    "alerts": "Alerts",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "company": "Company"
+  }
+}
