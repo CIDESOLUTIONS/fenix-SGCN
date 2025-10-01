@@ -16,6 +16,19 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        setUploadedFile(file);
+        setError(null);
+      } else {
+        setError('Solo se permiten archivos PDF');
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +38,36 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
     try {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      let fileUrl = null;
+      let fileName = null;
+      let fileSize = null;
+
+      // Si hay archivo, intentar subirlo (pero no bloquear si falla)
+      if (uploadedFile) {
+        try {
+          const formDataFile = new FormData();
+          formDataFile.append('file', uploadedFile);
+          formDataFile.append('category', 'policy');
+
+          const uploadRes = await fetch(`${API_URL}/api/documents/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formDataFile,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            fileUrl = uploadData.fileUrl;
+            fileName = uploadedFile.name;
+            fileSize = uploadedFile.size;
+          } else {
+            console.warn('Error al subir archivo, continuando sin él');
+          }
+        } catch (uploadError) {
+          console.warn('Error en upload, continuando sin archivo:', uploadError);
+        }
+      }
 
       const response = await fetch(`${API_URL}/api/governance/policies`, {
         method: 'POST',
@@ -32,7 +75,12 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          fileUrl,
+          fileName,
+          fileSize,
+        }),
       });
 
       if (!response.ok) {
@@ -42,6 +90,7 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
       onSuccess();
       onClose();
       setFormData({ title: "", content: "", version: "1.0" });
+      setUploadedFile(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -118,6 +167,26 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
             </p>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Archivo de Política (Opcional)
+            </label>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileUpload}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+            />
+            {uploadedFile && (
+              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                ✓ {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(2)} KB)
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              PDF con el documento de política completo
+            </p>
+          </div>
+
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
               💡 Plantilla Sugerida ISO 22301
@@ -130,35 +199,35 @@ export default function CreatePolicyModal({ isOpen, onClose, onSuccess }: Create
               <li>• Compromiso con la mejora continua</li>
             </ul>
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Crear Política
-              </>
-            )}
-          </button>
-        </div>
+          {/* Botón de submit dentro del form */}
+          <div className="flex items-center justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Crear Política
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

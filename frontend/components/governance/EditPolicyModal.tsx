@@ -22,7 +22,9 @@ export default function EditPolicyModal({ isOpen, onClose, onSuccess, policy }: 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [attachedFileUrl, setAttachedFileUrl] = useState<string | null>(null);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (policy) {
@@ -34,7 +36,7 @@ export default function EditPolicyModal({ isOpen, onClose, onSuccess, policy }: 
     }
   }, [policy]);
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -43,21 +45,15 @@ export default function EditPolicyModal({ isOpen, onClose, onSuccess, policy }: 
       return;
     }
 
-    setUploadingPdf(true);
+    setUploadedFile(file);
     setError(null);
+  };
 
-    try {
-      // Leer el PDF y extraer el texto (simulado - en producción usar pdf.js)
-      const text = await file.text();
-      setFormData(prev => ({ 
-        ...prev, 
-        content: prev.content + '\n\n[Contenido importado de PDF]\n' + text.substring(0, 5000)
-      }));
-    } catch (err) {
-      setError('Error al procesar el PDF');
-    } finally {
-      setUploadingPdf(false);
-    }
+  const removeAttachedFile = () => {
+    setUploadedFile(null);
+    setAttachedFileUrl(null);
+    setAttachedFileName(null);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,13 +67,48 @@ export default function EditPolicyModal({ isOpen, onClose, onSuccess, policy }: 
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
+      let fileUrl = null;
+      let fileName = null;
+      let fileSize = null;
+
+      // Si hay archivo, subirlo primero (opcional, no bloquea)
+      if (uploadedFile) {
+        try {
+          const formDataFile = new FormData();
+          formDataFile.append('file', uploadedFile);
+          formDataFile.append('category', 'policy');
+
+          const uploadRes = await fetch(`${API_URL}/api/documents/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formDataFile,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            fileUrl = uploadData.fileUrl;
+            fileName = uploadedFile.name;
+            fileSize = uploadedFile.size;
+          } else {
+            console.warn('Error al subir archivo, continuando sin él');
+          }
+        } catch (uploadError) {
+          console.warn('Error en upload, continuando sin archivo:', uploadError);
+        }
+      }
+
       const response = await fetch(`${API_URL}/api/governance/policies/${policy.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          fileUrl,
+          fileName,
+          fileSize,
+        }),
       });
 
       if (!response.ok) {
@@ -140,29 +171,68 @@ export default function EditPolicyModal({ isOpen, onClose, onSuccess, policy }: 
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Contenido de la Política *
-              </label>
-              <label className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 cursor-pointer">
-                <Upload className="w-4 h-4" />
-                {uploadingPdf ? 'Cargando...' : 'Cargar PDF'}
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handlePdfUpload}
-                  className="hidden"
-                  disabled={uploadingPdf}
-                />
-              </label>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Contenido de la Política *
+            </label>
             <textarea
               required
-              rows={12}
+              rows={10}
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Contenido de la política..."
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Archivo Adjunto (Opcional)
+            </label>
+            {!uploadedFile ? (
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <label className="cursor-pointer">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Click para adjuntar archivo PDF
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">PDF</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        {uploadedFile.name}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        {(uploadedFile.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeAttachedFile}
+                    className="text-red-600 hover:text-red-700 p-1"
+                    title="Eliminar archivo"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              El archivo PDF se adjuntará a la política sin extraer su contenido
+            </p>
           </div>
         </form>
 

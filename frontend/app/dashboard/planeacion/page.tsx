@@ -9,6 +9,7 @@ import EditPolicyModal from "@/components/governance/EditPolicyModal";
 import EditObjectiveModal from "@/components/governance/EditObjectiveModal";
 import RaciMatrixEditor from "@/components/governance/RaciMatrixEditor";
 import GovernanceKPICards from "@/components/governance/GovernanceKPICards";
+import EditContextModal from "@/components/business-context/EditContextModal";
 import CreateContextModal from "@/components/business-context/CreateContextModal";
 import SwotEditor from "@/components/business-context/SwotEditor";
 import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
@@ -84,8 +85,10 @@ export default function PlaneacionPage() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [showObjectiveModal, setShowObjectiveModal] = useState(false);
   const [showContextModal, setShowContextModal] = useState(false);
+  const [editingContext, setEditingContext] = useState<BusinessContext | null>(null);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
+  const [editingRaciMatrix, setEditingRaciMatrix] = useState<RaciMatrix | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -231,6 +234,17 @@ export default function PlaneacionPage() {
     return acc;
   }, { responsible: 0, accountable: 0, consulted: 0, informed: 0 });
 
+  // Calcular estadísticas de procesos
+  const processesStats = {
+    total: businessProcesses.length,
+    inAnalysis: businessProcesses.filter(p => p.includeInContinuityAnalysis).length,
+    byType: {
+      strategic: businessProcesses.filter(p => p.processType === 'STRATEGIC').length,
+      core: businessProcesses.filter(p => p.processType === 'CORE').length,
+      support: businessProcesses.filter(p => p.processType === 'SUPPORT').length,
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const badges: Record<string, string> = {
       'DRAFT': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
@@ -256,6 +270,12 @@ export default function PlaneacionPage() {
       <CreatePolicyModal isOpen={showPolicyModal} onClose={() => setShowPolicyModal(false)} onSuccess={fetchData} />
       <CreateObjectiveModal isOpen={showObjectiveModal} onClose={() => setShowObjectiveModal(false)} onSuccess={fetchData} />
       <CreateContextModal isOpen={showContextModal} onClose={() => setShowContextModal(false)} onSuccess={fetchData} />
+      <EditContextModal 
+        isOpen={!!editingContext} 
+        onClose={() => setEditingContext(null)} 
+        onSuccess={fetchData} 
+        context={editingContext}
+      />
       <EditPolicyModal isOpen={!!editingPolicy} onClose={() => setEditingPolicy(null)} onSuccess={fetchData} policy={editingPolicy} />
       <EditObjectiveModal isOpen={!!editingObjective} onClose={() => setEditingObjective(null)} onSuccess={fetchData} objective={editingObjective} />
 
@@ -277,6 +297,7 @@ export default function PlaneacionPage() {
         policiesCount={policies.length}
         objectivesCount={objectives.length}
         raciStats={raciStats}
+        processesStats={processesStats}
       />
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
@@ -368,6 +389,15 @@ export default function PlaneacionPage() {
                           <Lightbulb className="w-4 h-4" />
                           {selectedContextForSwot === context.id ? 'Ocultar' : 'Crear'} Análisis FODA
                         </button>
+                        {context.status === 'DRAFT' && (
+                          <button 
+                            onClick={() => setEditingContext(context)} 
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </button>
+                        )}
                         <button onClick={() => handleDeleteContext(context.id)} className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium text-sm">
                           <Trash2 className="w-4 h-4" />
                           {t('delete')}
@@ -517,7 +547,10 @@ export default function PlaneacionPage() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Matriz RACI</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Roles y responsabilidades</p>
               </div>
-              <RaciMatrixEditor onSuccess={fetchData} />
+              <RaciMatrixEditor 
+                onSuccess={fetchData} 
+                existingMatrix={editingRaciMatrix || undefined}
+              />
               {raciMatrices.length > 0 && (
                 <div className="mt-8 space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Matrices Guardadas</h3>
@@ -527,10 +560,19 @@ export default function PlaneacionPage() {
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{matrix.processOrActivity}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{matrix.assignments?.length || 0} asignaciones</p>
                       </div>
-                      <button onClick={() => handleDeleteRaciMatrix(matrix.id)} className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium">
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setEditingRaciMatrix(matrix)} 
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Editar
+                        </button>
+                        <button onClick={() => handleDeleteRaciMatrix(matrix.id)} className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium">
+                          <Trash2 className="w-4 h-4" />
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -571,9 +613,9 @@ export default function PlaneacionPage() {
                             )}
                             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                               <span>📅 {new Date(process.createdAt).toLocaleDateString()}</span>
-                              {process.priorityScore && (
+                              {process.priorityScore && !isNaN(Number(process.priorityScore)) && (
                                 <span className="flex items-center gap-1">
-                                  <span className="font-medium">Score:</span> {process.priorityScore.toFixed(2)}/10
+                                  <span className="font-medium">Score:</span> {Number(process.priorityScore).toFixed(2)}/10
                                 </span>
                               )}
                               {process.fileName && (
@@ -585,9 +627,25 @@ export default function PlaneacionPage() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <button 
+                            onClick={() => alert('Funcionalidad de edición de procesos disponible en próxima versión')}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </button>
+                          {process.fileName && (
+                            <button 
+                              onClick={() => alert('Funcionalidad para eliminar archivos disponible en próxima versión')}
+                              className="flex items-center gap-1 text-orange-600 hover:text-orange-700 font-medium text-sm"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Eliminar Archivo
+                            </button>
+                          )}
                           <button onClick={() => handleDeleteProcess(process.id)} className="flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm transition-colors">
                             <Trash2 className="w-4 h-4" />
-                            Eliminar
+                            Eliminar Proceso
                           </button>
                         </div>
                       </div>

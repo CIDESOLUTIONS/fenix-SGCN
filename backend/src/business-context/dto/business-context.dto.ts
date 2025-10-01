@@ -72,6 +72,10 @@ export class CreateSwotAnalysisDto {
   strategies?: any[];
 
   @IsOptional()
+  @IsString()
+  crossingAnalysis?: string;
+
+  @IsOptional()
   participants?: string[];
 
   @IsString()
@@ -101,6 +105,10 @@ export class UpdateSwotAnalysisDto {
 
   @IsOptional()
   strategies?: any[];
+
+  @IsOptional()
+  @IsString()
+  crossingAnalysis?: string;
 
   @IsOptional()
   participants?: string[];

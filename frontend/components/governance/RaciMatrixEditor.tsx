@@ -10,15 +10,31 @@ interface RaciAssignment {
 
 interface RaciEditorProps {
   onSuccess: () => void;
+  existingMatrix?: {
+    id: string;
+    processOrActivity: string;
+    assignments: RaciAssignment[];
+  };
 }
 
-export default function RaciMatrixEditor({ onSuccess }: RaciEditorProps) {
+export default function RaciMatrixEditor({ onSuccess, existingMatrix }: RaciEditorProps) {
   const [processOrActivity, setProcessOrActivity] = useState("");
   const [assignments, setAssignments] = useState<RaciAssignment[]>([
     { role: "", responsibility: "", raciType: 'RESPONSIBLE' }
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (existingMatrix) {
+      setProcessOrActivity(existingMatrix.processOrActivity);
+      setAssignments(existingMatrix.assignments.length > 0 ? existingMatrix.assignments : [
+        { role: "", responsibility: "", raciType: 'RESPONSIBLE' }
+      ]);
+      setIsEditMode(true);
+    }
+  }, [existingMatrix]);
 
   const addRow = () => {
     setAssignments([...assignments, { role: "", responsibility: "", raciType: 'RESPONSIBLE' }]);
@@ -43,8 +59,14 @@ export default function RaciMatrixEditor({ onSuccess }: RaciEditorProps) {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
-      const response = await fetch(`${API_URL}/api/governance/raci-matrix`, {
-        method: 'POST',
+      const url = isEditMode && existingMatrix 
+        ? `${API_URL}/api/governance/raci-matrix/${existingMatrix.id}` 
+        : `${API_URL}/api/governance/raci-matrix`;
+      
+      const method = isEditMode ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -56,12 +78,14 @@ export default function RaciMatrixEditor({ onSuccess }: RaciEditorProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al guardar la matriz RACI');
+        throw new Error(`Error al ${isEditMode ? 'actualizar' : 'guardar'} la matriz RACI`);
       }
 
       onSuccess();
-      setProcessOrActivity("");
-      setAssignments([{ role: "", responsibility: "", raciType: 'RESPONSIBLE' }]);
+      if (!isEditMode) {
+        setProcessOrActivity("");
+        setAssignments([{ role: "", responsibility: "", raciType: 'RESPONSIBLE' }]);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -198,12 +222,12 @@ export default function RaciMatrixEditor({ onSuccess }: RaciEditorProps) {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Guardando...
+                {isEditMode ? 'Actualizando...' : 'Guardando...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Guardar Matriz
+                {isEditMode ? 'Actualizar Matriz' : 'Guardar Matriz'}
               </>
             )}
           </button>

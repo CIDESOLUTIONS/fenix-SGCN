@@ -68,18 +68,27 @@ export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEdit
       }
 
       // Crear el proceso
+      const processData = {
+        ...formData,
+        fileUrl,
+        fileName,
+        fileSize,
+        // Calcular priorityScore en el frontend
+        priorityScore: parseFloat((
+          formData.prioritizationCriteria.strategic * 0.30 +
+          formData.prioritizationCriteria.operational * 0.30 +
+          formData.prioritizationCriteria.financial * 0.25 +
+          formData.prioritizationCriteria.regulatory * 0.15
+        ).toFixed(2))
+      };
+
       const response = await fetch(`${API_URL}/api/business-processes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          fileUrl,
-          fileName,
-          fileSize,
-        }),
+        body: JSON.stringify(processData),
       });
 
       if (response.ok) {
@@ -100,7 +109,7 @@ export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEdit
           }
         });
         setUploadedFile(null);
-        onSuccess();
+        onSuccess(); // Llamar inmediatamente
       } else {
         const error = await response.json();
         alert(`Error: ${error.message || 'Error al crear proceso'}`);

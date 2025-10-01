@@ -32,7 +32,10 @@ model Tenant {
   // Backup y eliminaciÃ³n
   lastBackupAt        DateTime?
   backupUrl           String?    // URL del Ãºltimo backup
-  scheduledDeletionAt DateTime?  // Fecha programada de eliminaciÃ³n
+  scheduledDeletionAt DateTime?  // Fecha programada de eliminaci�n
+  
+  // Integraciones IA
+  aiApiKey            String?    // API Key para servicios de IA (OpenAI, etc.)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -861,6 +864,9 @@ model SwotAnalysis {
   // Estrategias derivadas
   strategies      Json?    // Array de estrategias FO, FA, DO, DA
   
+  // Análisis de cruzamientos (generado por IA)
+  crossingAnalysis String? @db.Text
+  
   // Participantes
   participants    String[] // Array de nombres/emails
   facilitator     String
@@ -887,3 +893,4 @@ enum SwotStatus {
   APPROVED
   ARCHIVED
 }
+

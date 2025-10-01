@@ -82,6 +82,11 @@ export class CreateBusinessProcessDto {
     regulatory?: number;   // 0-10
   };
 
+  // NUEVO: Score calculado de priorización
+  @IsNumber()
+  @IsOptional()
+  priorityScore?: number;
+
   // NUEVO: Archivo adjunto
   @IsString()
   @IsOptional()

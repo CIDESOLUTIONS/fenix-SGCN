@@ -117,4 +117,12 @@ export class BusinessContextController {
   generateStrategies(@Param('id') id: string, @TenantId() tenantId: string) {
     return this.businessContextService.generateStrategies(id, tenantId);
   }
+
+  @Post('swot/analyze-with-ai')
+  analyzeSwotWithAI(
+    @Body() dto: { contextContent: string; contextTitle: string; swotData: any },
+    @TenantId() tenantId: string,
+  ) {
+    return this.businessContextService.analyzeSwotWithAI(dto, tenantId);
+  }
 }
