@@ -143,6 +143,10 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
       }));
 
       alert('✨ Análisis de cruzamientos completado');
+      } else {
+        console.warn('Análisis IA no disponible:', result.message);
+        alert('⚠️ Configuración de IA requerida. Configure las API keys en el botón "Configurar IA" de la página principal.');
+      }
     } catch (err: any) {
       setError(err.message || 'Error al conectar con el servicio de IA. Verifique la configuración.');
     } finally {

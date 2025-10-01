@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network } from "lucide-react";
+import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network, Settings } from "lucide-react";
 import { usePreferences } from "@/context/PreferencesContext";
 import CreatePolicyModal from "@/components/governance/CreatePolicyModal";
 import CreateObjectiveModal from "@/components/governance/CreateObjectiveModal";
@@ -12,6 +12,7 @@ import GovernanceKPICards from "@/components/governance/GovernanceKPICards";
 import EditContextModal from "@/components/business-context/EditContextModal";
 import CreateContextModal from "@/components/business-context/CreateContextModal";
 import SwotEditor from "@/components/business-context/SwotEditor";
+import AIConfigModal from "@/components/settings/AIConfigModal";
 import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
 
 interface Policy {
@@ -85,6 +86,7 @@ export default function PlaneacionPage() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [showObjectiveModal, setShowObjectiveModal] = useState(false);
   const [showContextModal, setShowContextModal] = useState(false);
+  const [showAIConfigModal, setShowAIConfigModal] = useState(false);
   const [editingContext, setEditingContext] = useState<BusinessContext | null>(null);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
@@ -265,11 +267,59 @@ export default function PlaneacionPage() {
     return labels[status] || status;
   };
 
+  const generatePlanningDocument = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      // Obtener procesos seleccionados para análisis
+      const selectedProcesses = businessProcesses.filter(p => p.includeInContinuityAnalysis);
+      
+      const response = await fetch(`${API_URL}/api/reports/planning-document`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          includeContexts: true,
+          includePolicies: true,
+          includeObjectives: true,
+          includeRaciMatrices: true,
+          includeSelectedProcesses: true,
+          selectedProcessIds: selectedProcesses.map(p => p.id),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al generar documento');
+      }
+
+      // Descargar el PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `Documento_Planeacion_SGCN_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      alert('✓ Documento PDF generado y descargado exitosamente');
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert('Error al generar documento: ' + error.message);
+    }
+  };
+
   return (
     <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <CreatePolicyModal isOpen={showPolicyModal} onClose={() => setShowPolicyModal(false)} onSuccess={fetchData} />
       <CreateObjectiveModal isOpen={showObjectiveModal} onClose={() => setShowObjectiveModal(false)} onSuccess={fetchData} />
       <CreateContextModal isOpen={showContextModal} onClose={() => setShowContextModal(false)} onSuccess={fetchData} />
+      <AIConfigModal isOpen={showAIConfigModal} onClose={() => setShowAIConfigModal(false)} onSuccess={() => alert('Configuración de IA actualizada')} />
       <EditContextModal 
         isOpen={!!editingContext} 
         onClose={() => setEditingContext(null)} 
@@ -299,6 +349,34 @@ export default function PlaneacionPage() {
         raciStats={raciStats}
         processesStats={processesStats}
       />
+
+      {/* Botón para generar documento PDF */}
+      <div className="mb-6 flex flex-wrap gap-3">
+        <button
+          onClick={() => setShowAIConfigModal(true)}
+          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Settings className="w-4 h-4" />
+          Configurar IA
+        </button>
+        <button
+          onClick={generatePlanningDocument}
+          disabled={loading}
+          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Generando...
+            </>
+          ) : (
+            <>
+              <FileText className="w-4 h-4" />
+              Generar Documento de Planeación (PDF)
+            </>
+          )}
+        </button>
+      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
         <div className="border-b border-gray-200 dark:border-gray-700">
@@ -405,7 +483,76 @@ export default function PlaneacionPage() {
                       </div>
                       {selectedContextForSwot === context.id && (
                         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                          <SwotEditor contextId={context.id} onSuccess={() => { setSelectedContextForSwot(null); fetchData(); }} />
+                          <SwotEditor 
+                            contextId={context.id} 
+                            onSuccess={() => { 
+                              setSelectedContextForSwot(null); 
+                              fetchData(); // Recargar datos para mostrar SWOT guardado
+                            }} 
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Mostrar SWOT existentes */}
+                      {context.swotAnalyses && context.swotAnalyses.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-yellow-500" />
+                            Análisis FODA Existentes
+                          </h4>
+                          {context.swotAnalyses.map((swot: any, index: number) => (
+                            <div key={swot.id || index} className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900 dark:text-white">{swot.title}</h5>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      // TODO: Implementar edición de SWOT
+                                      alert('Funcionalidad de edición de SWOT disponible en próxima versión');
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('¿Eliminar este análisis FODA?')) {
+                                        try {
+                                          const token = localStorage.getItem('token');
+                                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/swot/${swot.id}`, {
+                                            method: 'DELETE',
+                                            headers: { 'Authorization': `Bearer ${token}` },
+                                          });
+                                          if (response.ok) {
+                                            alert('Análisis FODA eliminado');
+                                            fetchData();
+                                          }
+                                        } catch (error) {
+                                          alert('Error al eliminar');
+                                        }
+                                      }
+                                    }}
+                                    className="text-red-600 hover:text-red-700 text-xs font-medium"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{swot.description}</p>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <span>Facilitador: {swot.facilitator}</span>
+                                {swot.participants && swot.participants.length > 0 && (
+                                  <span className="ml-4">Participantes: {swot.participants.join(', ')}</span>
+                                )}
+                              </div>
+                              {swot.crossingAnalysis && (
+                                <div className="mt-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                                  <p className="text-xs font-medium text-indigo-900 dark:text-indigo-200 mb-1">✨ Análisis con IA:</p>
+                                  <p className="text-xs text-indigo-800 dark:text-indigo-300">{swot.crossingAnalysis.substring(0, 150)}...</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
