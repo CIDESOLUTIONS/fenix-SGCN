@@ -30,6 +30,9 @@ import { ContinuousImprovementModule } from './continuous-improvement/continuous
 import { ExercisesModule } from './exercises/exercises.module';
 import { ReportGeneratorModule } from './report-generator/report-generator.module';
 import { BusinessContextModule } from './business-context/business-context.module';
+import { ReportsModule } from './reports/reports.module';
+import { SettingsModule } from './settings/settings.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -69,6 +72,9 @@ import { BusinessContextModule } from './business-context/business-context.modul
     ExercisesModule,
     ReportGeneratorModule,
     BusinessContextModule,
+    ReportsModule,
+    SettingsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

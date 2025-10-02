@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network, Settings } from "lucide-react";
+import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network, X } from "lucide-react";
 import { usePreferences } from "@/context/PreferencesContext";
 import CreatePolicyModal from "@/components/governance/CreatePolicyModal";
 import CreateObjectiveModal from "@/components/governance/CreateObjectiveModal";
@@ -12,7 +12,6 @@ import GovernanceKPICards from "@/components/governance/GovernanceKPICards";
 import EditContextModal from "@/components/business-context/EditContextModal";
 import CreateContextModal from "@/components/business-context/CreateContextModal";
 import SwotEditor from "@/components/business-context/SwotEditor";
-import AIConfigModal from "@/components/settings/AIConfigModal";
 import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
 
 interface Policy {
@@ -86,11 +85,11 @@ export default function PlaneacionPage() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [showObjectiveModal, setShowObjectiveModal] = useState(false);
   const [showContextModal, setShowContextModal] = useState(false);
-  const [showAIConfigModal, setShowAIConfigModal] = useState(false);
   const [editingContext, setEditingContext] = useState<BusinessContext | null>(null);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [editingRaciMatrix, setEditingRaciMatrix] = useState<RaciMatrix | null>(null);
+  const [editingSwot, setEditingSwot] = useState<any | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -319,7 +318,6 @@ export default function PlaneacionPage() {
       <CreatePolicyModal isOpen={showPolicyModal} onClose={() => setShowPolicyModal(false)} onSuccess={fetchData} />
       <CreateObjectiveModal isOpen={showObjectiveModal} onClose={() => setShowObjectiveModal(false)} onSuccess={fetchData} />
       <CreateContextModal isOpen={showContextModal} onClose={() => setShowContextModal(false)} onSuccess={fetchData} />
-      <AIConfigModal isOpen={showAIConfigModal} onClose={() => setShowAIConfigModal(false)} onSuccess={() => alert('Configuración de IA actualizada')} />
       <EditContextModal 
         isOpen={!!editingContext} 
         onClose={() => setEditingContext(null)} 
@@ -352,13 +350,6 @@ export default function PlaneacionPage() {
 
       {/* Botón para generar documento PDF */}
       <div className="mb-6 flex flex-wrap gap-3">
-        <button
-          onClick={() => setShowAIConfigModal(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-          Configurar IA
-        </button>
         <button
           onClick={generatePlanningDocument}
           disabled={loading}
@@ -493,6 +484,29 @@ export default function PlaneacionPage() {
                         </div>
                       )}
                       
+                      {/* Editor de SWOT para edición */}
+                      {editingSwot && editingSwot.contextId === context.id && (
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Editar Análisis FODA</h4>
+                            <button 
+                              onClick={() => setEditingSwot(null)}
+                              className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <SwotEditor 
+                            contextId={context.id}
+                            existingSwot={editingSwot}
+                            onSuccess={() => { 
+                              setEditingSwot(null);
+                              fetchData();
+                            }} 
+                          />
+                        </div>
+                      )}
+                      
                       {/* Mostrar SWOT existentes */}
                       {context.swotAnalyses && context.swotAnalyses.length > 0 && (
                         <div className="mt-4 space-y-3">
@@ -506,10 +520,7 @@ export default function PlaneacionPage() {
                                 <h5 className="font-medium text-gray-900 dark:text-white">{swot.title}</h5>
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() => {
-                                      // TODO: Implementar edición de SWOT
-                                      alert('Funcionalidad de edición de SWOT disponible en próxima versión');
-                                    }}
+                                    onClick={() => setEditingSwot(swot)}
                                     className="text-blue-600 hover:text-blue-700 text-xs font-medium"
                                   >
                                     Editar

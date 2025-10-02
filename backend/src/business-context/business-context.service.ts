@@ -143,6 +143,7 @@ export class BusinessContextService {
         opportunities: dto.opportunities || [],
         threats: dto.threats || [],
         strategies: dto.strategies ? dto.strategies : undefined,
+        crossingAnalysis: dto.crossingAnalysis || null,
         participants: dto.participants || [],
         facilitator: dto.facilitator,
         createdBy: userId,
@@ -273,15 +274,47 @@ export class BusinessContextService {
     tenantId: string,
   ) {
     try {
-      // Obtener API Key de configuración del tenant
-      const tenant = await this.prisma.tenant.findUnique({
-        where: { id: tenantId },
+      // Obtener configuración de IA del tenant
+      const aiConfig = await this.prisma.aIConfig.findUnique({
+        where: { tenantId },
       });
 
-      if (!tenant?.aiApiKey) {
-        throw new Error(
-          'API Key de IA no configurada. Configure en Configuración > Integraciones',
-        );
+      if (!aiConfig) {
+        return {
+          success: false,
+          message: 'Configuración de IA no encontrada. Configure las API keys en el botón "Configurar IA".',
+        };
+      }
+
+      // Determinar qué API usar basado en el proveedor por defecto y las keys disponibles
+      let apiKey: string | null = null;
+      let provider = aiConfig.defaultProvider || 'openai';
+
+      if (provider === 'openai' && aiConfig.openaiApiKey) {
+        apiKey = aiConfig.openaiApiKey;
+      } else if (provider === 'claude' && aiConfig.claudeApiKey) {
+        apiKey = aiConfig.claudeApiKey;
+      } else if (provider === 'gemini' && aiConfig.geminiApiKey) {
+        apiKey = aiConfig.geminiApiKey;
+      } else {
+        // Buscar cualquier API key disponible
+        if (aiConfig.openaiApiKey) {
+          apiKey = aiConfig.openaiApiKey;
+          provider = 'openai';
+        } else if (aiConfig.claudeApiKey) {
+          apiKey = aiConfig.claudeApiKey;
+          provider = 'claude';
+        } else if (aiConfig.geminiApiKey) {
+          apiKey = aiConfig.geminiApiKey;
+          provider = 'gemini';
+        }
+      }
+
+      if (!apiKey) {
+        return {
+          success: false,
+          message: 'No hay API keys configuradas. Configure al menos una en "Configurar IA".',
+        };
       }
 
       // Construir prompt para análisis de cruzamientos FODA
@@ -307,41 +340,99 @@ Realiza un análisis detallado de cruzamientos FODA identificando:
 Para cada tipo de estrategia, proporciona 2-3 recomendaciones específicas y accionables.
 `;
 
-      // Llamar a API de IA (ejemplo con OpenAI)
-      const response = await fetch(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${tenant.aiApiKey}`,
+      let analysis = '';
+
+      // Llamar a la API correspondiente
+      if (provider === 'openai') {
+        const response = await fetch(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-4',
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+              max_tokens: 2000,
+            }),
           },
-          body: JSON.stringify({
-            model: 'gpt-4',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 2000,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.error?.message || 'Error al comunicarse con la API de IA',
         );
-      }
 
-      const result = await response.json();
-      const analysis = result.choices[0]?.message?.content || '';
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(
+            error.error?.message || 'Error al comunicarse con OpenAI',
+          );
+        }
+
+        const result = await response.json();
+        analysis = result.choices[0]?.message?.content || '';
+      } else if (provider === 'claude') {
+        const response = await fetch(
+          'https://api.anthropic.com/v1/messages',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-sonnet-20240229',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(
+            error.error?.message || 'Error al comunicarse con Claude',
+          );
+        }
+
+        const result = await response.json();
+        analysis = result.content[0]?.text || '';
+      } else if (provider === 'gemini') {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(
+            error.error?.message || 'Error al comunicarse con Gemini',
+          );
+        }
+
+        const result = await response.json();
+        analysis = result.candidates[0]?.content?.parts[0]?.text || '';
+      }
 
       return {
         success: true,
         analysis,
+        provider,
       };
     } catch (error) {
       this.logger.error('Error analyzing SWOT with AI:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Error al analizar con IA',
+      };
     }
   }
 }

@@ -134,7 +134,7 @@ export default function AIConfigModal({ isOpen, onClose, onSuccess }: AIConfigMo
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
@@ -159,7 +159,8 @@ export default function AIConfigModal({ isOpen, onClose, onSuccess }: AIConfigMo
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
@@ -334,10 +335,11 @@ export default function AIConfigModal({ isOpen, onClose, onSuccess }: AIConfigMo
               <li>• Gemini ofrece análisis multimodal avanzado</li>
             </ul>
           </div>
-        </form>
+          </form>
+        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        {/* Footer - Fijo */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <button
             type="button"
             onClick={onClose}

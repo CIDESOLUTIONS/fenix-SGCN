@@ -137,12 +137,13 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
       }
 
       const result = await response.json();
-      setFormData(prev => ({
-        ...prev,
-        crossingAnalysis: result.analysis
-      }));
-
-      alert('✨ Análisis de cruzamientos completado');
+      
+      if (result.success && result.analysis) {
+        setFormData(prev => ({
+          ...prev,
+          crossingAnalysis: result.analysis
+        }));
+        alert('✨ Análisis de cruzamientos completado');
       } else {
         console.warn('Análisis IA no disponible:', result.message);
         alert('⚠️ Configuración de IA requerida. Configure las API keys en el botón "Configurar IA" de la página principal.');

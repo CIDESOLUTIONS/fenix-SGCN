@@ -58,6 +58,7 @@ model Tenant {
   exercises           Exercise[]
   businessContexts    BusinessContext[]
   swotAnalyses        SwotAnalysis[]
+  aiConfig            AIConfig?
 
   @@map("tenants")
 }
@@ -892,5 +893,22 @@ enum SwotStatus {
   COMPLETED
   APPROVED
   ARCHIVED
+}
+
+model AIConfig {
+  id               String   @id @default(uuid())
+  tenantId         String   @unique
+  
+  openaiApiKey     String?  @db.Text
+  claudeApiKey     String?  @db.Text
+  geminiApiKey     String?  @db.Text
+  defaultProvider  String   @default("openai")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_configs")
 }
 
