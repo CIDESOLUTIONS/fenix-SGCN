@@ -138,7 +138,7 @@ export class ReportsService {
           doc
             .fontSize(10)
             .font('Helvetica')
-            .text(context.content.substring(0, 500) + (context.content.length > 500 ? '...' : ''))
+            .text(context.content, { align: 'justify' })
             .moveDown(0.5);
         }
 
@@ -158,7 +158,32 @@ export class ReportsService {
             if (swot.participants?.length) {
               doc.text(`  Participantes: ${swot.participants.join(', ')}`);
             }
-            doc.moveDown(0.3);
+            
+            // Mostrar elementos FODA completos
+            if (swot.strengths?.length) {
+              doc.moveDown(0.3).font('Helvetica-Bold').text('  Fortalezas:').font('Helvetica');
+              swot.strengths.forEach((s: string) => doc.text(`    • ${s}`));
+            }
+            if (swot.weaknesses?.length) {
+              doc.moveDown(0.3).font('Helvetica-Bold').text('  Debilidades:').font('Helvetica');
+              swot.weaknesses.forEach((w: string) => doc.text(`    • ${w}`));
+            }
+            if (swot.opportunities?.length) {
+              doc.moveDown(0.3).font('Helvetica-Bold').text('  Oportunidades:').font('Helvetica');
+              swot.opportunities.forEach((o: string) => doc.text(`    • ${o}`));
+            }
+            if (swot.threats?.length) {
+              doc.moveDown(0.3).font('Helvetica-Bold').text('  Amenazas:').font('Helvetica');
+              swot.threats.forEach((t: string) => doc.text(`    • ${t}`));
+            }
+            
+            // Análisis de cruzamientos
+            if (swot.crossingAnalysis) {
+              doc.moveDown(0.3).font('Helvetica-Bold').text('  Análisis de Cruzamientos (IA):').font('Helvetica');
+              doc.text(swot.crossingAnalysis, { align: 'justify' });
+            }
+            
+            doc.moveDown(0.5);
           });
         }
 
@@ -194,7 +219,7 @@ export class ReportsService {
           doc.moveDown(0.5);
           doc
             .fontSize(10)
-            .text(policy.content.substring(0, 800) + (policy.content.length > 800 ? '...' : ''));
+            .text(policy.content, { align: 'justify' });
         }
 
         doc.moveDown(1);
@@ -291,6 +316,22 @@ export class ReportsService {
         }
 
         doc.text(`Incluido en análisis de continuidad: ${process.includeInContinuityAnalysis ? 'Sí' : 'No'}`);
+        
+        // Caracterización de alto nivel
+        if (process.highLevelCharacterization) {
+          doc.moveDown(0.3).font('Helvetica-Bold').text('Caracterización de Alto Nivel:').font('Helvetica');
+          doc.text(process.highLevelCharacterization, { align: 'justify' });
+        }
+        
+        // Criterios de priorización
+        if (process.prioritizationCriteria) {
+          doc.moveDown(0.3).font('Helvetica-Bold').text('Criterios de Priorización:').font('Helvetica');
+          const criteria = process.prioritizationCriteria as any;
+          if (criteria.strategic) doc.text(`  • Estratégico: ${criteria.strategic}/10`);
+          if (criteria.operational) doc.text(`  • Operacional: ${criteria.operational}/10`);
+          if (criteria.financial) doc.text(`  • Financiero: ${criteria.financial}/10`);
+          if (criteria.regulatory) doc.text(`  • Regulatorio: ${criteria.regulatory}/10`);
+        }
 
         doc.moveDown(1);
       });

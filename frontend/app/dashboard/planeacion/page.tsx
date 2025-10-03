@@ -50,6 +50,9 @@ interface BusinessContext {
   status: string;
   createdAt: string;
   swotAnalyses?: any[];
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
 }
 
 interface BusinessProcess {
@@ -132,7 +135,7 @@ export default function PlaneacionPage() {
   };
 
   const handleDeletePolicy = async (id: string) => {
-    if (!confirm('¿Eliminar esta política?')) return;
+    if (!window.confirm('⚠️ ¿Eliminar esta política PERMANENTEMENTE?\nEsta acción NO se puede deshacer.')) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/policies/${id}`, {
@@ -140,7 +143,7 @@ export default function PlaneacionPage() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        alert('Política eliminada');
+        alert('✓ Política eliminada');
         fetchData();
       }
     } catch (error) {
@@ -183,7 +186,27 @@ export default function PlaneacionPage() {
   };
 
   const handleDeleteContext = async (id: string) => {
-    if (!confirm('¿Eliminar este contexto?')) return;
+    const confirmed = window.confirm(
+      '⚠️ ADVERTENCIA: ¿Está seguro de que desea ELIMINAR PERMANENTEMENTE este contexto?\n\n' +
+      'Esta acción:'+
+      '\n• Eliminará el contexto de manera irreversible\n' +
+      '• Borrará todos los análisis FODA asociados\n' +
+      '• NO se puede deshacer\n\n' +
+      'Para confirmar, haga clic en Aceptar.'
+    );
+    
+    if (!confirmed) return;
+    
+    // Segunda confirmación
+    const doubleCheck = window.prompt(
+      'Para confirmar la eliminación, escriba "ELIMINAR" (en mayúsculas):'
+    );
+    
+    if (doubleCheck !== 'ELIMINAR') {
+      alert('Eliminación cancelada. El contexto NO fue eliminado.');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/contexts/${id}`, {
@@ -191,7 +214,7 @@ export default function PlaneacionPage() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        alert('Contexto eliminado');
+        alert('✓ Contexto eliminado');
         fetchData();
       }
     } catch (error) {
@@ -447,6 +470,19 @@ export default function PlaneacionPage() {
                                 {context.swotAnalyses.length} análisis FODA
                               </span>
                             )}
+                            {context.fileName && (
+                              <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                                <FileText className="w-4 h-4" />
+                                <a 
+                                  href={context.fileUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  {context.fileName}
+                                </a>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -520,8 +556,8 @@ export default function PlaneacionPage() {
                                 <h5 className="font-medium text-gray-900 dark:text-white">{swot.title}</h5>
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() => setEditingSwot(swot)}
-                                    className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                                  onClick={() => setEditingSwot({...swot, contextId: context.id})}
+                                  className="text-blue-600 hover:text-blue-700 text-xs font-medium"
                                   >
                                     Editar
                                   </button>

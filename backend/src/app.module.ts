@@ -32,7 +32,7 @@ import { ReportGeneratorModule } from './report-generator/report-generator.modul
 import { BusinessContextModule } from './business-context/business-context.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
-import { AiModule } from './ai/ai.module';
+import { AIModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -74,9 +74,10 @@ import { AiModule } from './ai/ai.module';
     BusinessContextModule,
     ReportsModule,
     SettingsModule,
-    AiModule,
+    AIModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

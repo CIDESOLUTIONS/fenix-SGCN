@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { X, Save, Plus, Trash2, Lightbulb, Sparkles, Loader } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import AIAnalysisModal from "./AIAnalysisModal";
 
 interface SwotEditorProps {
   contextId: string;
   onSuccess: () => void;
   existingSwot?: {
     id: string;
+    contextId?: string;
     title: string;
     description: string;
     facilitator: string;
@@ -38,21 +40,37 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
   const [error, setError] = useState<string | null>(null);
   const [newParticipant, setNewParticipant] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [contextData, setContextData] = useState<any>(null);
 
   useEffect(() => {
     if (existingSwot) {
       setFormData({
-        title: existingSwot.title,
-        description: existingSwot.description,
-        facilitator: existingSwot.facilitator,
-        participants: existingSwot.participants,
-        strengths: existingSwot.strengths.length ? existingSwot.strengths : [""],
-        weaknesses: existingSwot.weaknesses.length ? existingSwot.weaknesses : [""],
-        opportunities: existingSwot.opportunities.length ? existingSwot.opportunities : [""],
-        threats: existingSwot.threats.length ? existingSwot.threats : [""],
+        title: existingSwot.title || "",
+        description: existingSwot.description || "",
+        facilitator: existingSwot.facilitator || "",
+        participants: existingSwot.participants || [],
+        strengths: (existingSwot.strengths && existingSwot.strengths.length) ? existingSwot.strengths : [""],
+        weaknesses: (existingSwot.weaknesses && existingSwot.weaknesses.length) ? existingSwot.weaknesses : [""],
+        opportunities: (existingSwot.opportunities && existingSwot.opportunities.length) ? existingSwot.opportunities : [""],
+        threats: (existingSwot.threats && existingSwot.threats.length) ? existingSwot.threats : [""],
         crossingAnalysis: existingSwot.crossingAnalysis || "",
       });
       setIsEditMode(true);
+    } else {
+      // Reset form cuando no hay existingSwot
+      setFormData({
+        title: "",
+        description: "",
+        facilitator: "",
+        participants: [],
+        strengths: [""],
+        weaknesses: [""],
+        opportunities: [""],
+        threats: [""],
+        crossingAnalysis: "",
+      });
+      setIsEditMode(false);
     }
   }, [existingSwot]);
 
@@ -95,9 +113,6 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
   };
 
   const analyzeWithAI = async () => {
-    setAnalyzingWithAI(true);
-    setError(null);
-
     try {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
@@ -110,48 +125,10 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
       if (!contextRes.ok) throw new Error('Error al obtener contexto');
       const context = await contextRes.json();
 
-      // Preparar datos para la IA
-      const swotData = {
-        strengths: formData.strengths.filter(s => s.trim()),
-        weaknesses: formData.weaknesses.filter(w => w.trim()),
-        opportunities: formData.opportunities.filter(o => o.trim()),
-        threats: formData.threats.filter(t => t.trim()),
-      };
-
-      // Llamar al endpoint de análisis con IA
-      const response = await fetch(`${API_URL}/api/business-context/swot/analyze-with-ai`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          contextContent: context.content,
-          contextTitle: context.title,
-          swotData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al analizar con IA');
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.analysis) {
-        setFormData(prev => ({
-          ...prev,
-          crossingAnalysis: result.analysis
-        }));
-        alert('✨ Análisis de cruzamientos completado');
-      } else {
-        console.warn('Análisis IA no disponible:', result.message);
-        alert('⚠️ Configuración de IA requerida. Configure las API keys en el botón "Configurar IA" de la página principal.');
-      }
+      setContextData(context);
+      setShowAIModal(true);
     } catch (err: any) {
-      setError(err.message || 'Error al conectar con el servicio de IA. Verifique la configuración.');
-    } finally {
-      setAnalyzingWithAI(false);
+      setError(err.message || 'Error al cargar contexto para análisis IA');
     }
   };
 
@@ -422,6 +399,26 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
           </button>
         </div>
       </form>
+
+      {/* Modal de Análisis IA */}
+      {showAIModal && contextData && (
+        <AIAnalysisModal
+          isOpen={showAIModal}
+          onClose={() => setShowAIModal(false)}
+          contextContent={contextData.content}
+          contextTitle={contextData.title}
+          swotData={{
+            strengths: formData.strengths.filter(s => s.trim()),
+            weaknesses: formData.weaknesses.filter(w => w.trim()),
+            opportunities: formData.opportunities.filter(o => o.trim()),
+            threats: formData.threats.filter(t => t.trim()),
+          }}
+          onAnalysisComplete={(analysis) => {
+            setFormData(prev => ({ ...prev, crossingAnalysis: analysis }));
+            setShowAIModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

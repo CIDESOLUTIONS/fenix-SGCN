@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { X, Save, Upload } from "lucide-react";
+import RichTextEditor from "../RichTextEditor";
 
 interface CreateContextModalProps {
   isOpen: boolean;

@@ -119,6 +119,28 @@ export class BusinessContextService {
     });
   }
 
+  async removeContextFile(id: string, tenantId: string) {
+    const context = await this.prisma.businessContext.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!context) {
+      throw new NotFoundException('Business context not found');
+    }
+
+    await this.prisma.businessContext.update({
+      where: { id },
+      data: {
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
+      },
+    });
+
+    this.logger.log(`File removed from context: ${id}`);
+    return { message: 'File removed successfully' };
+  }
+
   // ============================================
   // ANÁLISIS FODA (SWOT)
   // ============================================

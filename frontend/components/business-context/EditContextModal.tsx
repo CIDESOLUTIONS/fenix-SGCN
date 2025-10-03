@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, Save, Send, Calendar } from "lucide-react";
+import { X, Save, Send, Calendar, Upload, FileText, Trash2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import RichTextEditor from "../RichTextEditor";
 
 interface EditContextModalProps {
   isOpen: boolean;
@@ -14,6 +15,9 @@ interface EditContextModalProps {
     content: string;
     elaborationDate: string;
     status: string;
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
   } | null;
 }
 
@@ -27,6 +31,8 @@ export default function EditContextModal({ isOpen, onClose, onSuccess, context }
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(false);
 
   useEffect(() => {
     if (context) {
@@ -49,6 +55,37 @@ export default function EditContextModal({ isOpen, onClose, onSuccess, context }
     try {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      let fileUrl = context.fileUrl;
+      let fileName = context.fileName;
+      let fileSize = context.fileSize;
+
+      // Si hay un nuevo archivo, subirlo primero
+      if (uploadedFile) {
+        setUploadProgress(true);
+        try {
+          const formDataFile = new FormData();
+          formDataFile.append('file', uploadedFile);
+          formDataFile.append('category', 'context');
+
+          const uploadRes = await fetch(`${API_URL}/api/documents/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formDataFile,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            fileUrl = uploadData.fileUrl;
+            fileName = uploadedFile.name;
+            fileSize = uploadedFile.size;
+          }
+        } catch (uploadError) {
+          console.warn('Error al subir archivo:', uploadError);
+        } finally {
+          setUploadProgress(false);
+        }
+      }
 
       const response = await fetch(`${API_URL}/api/business-context/contexts/${context.id}`, {
         method: 'PATCH',
@@ -56,7 +93,12 @@ export default function EditContextModal({ isOpen, onClose, onSuccess, context }
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          fileUrl,
+          fileName,
+          fileSize
+        }),
       });
 
       if (!response.ok) {
@@ -202,6 +244,103 @@ export default function EditContextModal({ isOpen, onClose, onSuccess, context }
             <p className="mt-1 text-xs text-gray-500">
               Incluya: propósito, objetivos estratégicos, partes interesadas, requisitos legales, etc.
             </p>
+          </div>
+
+          {/* Documentos Adjuntos */}
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-3">📎 Documentos Adjuntos</h4>
+            
+            {/* Archivo existente */}
+            {context?.fileName && (
+              <div className="mb-3 flex items-center justify-between bg-white dark:bg-gray-700 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <a 
+                    href={context.fileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    {context.fileName}
+                  </a>
+                  {context.fileSize && (
+                    <span className="text-xs text-gray-500">({(context.fileSize / 1024).toFixed(2)} KB)</span>
+                  )}
+                </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm('¿Eliminar este documento?')) {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/contexts/${context.id}/remove-file`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                          });
+                          if (response.ok) {
+                            alert('✓ Documento eliminado');
+                            onSuccess();
+                            onClose();
+                          }
+                        } catch (error) {
+                          alert('Error al eliminar documento');
+                        }
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {/* Subir nuevo archivo */}
+            {canEdit && (
+              <div>
+                <label className="block">
+                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-lg hover:border-indigo-500 cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-sm text-indigo-600 dark:text-indigo-400">
+                      {uploadedFile ? uploadedFile.name : (context?.fileName ? 'Reemplazar documento' : 'Adjuntar documento PDF')}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.type === 'application/pdf') {
+                          setUploadedFile(file);
+                          setError(null);
+                        } else {
+                          setError('Solo se permiten archivos PDF');
+                          setUploadedFile(null);
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                {uploadedFile && (
+                  <div className="mt-2 flex items-center justify-between text-sm text-green-600 dark:text-green-400">
+                    <span>✓ Archivo seleccionado: {uploadedFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedFile(null)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  📄 El documento se subirá al guardar los cambios
+                </p>
+              </div>
+            )}
           </div>
         </form>
 

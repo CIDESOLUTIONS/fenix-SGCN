@@ -58,6 +58,11 @@ export class BusinessContextController {
     return this.businessContextService.deleteContext(id, tenantId);
   }
 
+  @Delete('contexts/:id/remove-file')
+  async removeContextFile(@Param('id') id: string, @TenantId() tenantId: string) {
+    return this.businessContextService.removeContextFile(id, tenantId);
+  }
+
   @Post('contexts/:id/approve')
   approveContext(
     @Param('id') id: string,

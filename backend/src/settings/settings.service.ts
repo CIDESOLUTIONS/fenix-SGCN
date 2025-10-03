@@ -51,29 +51,31 @@ export class SettingsService {
     // Solo actualizar las keys que no estén enmascaradas (que vengan sin ***)
     if (dto.openaiApiKey && !dto.openaiApiKey.includes('***')) {
       data.openaiApiKey = dto.openaiApiKey;
+    } else if (existing?.openaiApiKey) {
+      data.openaiApiKey = existing.openaiApiKey; // Mantener la existente
     }
+    
     if (dto.claudeApiKey && !dto.claudeApiKey.includes('***')) {
       data.claudeApiKey = dto.claudeApiKey;
+    } else if (existing?.claudeApiKey) {
+      data.claudeApiKey = existing.claudeApiKey; // Mantener la existente
     }
+    
     if (dto.geminiApiKey && !dto.geminiApiKey.includes('***')) {
       data.geminiApiKey = dto.geminiApiKey;
+    } else if (existing?.geminiApiKey) {
+      data.geminiApiKey = existing.geminiApiKey; // Mantener la existente
     }
 
-    if (existing) {
-      // Actualizar
-      await this.prisma.aIConfig.update({
-        where: { tenantId },
-        data,
-      });
-    } else {
-      // Crear
-      await this.prisma.aIConfig.create({
-        data: {
-          tenantId,
-          ...data,
-        },
-      });
-    }
+    // Usar upsert para crear o actualizar
+    await this.prisma.aIConfig.upsert({
+      where: { tenantId },
+      create: {
+        tenantId,
+        ...data,
+      },
+      update: data,
+    });
 
     this.logger.log(`AI config saved for tenant ${tenantId}`);
 
