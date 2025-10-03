@@ -93,10 +93,35 @@ export default function PlaneacionPage() {
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [editingRaciMatrix, setEditingRaciMatrix] = useState<RaciMatrix | null>(null);
   const [editingSwot, setEditingSwot] = useState<any | null>(null);
+  const [loadingSwot, setLoadingSwot] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const loadFullSwotData = async (swotId: string, contextId: string) => {
+    setLoadingSwot(true);
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+      
+      const response = await fetch(`${API_URL}/api/business-context/swot/${swotId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const fullSwotData = await response.json();
+        setEditingSwot({ ...fullSwotData, contextId });
+      } else {
+        alert('Error al cargar datos del FODA');
+      }
+    } catch (error) {
+      console.error('Error loading SWOT:', error);
+      alert('Error al cargar datos del FODA');
+    } finally {
+      setLoadingSwot(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -556,7 +581,7 @@ export default function PlaneacionPage() {
                                 <h5 className="font-medium text-gray-900 dark:text-white">{swot.title}</h5>
                                 <div className="flex gap-2">
                                   <button
-                                  onClick={() => setEditingSwot({...swot, contextId: context.id})}
+                                  onClick={() => loadFullSwotData(swot.id, context.id)}
                                   className="text-blue-600 hover:text-blue-700 text-xs font-medium"
                                   >
                                     Editar

@@ -59,43 +59,47 @@ export default function RichTextEditor({
 
   // Configurar el manejador de pegado de imágenes
   useEffect(() => {
-    if (!reactQuillRef.current) return;
+    const timeout = setTimeout(() => {
+      if (!reactQuillRef.current) return;
 
-    const editor = reactQuillRef.current.getEditor();
-    if (!editor) return;
+      const editor = reactQuillRef.current.getEditor();
+      if (!editor) return;
 
-    const handlePaste = (event: ClipboardEvent) => {
-      const clipboardData = event.clipboardData;
-      if (!clipboardData) return;
+      const handlePaste = (event: ClipboardEvent) => {
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return;
 
-      // Buscar imágenes en el clipboard
-      const items = Array.from(clipboardData.items);
-      const imageItem = items.find(item => item.type.indexOf('image') !== -1);
+        // Buscar imágenes en el clipboard
+        const items = Array.from(clipboardData.items);
+        const imageItem = items.find(item => item.type.indexOf('image') !== -1);
 
-      if (imageItem) {
-        event.preventDefault();
-        const file = imageItem.getAsFile();
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const range = editor.getSelection(true);
-            if (range) {
-              editor.insertEmbed(range.index, 'image', e.target?.result);
-              editor.setSelection(range.index + 1, 0);
-            }
-          };
-          reader.readAsDataURL(file);
+        if (imageItem) {
+          event.preventDefault();
+          const file = imageItem.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const range = editor.getSelection(true);
+              if (range) {
+                editor.insertEmbed(range.index, 'image', e.target?.result);
+                editor.setSelection(range.index + 1, 0);
+              }
+            };
+            reader.readAsDataURL(file);
+          }
         }
-      }
-    };
+      };
 
-    const editorElement = editor.root;
-    editorElement.addEventListener('paste', handlePaste);
+      const editorElement = editor.root;
+      editorElement.addEventListener('paste', handlePaste);
 
-    return () => {
-      editorElement.removeEventListener('paste', handlePaste);
-    };
-  }, [reactQuillRef.current]);
+      return () => {
+        editorElement.removeEventListener('paste', handlePaste);
+      };
+    }, 100); // Pequeño delay para asegurar que el editor esté listo
+
+    return () => clearTimeout(timeout);
+  }, []); // Sin dependencias - se ejecuta solo al montar
 
   // Configuración de módulos de Quill
   const modules = useMemo(() => ({
