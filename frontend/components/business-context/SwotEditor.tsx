@@ -45,18 +45,20 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
 
   useEffect(() => {
     if (existingSwot) {
+      console.log('Loading existing SWOT:', existingSwot); // Debug
       setFormData({
         title: existingSwot.title || "",
         description: existingSwot.description || "",
         facilitator: existingSwot.facilitator || "",
-        participants: existingSwot.participants || [],
-        strengths: (existingSwot.strengths && existingSwot.strengths.length) ? existingSwot.strengths : [""],
-        weaknesses: (existingSwot.weaknesses && existingSwot.weaknesses.length) ? existingSwot.weaknesses : [""],
-        opportunities: (existingSwot.opportunities && existingSwot.opportunities.length) ? existingSwot.opportunities : [""],
-        threats: (existingSwot.threats && existingSwot.threats.length) ? existingSwot.threats : [""],
+        participants: Array.isArray(existingSwot.participants) ? existingSwot.participants : [],
+        strengths: (Array.isArray(existingSwot.strengths) && existingSwot.strengths.length > 0) ? existingSwot.strengths : [""],
+        weaknesses: (Array.isArray(existingSwot.weaknesses) && existingSwot.weaknesses.length > 0) ? existingSwot.weaknesses : [""],
+        opportunities: (Array.isArray(existingSwot.opportunities) && existingSwot.opportunities.length > 0) ? existingSwot.opportunities : [""],
+        threats: (Array.isArray(existingSwot.threats) && existingSwot.threats.length > 0) ? existingSwot.threats : [""],
         crossingAnalysis: existingSwot.crossingAnalysis || "",
       });
       setIsEditMode(true);
+      console.log('Form data loaded'); // Debug
     } else {
       // Reset form cuando no hay existingSwot
       setFormData({

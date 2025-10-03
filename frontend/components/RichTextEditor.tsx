@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
@@ -12,7 +12,17 @@ interface RichTextEditorProps {
 }
 
 // Importar ReactQuill dinámicamente para evitar errores de SSR
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = dynamic(
+  async () => {
+    const { default: RQ } = await import('react-quill');
+    
+    // Configurar el manejador de pegado de imágenes
+    const Quill = (await import('react-quill')).Quill;
+    
+    return ({ forwardedRef, ...props }: any) => <RQ ref={forwardedRef} {...props} />;
+  },
+  { ssr: false }
+);
 
 export default function RichTextEditor({ 
   value, 
@@ -22,10 +32,10 @@ export default function RichTextEditor({
   className = ""
 }: RichTextEditorProps) {
   
-  const quillRef = useRef<any>(null);
+  const reactQuillRef = useRef<any>(null);
 
-  // Handler para pegar imágenes desde clipboard
-  const imageHandler = () => {
+  // Handler para insertar imágenes desde el botón
+  const imageHandler = useCallback(() => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -36,18 +46,58 @@ export default function RichTextEditor({
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const quill = quillRef.current?.getEditor();
-          if (quill) {
-            const range = quill.getSelection(true);
-            quill.insertEmbed(range.index, 'image', e.target?.result);
+          const editor = reactQuillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, 'image', e.target?.result);
           }
         };
         reader.readAsDataURL(file);
       }
     };
-  };
+  }, []);
 
-  // Configuración de módulos de Quill con soporte completo de imágenes
+  // Configurar el manejador de pegado de imágenes
+  useEffect(() => {
+    if (!reactQuillRef.current) return;
+
+    const editor = reactQuillRef.current.getEditor();
+    if (!editor) return;
+
+    const handlePaste = (event: ClipboardEvent) => {
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) return;
+
+      // Buscar imágenes en el clipboard
+      const items = Array.from(clipboardData.items);
+      const imageItem = items.find(item => item.type.indexOf('image') !== -1);
+
+      if (imageItem) {
+        event.preventDefault();
+        const file = imageItem.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const range = editor.getSelection(true);
+            if (range) {
+              editor.insertEmbed(range.index, 'image', e.target?.result);
+              editor.setSelection(range.index + 1, 0);
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    };
+
+    const editorElement = editor.root;
+    editorElement.addEventListener('paste', handlePaste);
+
+    return () => {
+      editorElement.removeEventListener('paste', handlePaste);
+    };
+  }, [reactQuillRef.current]);
+
+  // Configuración de módulos de Quill
   const modules = useMemo(() => ({
     toolbar: {
       container: [
@@ -65,14 +115,8 @@ export default function RichTextEditor({
     },
     clipboard: {
       matchVisual: false,
-      // Permitir pegar imágenes desde clipboard
-      matchers: [
-        ['img', (node: any, delta: any) => {
-          return delta;
-        }]
-      ]
     }
-  }), []);
+  }), [imageHandler]);
 
   const formats = [
     'header',
@@ -85,7 +129,7 @@ export default function RichTextEditor({
   return (
     <div className={className}>
       <ReactQuill
-        ref={quillRef}
+        forwardedRef={reactQuillRef}
         theme="snow"
         value={value}
         onChange={onChange}
