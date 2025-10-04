@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
@@ -11,18 +11,10 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Importar ReactQuill dinámicamente para evitar errores de SSR
-const ReactQuill = dynamic(
-  async () => {
-    const { default: RQ } = await import('react-quill');
-    
-    // Configurar el manejador de pegado de imágenes
-    const Quill = (await import('react-quill')).Quill;
-    
-    return ({ forwardedRef, ...props }: any) => <RQ ref={forwardedRef} {...props} />;
-  },
-  { ssr: false }
-);
+const ReactQuill = dynamic(() => import('react-quill'), { 
+  ssr: false,
+  loading: () => <div className="border rounded p-4 bg-gray-50 dark:bg-gray-800">Cargando editor...</div>
+});
 
 export default function RichTextEditor({ 
   value, 
@@ -31,96 +23,18 @@ export default function RichTextEditor({
   disabled = false,
   className = ""
 }: RichTextEditorProps) {
-  
-  const reactQuillRef = useRef<any>(null);
 
-  // Handler para insertar imágenes desde el botón
-  const imageHandler = useCallback(() => {
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
-
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const editor = reactQuillRef.current?.getEditor();
-          if (editor) {
-            const range = editor.getSelection(true);
-            editor.insertEmbed(range.index, 'image', e.target?.result);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }, []);
-
-  // Configurar el manejador de pegado de imágenes
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!reactQuillRef.current) return;
-
-      const editor = reactQuillRef.current.getEditor();
-      if (!editor) return;
-
-      const handlePaste = (event: ClipboardEvent) => {
-        const clipboardData = event.clipboardData;
-        if (!clipboardData) return;
-
-        // Buscar imágenes en el clipboard
-        const items = Array.from(clipboardData.items);
-        const imageItem = items.find(item => item.type.indexOf('image') !== -1);
-
-        if (imageItem) {
-          event.preventDefault();
-          const file = imageItem.getAsFile();
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const range = editor.getSelection(true);
-              if (range) {
-                editor.insertEmbed(range.index, 'image', e.target?.result);
-                editor.setSelection(range.index + 1, 0);
-              }
-            };
-            reader.readAsDataURL(file);
-          }
-        }
-      };
-
-      const editorElement = editor.root;
-      editorElement.addEventListener('paste', handlePaste);
-
-      return () => {
-        editorElement.removeEventListener('paste', handlePaste);
-      };
-    }, 100); // Pequeño delay para asegurar que el editor esté listo
-
-    return () => clearTimeout(timeout);
-  }, []); // Sin dependencias - se ejecuta solo al montar
-
-  // Configuración de módulos de Quill
   const modules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['link', 'image'],
-        ['clean']
-      ],
-      handlers: {
-        image: imageHandler
-      }
-    },
-    clipboard: {
-      matchVisual: false,
-    }
-  }), [imageHandler]);
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      ['link', 'image'],
+      ['clean']
+    ],
+  }), []);
 
   const formats = [
     'header',
@@ -133,7 +47,6 @@ export default function RichTextEditor({
   return (
     <div className={className}>
       <ReactQuill
-        forwardedRef={reactQuillRef}
         theme="snow"
         value={value}
         onChange={onChange}
@@ -143,6 +56,9 @@ export default function RichTextEditor({
         readOnly={disabled}
         className={disabled ? 'opacity-50 cursor-not-allowed' : ''}
       />
+      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        💡 Use el botón de imagen (📷) en la barra de herramientas para insertar imágenes
+      </p>
       <style jsx global>{`
         .quill {
           background: white;

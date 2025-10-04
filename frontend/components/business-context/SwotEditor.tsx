@@ -46,19 +46,53 @@ export default function SwotEditor({ contextId, onSuccess, existingSwot }: SwotE
   useEffect(() => {
     if (existingSwot) {
       console.log('Loading existing SWOT:', existingSwot); // Debug
-      setFormData({
+      
+      // Función helper para parsear arrays que pueden venir como string o array
+      const parseArrayField = (field: any): string[] => {
+        if (!field) return [""];
+        if (Array.isArray(field)) {
+          return field.length > 0 ? field : [""];
+        }
+        if (typeof field === 'string') {
+          try {
+            const parsed = JSON.parse(field);
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed : [""];
+          } catch {
+            return [""];
+          }
+        }
+        return [""];
+      };
+
+      const parseParticipants = (field: any): string[] => {
+        if (!field) return [];
+        if (Array.isArray(field)) return field;
+        if (typeof field === 'string') {
+          try {
+            const parsed = JSON.parse(field);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const loadedData = {
         title: existingSwot.title || "",
         description: existingSwot.description || "",
         facilitator: existingSwot.facilitator || "",
-        participants: Array.isArray(existingSwot.participants) ? existingSwot.participants : [],
-        strengths: (Array.isArray(existingSwot.strengths) && existingSwot.strengths.length > 0) ? existingSwot.strengths : [""],
-        weaknesses: (Array.isArray(existingSwot.weaknesses) && existingSwot.weaknesses.length > 0) ? existingSwot.weaknesses : [""],
-        opportunities: (Array.isArray(existingSwot.opportunities) && existingSwot.opportunities.length > 0) ? existingSwot.opportunities : [""],
-        threats: (Array.isArray(existingSwot.threats) && existingSwot.threats.length > 0) ? existingSwot.threats : [""],
+        participants: parseParticipants(existingSwot.participants),
+        strengths: parseArrayField(existingSwot.strengths),
+        weaknesses: parseArrayField(existingSwot.weaknesses),
+        opportunities: parseArrayField(existingSwot.opportunities),
+        threats: parseArrayField(existingSwot.threats),
         crossingAnalysis: existingSwot.crossingAnalysis || "",
-      });
+      };
+
+      console.log('Parsed SWOT data:', loadedData); // Debug
+      setFormData(loadedData);
       setIsEditMode(true);
-      console.log('Form data loaded'); // Debug
     } else {
       // Reset form cuando no hay existingSwot
       setFormData({
