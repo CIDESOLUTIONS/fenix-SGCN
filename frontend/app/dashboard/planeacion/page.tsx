@@ -151,7 +151,13 @@ export default function PlaneacionPage() {
       if (objectivesRes.ok) setObjectives(await objectivesRes.json());
       if (raciRes.ok) setRaciMatrices(await raciRes.json());
       if (contextsRes.ok) setContexts(await contextsRes.json());
-      if (processesRes.ok) setBusinessProcesses(await processesRes.json());
+      if (processesRes.ok) {
+        const processesData = await processesRes.json();
+        console.log('📊 Procesos cargados:', processesData.length, processesData);
+        setBusinessProcesses(processesData);
+      } else {
+        console.error('❌ Error cargando procesos:', processesRes.status);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {

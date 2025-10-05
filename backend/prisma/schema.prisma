@@ -247,7 +247,7 @@ model RiskAssessment {
   tenantId    String
   processId   String?
   
-  riskId      String?  @unique
+  riskId      String?  @unique @map("risk_id")
   
   name        String
   description String?
@@ -258,7 +258,7 @@ model RiskAssessment {
   
   category    RiskCategory
   
-  affectedProcesses Json?  @default("[]")
+  affectedProcesses Json?  @default("[]") @map("affected_processes")
   
   probabilityBefore Int
   impactBefore      Int

@@ -62,7 +62,7 @@ export class BusinessProcessesService {
         plans: true,
       },
       orderBy: [
-        { priorityScore: 'desc' }, // Ordenar por prioridad
+        { priorityScore: 'desc' },
         { name: 'asc' },
       ],
     });

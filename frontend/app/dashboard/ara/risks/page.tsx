@@ -36,9 +36,15 @@ export default function RisksPage() {
 
   const fetchData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
       const [procResponse, riskResponse] = await Promise.all([
-        fetch('/api/business-processes/continuity/selected'),
-        fetch('/api/risk-assessments')
+        fetch(`${API_URL}/api/business-processes/continuity/selected`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/risk-assessments`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
       ]);
 
       if (procResponse.ok) {
