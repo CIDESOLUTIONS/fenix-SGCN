@@ -1,9 +1,10 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto, SigninDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -11,19 +12,18 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private mailService: MailService,
   ) {}
 
   async signup(dto: SignupDto) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(dto.password, salt);
 
-    // Calcular fechas de suscripción
     const now = new Date();
-    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
-    const gracePeriodEndsAt = new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 días más
+    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const gracePeriodEndsAt = new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const newUser = await this.prisma.$transaction(async (tx) => {
-      // Crear tenant con período de prueba
       const tenant = await tx.tenant.create({
         data: {
           name: dto.tenantName,
@@ -35,7 +35,6 @@ export class AuthService {
         },
       });
 
-      // Crear usuario administrador
       const user = await tx.user.create({
         data: {
           email: dto.email,
@@ -48,7 +47,6 @@ export class AuthService {
         },
       });
 
-      // Registrar en audit log
       await tx.auditLog.create({
         data: {
           tenantId: tenant.id,
@@ -89,7 +87,6 @@ export class AuthService {
       throw new ForbiddenException('Invalid credentials');
     }
 
-    // Verificar estado de suscripción
     const now = new Date();
     if (user.tenant.subscriptionStatus === 'DELETED') {
       throw new ForbiddenException('Tenant has been deleted');
@@ -116,7 +113,6 @@ export class AuthService {
       secret: this.config.get('JWT_SECRET'),
     });
 
-    // Registrar login en audit log
     await this.prisma.auditLog.create({
       data: {
         tenantId: user.tenantId,
@@ -138,7 +134,6 @@ export class AuthService {
     };
   }
 
-  // NUEVO: Método para obtener datos del usuario actual
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -163,5 +158,80 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  // ========== RECUPERACIÓN DE CONTRASEÑA ==========
+
+  async sendPasswordResetOTP(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por seguridad, no revelar si el email existe
+      return { message: 'Si el email existe, recibirás un código OTP' };
+    }
+
+    // Generar OTP de 6 dígitos
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    // Guardar OTP en base de datos
+    await this.prisma.passwordReset.upsert({
+      where: { email },
+      create: {
+        email,
+        otp,
+        expiresAt,
+      },
+      update: {
+        otp,
+        expiresAt,
+        used: false,
+      },
+    });
+
+    // Enviar email con OTP
+    await this.mailService.sendPasswordResetOTP(email, otp);
+
+    return { message: 'Si el email existe, recibirás un código OTP' };
+  }
+
+  async verifyOTP(email: string, otp: string) {
+    const reset = await this.prisma.passwordReset.findUnique({
+      where: { email },
+    });
+
+    if (!reset || reset.used || reset.expiresAt < new Date() || reset.otp !== otp) {
+      throw new ForbiddenException('Código OTP inválido o expirado');
+    }
+
+    return { valid: true, message: 'OTP válido' };
+  }
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const reset = await this.prisma.passwordReset.findUnique({
+      where: { email },
+    });
+
+    if (!reset || reset.used || reset.expiresAt < new Date() || reset.otp !== otp) {
+      throw new ForbiddenException('Código OTP inválido o expirado');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { email },
+        data: { password: hashedPassword },
+      }),
+      this.prisma.passwordReset.update({
+        where: { email },
+        data: { used: true },
+      }),
+    ]);
+
+    return { message: 'Contraseña actualizada exitosamente' };
   }
 }

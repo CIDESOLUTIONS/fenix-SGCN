@@ -973,3 +973,14 @@ enum AutomationLevel {
 
 
 
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("password_resets")
+}

@@ -19,10 +19,27 @@ export class AuthController {
     return this.authService.signin(dto);
   }
 
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body('email') email: string) {
+    return this.authService.sendPasswordResetOTP(email);
+  }
+
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOTP(@Body() dto: { email: string; otp: string }) {
+    return this.authService.verifyOTP(dto.email, dto.otp);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: { email: string; otp: string; newPassword: string }) {
+    return this.authService.resetPassword(dto.email, dto.otp, dto.newPassword);
+  }
+
   @UseGuards(JwtGuard)
   @Get('me')
   getMe(@Request() req) {
-    // El JWT strategy retorna el user completo, usar req.user.id en lugar de req.user.sub
     return this.authService.getMe(req.user.id);
   }
 }
