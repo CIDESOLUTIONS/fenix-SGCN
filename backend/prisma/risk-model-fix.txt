@@ -1,0 +1,42 @@
+model RiskAssessment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String?
+  
+  riskId      String?  @unique
+  
+  name        String
+  description String?
+  
+  cause       String?  @db.Text
+  event       String?  @db.Text
+  consequence String?  @db.Text
+  
+  category    RiskCategory
+  
+  affectedProcesses Json?  @default("[]")
+  
+  probabilityBefore Int
+  impactBefore      Int
+  scoreBefore       Decimal
+  
+  controls          String[]
+  
+  probabilityAfter  Int?
+  impactAfter       Int?
+  scoreAfter        Decimal?
+  
+  kris              Json?
+  
+  resilienceScore   Decimal?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  
+  riskControls RiskControl[]
+
+  @@map("risk_assessments")
+}

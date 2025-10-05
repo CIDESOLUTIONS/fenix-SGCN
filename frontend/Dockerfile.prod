@@ -7,8 +7,10 @@ WORKDIR /app
 # Copiar archivos de configuración
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+# Instalar dependencias con reintentos
+RUN npm install --legacy-peer-deps --no-audit || \
+    npm install --legacy-peer-deps --no-audit || \
+    npm install --legacy-peer-deps --no-audit
 
 # Copiar código fuente
 COPY . .

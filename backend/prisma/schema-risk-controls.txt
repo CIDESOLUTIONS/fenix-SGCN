@@ -1,0 +1,107 @@
+model RiskAssessment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  processId   String?
+  
+  // NUEVO: ID de Riesgo (ej: RTC-001)
+  riskId      String?  @unique
+  
+  name        String
+  description String?
+  
+  // NUEVO: Análisis Causa-Efecto (metodología ICETEX)
+  cause       String?  @db.Text  // Causa del riesgo
+  event       String?  @db.Text  // Evento potencial
+  consequence String?  @db.Text  // Consecuencia
+  
+  category    RiskCategory
+  
+  // NUEVO: Procesos críticos afectados
+  affectedProcesses Json?  @default("[]")  // Array de IDs de procesos
+  
+  // Evaluación sin controles (Riesgo Inherente)
+  probabilityBefore Int      // 1-5
+  impactBefore      Int      // 1-5
+  scoreBefore       Decimal  // Calculado
+  
+  // Controles (DEPRECATED - usar tabla RiskControl)
+  controls          String[]
+  
+  // Evaluación con controles (Riesgo Residual)
+  probabilityAfter  Int?
+  impactAfter       Int?
+  scoreAfter        Decimal?
+  
+  // KRIs
+  kris              Json?
+  
+  // Score resiliencia
+  resilienceScore   Decimal?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  
+  // NUEVO: Relación con controles
+  riskControls RiskControl[]
+
+  @@map("risk_assessments")
+}
+
+// NUEVO: Tabla de Controles de Riesgo (metodología ICETEX)
+model RiskControl {
+  id                String   @id @default(uuid())
+  riskAssessmentId  String
+  
+  description       String   @db.Text
+  
+  // Variables de puntuación ICETEX
+  controlType       ControlType           // PREVENTIVE, DETECTIVE, CORRECTIVE
+  applicationCriteria ApplicationCriteria // ALWAYS, RANDOM
+  isDocumented      DocumentationLevel    // YES, PARTIAL, NO
+  effectiveness     EffectivenessLevel    // EFFECTIVE, NEEDS_IMPROVEMENT, NOT_EFFECTIVE
+  automation        AutomationLevel       // AUTOMATIC, MANUAL
+  
+  // Puntuación calculada (0-100)
+  score             Int      @default(0)
+  
+  // Cuadrantes a reducir (0, 1, 2)
+  reductionQuadrants Int     @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  riskAssessment RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  @@map("risk_controls")
+}
+
+enum ControlType {
+  PREVENTIVE   // 10 puntos
+  DETECTIVE    // 8 puntos
+  CORRECTIVE   // 3 puntos
+}
+
+enum ApplicationCriteria {
+  ALWAYS       // 10 puntos
+  RANDOM       // 5 puntos
+}
+
+enum DocumentationLevel {
+  YES          // 15 puntos
+  PARTIAL      // 7 puntos
+  NO           // 0 puntos
+}
+
+enum EffectivenessLevel {
+  EFFECTIVE              // 50 puntos
+  NEEDS_IMPROVEMENT      // 25 puntos
+  NOT_EFFECTIVE          // 0 puntos
+}
+
+enum AutomationLevel {
+  AUTOMATIC    // 15 puntos
+  MANUAL       // 10 puntos
+}

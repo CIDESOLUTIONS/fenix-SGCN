@@ -4,7 +4,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para compilación
+# Instalar dependencias del sistema
 RUN apk add --no-cache \
     python3 \
     make \
@@ -16,8 +16,10 @@ RUN apk add --no-cache \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar TODAS las dependencias (incluidas devDependencies)
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+# Instalar dependencias con reintentos
+RUN npm install --legacy-peer-deps --no-audit || \
+    npm install --legacy-peer-deps --no-audit || \
+    npm install --legacy-peer-deps --no-audit
 
 # Generar Prisma Client
 RUN npx prisma generate
@@ -46,7 +48,7 @@ RUN apk add --no-cache \
 # Crear usuario no-root
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copiar solo lo necesario desde builder
+# Copiar desde builder
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
@@ -69,6 +71,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3001/health || exit 1
 
-# Usar tini como init para manejar señales correctamente
+# Usar tini como init
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["./docker-entrypoint.sh"]

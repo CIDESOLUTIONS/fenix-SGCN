@@ -22,17 +22,17 @@ model Tenant {
   logo      String?
   colors    Json?
   
-  // Sistema de suscripciÃ³n
+  // Sistema de suscripciÃƒÂ³n
   subscriptionPlan    SubscriptionPlan @default(TRIAL)
   subscriptionStatus  SubscriptionStatus @default(ACTIVE)
   trialEndsAt         DateTime?
   subscriptionEndsAt  DateTime?
-  gracePeriodEndsAt   DateTime?  // 30 dÃ­as despuÃ©s de vencimiento
+  gracePeriodEndsAt   DateTime?  // 30 dÃƒÂ­as despuÃƒÂ©s de vencimiento
   
-  // Backup y eliminaciÃ³n
+  // Backup y eliminaciÃƒÂ³n
   lastBackupAt        DateTime?
-  backupUrl           String?    // URL del Ãºltimo backup
-  scheduledDeletionAt DateTime?  // Fecha programada de eliminaci�n
+  backupUrl           String?    // URL del ÃƒÂºltimo backup
+  scheduledDeletionAt DateTime?  // Fecha programada de eliminaciï¿½n
   
   // Integraciones IA
   aiApiKey            String?    // API Key para servicios de IA (OpenAI, etc.)
@@ -64,8 +64,8 @@ model Tenant {
 }
 
 enum SubscriptionPlan {
-  TRIAL          // 30 dÃ­as gratis
-  STANDARD       // Plan bÃ¡sico
+  TRIAL          // 30 dÃƒÂ­as gratis
+  STANDARD       // Plan bÃƒÂ¡sico
   PROFESSIONAL   // Plan profesional
   PREMIUM        // Plan premium
   ENTERPRISE     // Plan empresarial
@@ -73,10 +73,10 @@ enum SubscriptionPlan {
 
 enum SubscriptionStatus {
   ACTIVE         // Activa
-  EXPIRED        // Vencida (en perÃ­odo de gracia)
+  EXPIRED        // Vencida (en perÃƒÂ­odo de gracia)
   SUSPENDED      // Suspendida (no pago)
   CANCELLED      // Cancelada por usuario
-  DELETED        // Eliminada (despuÃ©s de perÃ­odo de gracia)
+  DELETED        // Eliminada (despuÃƒÂ©s de perÃƒÂ­odo de gracia)
 }
 
 model User {
@@ -109,7 +109,7 @@ enum UserRole {
 }
 
 // ============================================
-// AUDITORÃA Y LOGS
+// AUDITORÃƒÂA Y LOGS
 // ============================================
 
 model AuditLog {
@@ -130,7 +130,7 @@ model AuditLog {
 }
 
 // ============================================
-// MÃ“DULO: PROCESOS CRÃTICOS
+// MÃƒâ€œDULO: PROCESOS CRÃƒÂTICOS
 // ============================================
 
 model BusinessProcess {
@@ -153,22 +153,22 @@ model BusinessProcess {
   raciInformed          String?
   raciInformedEmail     String?
   
-  // NUEVO: Caracterización de Alto Nivel
+  // NUEVO: CaracterizaciÃ³n de Alto Nivel
   highLevelCharacterization String?  @db.Text
   
   // NUEVO: Tipo de Proceso
   processType      ProcessType?
   
-  // NUEVO: Inclusión en Análisis de Continuidad
+  // NUEVO: InclusiÃ³n en AnÃ¡lisis de Continuidad
   includeInContinuityAnalysis Boolean @default(false)
   
-  // NUEVO: Criterios de Priorización (JSON con pesos)
+  // NUEVO: Criterios de PriorizaciÃ³n (JSON con pesos)
   prioritizationCriteria Json?  // { strategic: 0-10, operational: 0-10, financial: 0-10, regulatory: 0-10 }
   
-  // NUEVO: Score calculado de priorización
+  // NUEVO: Score calculado de priorizaciÃ³n
   priorityScore    Decimal? @db.Decimal(5, 2)
   
-  // NUEVO: Archivo adjunto (caracterización completa)
+  // NUEVO: Archivo adjunto (caracterizaciÃ³n completa)
   fileUrl          String?
   fileName         String?
   fileSize         Int?
@@ -193,13 +193,13 @@ enum CriticalityLevel {
 }
 
 enum ProcessType {
-  STRATEGIC    // Estratégico
+  STRATEGIC    // EstratÃ©gico
   CORE         // Misional
   SUPPORT      // Soporte
 }
 
 // ============================================
-// MÃ“DULO: BIA (Business Impact Analysis)
+// MÃƒâ€œDULO: BIA (Business Impact Analysis)
 // ============================================
 
 model BiaAssessment {
@@ -207,7 +207,7 @@ model BiaAssessment {
   tenantId    String
   processId   String
   
-  // MÃ©tricas tiempo (en horas)
+  // MÃƒÂ©tricas tiempo (en horas)
   rto         Int?     // Recovery Time Objective
   rpo         Int?     // Recovery Point Objective
   mtpd        Int?     // Maximum Tolerable Period of Disruption
@@ -239,7 +239,7 @@ model BiaAssessment {
 }
 
 // ============================================
-// MÃ“DULO: RIESGO DE CONTINUIDAD (ARA)
+// MÃƒâ€œDULO: RIESGO DE CONTINUIDAD (ARA)
 // ============================================
 
 model RiskAssessment {
@@ -247,27 +247,31 @@ model RiskAssessment {
   tenantId    String
   processId   String?
   
+  riskId      String?  @unique
+  
   name        String
   description String?
+  
+  cause       String?  @db.Text
+  event       String?  @db.Text
+  consequence String?  @db.Text
+  
   category    RiskCategory
   
-  // EvaluaciÃ³n sin controles
-  probabilityBefore Int      // 1-5
-  impactBefore      Int      // 1-5
-  scoreBefore       Decimal  // Calculado
+  affectedProcesses Json?  @default("[]")
   
-  // Controles
+  probabilityBefore Int
+  impactBefore      Int
+  scoreBefore       Decimal
+  
   controls          String[]
   
-  // EvaluaciÃ³n con controles
   probabilityAfter  Int?
   impactAfter       Int?
   scoreAfter        Decimal?
   
-  // KRIs
   kris              Json?
   
-  // Score resiliencia
   resilienceScore   Decimal?
   
   createdAt DateTime @default(now())
@@ -275,9 +279,12 @@ model RiskAssessment {
 
   tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   process BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  
+  riskControls RiskControl[]
 
   @@map("risk_assessments")
 }
+
 
 enum RiskCategory {
   OPERATIONAL
@@ -288,7 +295,7 @@ enum RiskCategory {
 }
 
 // ============================================
-// MÃ“DULO: ESCENARIOS Y ESTRATEGIAS
+// MÃƒâ€œDULO: ESCENARIOS Y ESTRATEGIAS
 // ============================================
 
 model ContinuityStrategy {
@@ -300,10 +307,10 @@ model ContinuityStrategy {
   description String?
   type        StrategyType
   
-  // EvaluaciÃ³n
+  // EvaluaciÃƒÂ³n
   cost              Decimal?
   effectiveness     Int?     // 1-5
-  implementationTime Int?    // dÃ­as
+  implementationTime Int?    // dÃƒÂ­as
   
   // Scoring
   costEffectivenessScore Decimal?
@@ -327,7 +334,7 @@ enum StrategyType {
 }
 
 // ============================================
-// MÃ“DULO: PLANES DE CONTINUIDAD
+// MÃƒâ€œDULO: PLANES DE CONTINUIDAD
 // ============================================
 
 model ContinuityPlan {
@@ -345,7 +352,7 @@ model ContinuityPlan {
   approvedBy  String?
   approvedAt  DateTime?
   
-  // EjecuciÃ³n
+  // EjecuciÃƒÂ³n
   lastActivated DateTime?
   executionLog  Json?
   
@@ -376,31 +383,31 @@ enum PlanStatus {
 }
 
 // ============================================
-// MÃ“DULO: PRUEBAS DE CONTINUIDAD
+// MÃƒâ€œDULO: PRUEBAS DE CONTINUIDAD
 // ============================================
 
 model TestExercise {
   id          String   @id @default(uuid())
   tenantId    String
-  planId      String?  // RelaciÃ³n con plan
+  planId      String?  // RelaciÃƒÂ³n con plan
   
   name        String
   type        TestType
   description String?
   scenario    Json?    // Escenario del ejercicio
   
-  // PlanificaciÃ³n
+  // PlanificaciÃƒÂ³n
   scheduledDate DateTime
   duration      Int?     // minutos planificados
   participants  String[]
   objectives    Json?    // Objetivos del ejercicio
   
-  // EjecuciÃ³n
+  // EjecuciÃƒÂ³n
   executedDate     DateTime?
   executedBy       String?
   actualStartTime  DateTime?  // Hora real de inicio
   actualEndTime    DateTime?  // Hora real de fin
-  actualDuration   Decimal?   // DuraciÃ³n real en horas
+  actualDuration   Decimal?   // DuraciÃƒÂ³n real en horas
   executionLog     Json?      // Log de eventos
   
   // Resultados
@@ -436,7 +443,7 @@ enum TestType {
 }
 
 // ============================================
-// MÃ“DULO: CUMPLIMIENTO NORMATIVO
+// MÃƒâ€œDULO: CUMPLIMIENTO NORMATIVO
 // ============================================
 
 model ComplianceFramework {
@@ -447,7 +454,7 @@ model ComplianceFramework {
   version     String?
   description String?
   
-  // CertificaciÃ³n
+  // CertificaciÃƒÂ³n
   certificationDate DateTime?
   expiryDate        DateTime?
   certifyingBody    String?
@@ -469,7 +476,7 @@ model ComplianceFramework {
 }
 
 // ============================================
-// MÃ“DULO: MEJORA CONTINUA
+// MÃƒâ€œDULO: MEJORA CONTINUA
 // ============================================
 
 model CorrectiveAction {
@@ -480,12 +487,12 @@ model CorrectiveAction {
   description String?
   category    ActionCategory
   
-  // NC/Hallazgo (relaciÃ³n con Finding)
+  // NC/Hallazgo (relaciÃƒÂ³n con Finding)
   findingId   String?
   finding     Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
   severity    Severity
   
-  // Plan de acciÃ³n
+  // Plan de acciÃƒÂ³n
   actionPlan  String
   responsible String
   assignedTo  String?  // Para workflows
@@ -541,11 +548,11 @@ model Finding {
   title       String
   description String   @db.Text
   source      FindingSource
-  sourceReference String?  // ID del ejercicio, auditorÃ­a, etc.
+  sourceReference String?  // ID del ejercicio, auditorÃƒÂ­a, etc.
   severity    Severity
   category    String
   
-  // Impacto y recomendaciÃ³n
+  // Impacto y recomendaciÃƒÂ³n
   affectedArea    String?
   impact          String?  @db.Text
   recommendation  String?  @db.Text
@@ -553,12 +560,12 @@ model Finding {
   // Estado
   status      FindingStatus @default(OPEN)
   
-  // ResoluciÃ³n
+  // ResoluciÃƒÂ³n
   resolution  String?  @db.Text
   resolvedBy  String?
   resolvedAt  DateTime?
   
-  // AuditorÃ­a
+  // AuditorÃƒÂ­a
   identifiedBy String
   identifiedAt DateTime @default(now())
   
@@ -599,17 +606,17 @@ model Exercise {
   id          String   @id @default(uuid())
   tenantId    String
   
-  // InformaciÃ³n bÃ¡sica
+  // InformaciÃƒÂ³n bÃƒÂ¡sica
   name        String
   type        ExerciseType
   description String?  @db.Text
   
-  // PlanificaciÃ³n
+  // PlanificaciÃƒÂ³n
   scheduledDate DateTime
   planId      String?
   scenario    Json?    // Escenario del ejercicio
   
-  // EjecuciÃ³n
+  // EjecuciÃƒÂ³n
   startTime   DateTime?
   endTime     DateTime?
   actualEndTime DateTime?  // Alias para exercises.service.ts
@@ -619,11 +626,11 @@ model Exercise {
   result      ExerciseResult?
   score       Decimal?         @db.Decimal(5, 2)
   
-  // Tiempos y duraciÃ³n
+  // Tiempos y duraciÃƒÂ³n
   actualStartTime DateTime?
-  actualDuration  Float?     // DuraciÃ³n real en horas
+  actualDuration  Float?     // DuraciÃƒÂ³n real en horas
   
-  // Objetivos y log de ejecuciÃ³n
+  // Objetivos y log de ejecuciÃƒÂ³n
   objectives     Json?      // Array de objetivos del ejercicio
   executionLog   Json?      // Log completo de eventos durante ejercicio
   
@@ -652,8 +659,8 @@ model Exercise {
 
 enum ExerciseType {
   TABLETOP      // Ejercicio de mesa
-  WALKTHROUGH   // RevisiÃ³n paso a paso
-  SIMULATION    // SimulaciÃ³n
+  WALKTHROUGH   // RevisiÃƒÂ³n paso a paso
+  SIMULATION    // SimulaciÃƒÂ³n
   FULL_SCALE    // Prueba a escala completa
   DRILL         // Simulacro
 }
@@ -721,7 +728,7 @@ enum DocumentType {
 }
 
 // ============================================
-// MÃ“DULO 1: PLANEACIÃ“N Y GOBIERNO (ISO 22301 ClÃ¡usula 5)
+// MÃƒâ€œDULO 1: PLANEACIÃƒâ€œN Y GOBIERNO (ISO 22301 ClÃƒÂ¡usula 5)
 // ============================================
 
 model SgcnPolicy {
@@ -734,15 +741,15 @@ model SgcnPolicy {
   
   status      PolicyStatus @default(DRAFT)
   
-  // AprobaciÃ³n
+  // AprobaciÃƒÂ³n
   approvedBy  String?
   approvedAt  DateTime?
   
-  // PublicaciÃ³n
+  // PublicaciÃƒÂ³n
   publishedBy String?
   publishedAt DateTime?
   
-  // AuditorÃ­a
+  // AuditorÃƒÂ­a
   createdBy   String
   updatedBy   String?
   
@@ -808,14 +815,14 @@ model RaciMatrix {
 
 
 // ============================================
-// CONTEXTO DE NEGOCIO Y ANÁLISIS FODA
+// CONTEXTO DE NEGOCIO Y ANÃLISIS FODA
 // ============================================
 
 model BusinessContext {
   id              String   @id @default(uuid())
   tenantId        String
   
-  // Información básica
+  // InformaciÃ³n bÃ¡sica
   title           String
   description     String?  @db.Text
   elaborationDate DateTime @default(now())
@@ -828,12 +835,12 @@ model BusinessContext {
   fileName        String?
   fileSize        Int?
   
-  // Estado y aprobación
+  // Estado y aprobaciÃ³n
   status          PolicyStatus @default(DRAFT)
   approvedBy      String?
   approvedAt      DateTime?
   
-  // Auditoría
+  // AuditorÃ­a
   createdBy       String
   updatedBy       String?
   
@@ -849,9 +856,9 @@ model BusinessContext {
 model SwotAnalysis {
   id              String   @id @default(uuid())
   tenantId        String
-  contextId       String   // Relación con BusinessContext
+  contextId       String   // RelaciÃ³n con BusinessContext
   
-  // Información básica
+  // InformaciÃ³n bÃ¡sica
   title           String
   description     String?
   analysisDate    DateTime @default(now())
@@ -865,7 +872,7 @@ model SwotAnalysis {
   // Estrategias derivadas
   strategies      Json?    // Array de estrategias FO, FA, DO, DA
   
-  // Análisis de cruzamientos (generado por IA)
+  // AnÃ¡lisis de cruzamientos (generado por IA)
   crossingAnalysis String? @db.Text
   
   // Participantes
@@ -875,7 +882,7 @@ model SwotAnalysis {
   // Estado
   status          SwotStatus @default(IN_PROGRESS)
   
-  // Auditoría
+  // AuditorÃ­a
   createdBy       String
   updatedBy       String?
   
@@ -911,4 +918,58 @@ model AIConfig {
   
   @@map("ai_configs")
 }
+
+// NUEVO: Modelo de Controles de Riesgo (metodología ICETEX)
+model RiskControl {
+  id                String   @id @default(uuid())
+  riskAssessmentId  String
+  
+  description       String   @db.Text
+  
+  controlType       ControlType
+  applicationCriteria ApplicationCriteria
+  isDocumented      DocumentationLevel
+  effectiveness     EffectivenessLevel
+  automation        AutomationLevel
+  
+  score             Int      @default(0)
+  reductionQuadrants Int     @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  riskAssessment RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  @@map("risk_controls")
+}
+
+enum ControlType {
+  PREVENTIVE
+  DETECTIVE
+  CORRECTIVE
+}
+
+enum ApplicationCriteria {
+  ALWAYS
+  RANDOM
+}
+
+enum DocumentationLevel {
+  YES
+  PARTIAL
+  NO
+}
+
+enum EffectivenessLevel {
+  EFFECTIVE
+  NEEDS_IMPROVEMENT
+  NOT_EFFECTIVE
+}
+
+enum AutomationLevel {
+  AUTOMATIC
+  MANUAL
+}
+
+
 

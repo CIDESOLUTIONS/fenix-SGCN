@@ -33,6 +33,7 @@ import { BusinessContextModule } from './business-context/business-context.modul
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { AIModule } from './ai/ai.module';
+import { RiskControlsModule } from './risk-controls/risk-controls.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { AIModule } from './ai/ai.module';
     BusinessProcessesModule,
     BiaAssessmentsModule,
     RiskAssessmentsModule,
+    RiskControlsModule,
     ContinuityStrategiesModule,
     ContinuityPlansModule,
     TestExercisesModule,
@@ -80,4 +82,3 @@ import { AIModule } from './ai/ai.module';
   providers: [AppService],
 })
 export class AppModule {}
-

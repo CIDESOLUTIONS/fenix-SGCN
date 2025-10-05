@@ -1,0 +1,50 @@
+model RiskControl {
+  id                String   @id @default(uuid())
+  riskAssessmentId  String
+  
+  description       String   @db.Text
+  
+  controlType       ControlType
+  applicationCriteria ApplicationCriteria
+  isDocumented      DocumentationLevel
+  effectiveness     EffectivenessLevel
+  automation        AutomationLevel
+  
+  score             Int      @default(0)
+  reductionQuadrants Int     @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  riskAssessment RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  @@map("risk_controls")
+}
+
+enum ControlType {
+  PREVENTIVE
+  DETECTIVE
+  CORRECTIVE
+}
+
+enum ApplicationCriteria {
+  ALWAYS
+  RANDOM
+}
+
+enum DocumentationLevel {
+  YES
+  PARTIAL
+  NO
+}
+
+enum EffectivenessLevel {
+  EFFECTIVE
+  NEEDS_IMPROVEMENT
+  NOT_EFFECTIVE
+}
+
+enum AutomationLevel {
+  AUTOMATIC
+  MANUAL
+}

@@ -1,0 +1,55 @@
+﻿// NUEVO: Modelo de Controles de Riesgo (metodología ICETEX)
+model RiskControl {
+  id                String   @id @default(uuid())
+  riskAssessmentId  String
+  
+  description       String   @db.Text
+  
+  // Variables de puntuación ICETEX
+  controlType       ControlType
+  applicationCriteria ApplicationCriteria
+  isDocumented      DocumentationLevel
+  effectiveness     EffectivenessLevel
+  automation        AutomationLevel
+  
+  // Puntuación calculada (0-100)
+  score             Int      @default(0)
+  
+  // Cuadrantes a reducir (0, 1, 2)
+  reductionQuadrants Int     @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  riskAssessment RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  @@map(\"risk_controls\")
+}
+
+enum ControlType {
+  PREVENTIVE
+  DETECTIVE
+  CORRECTIVE
+}
+
+enum ApplicationCriteria {
+  ALWAYS
+  RANDOM
+}
+
+enum DocumentationLevel {
+  YES
+  PARTIAL
+  NO
+}
+
+enum EffectivenessLevel {
+  EFFECTIVE
+  NEEDS_IMPROVEMENT
+  NOT_EFFECTIVE
+}
+
+enum AutomationLevel {
+  AUTOMATIC
+  MANUAL
+}
