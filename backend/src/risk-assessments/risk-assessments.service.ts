@@ -73,7 +73,20 @@ export class RiskAssessmentsService {
   async findAll(tenantId: string) {
     return await this.prisma.riskAssessment.findMany({
       where: { tenantId },
-      include: {
+      select: {
+        id: true,
+        riskId: true,
+        name: true,
+        category: true,
+        cause: true,           // AGREGADO
+        event: true,           // AGREGADO
+        consequence: true,     // AGREGADO
+        probabilityBefore: true,
+        impactBefore: true,
+        scoreBefore: true,
+        probabilityAfter: true,
+        impactAfter: true,
+        scoreAfter: true,
         process: {
           select: {
             id: true,

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Eye, FileText } from 'lucide-react';
+import { Plus, Eye, FileText, Edit2, Trash2 } from 'lucide-react';
 import NewRiskModal from '@/components/NewRiskModal';
+import EditRiskModal from '@/components/EditRiskModal';
 import Link from 'next/link';
 
 interface BusinessProcess {
@@ -15,6 +16,9 @@ interface RiskAssessment {
   riskId: string;
   name: string;
   category: string;
+  cause?: string;
+  event?: string;
+  consequence?: string;
   probabilityBefore: number;
   impactBefore: number;
   scoreBefore: number;
@@ -28,6 +32,8 @@ export default function RisksPage() {
   const [processes, setProcesses] = useState<BusinessProcess[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewRiskModal, setShowNewRiskModal] = useState(false);
+  const [showEditRiskModal, setShowEditRiskModal] = useState(false);
+  const [selectedRisk, setSelectedRisk] = useState<RiskAssessment | null>(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
@@ -86,6 +92,34 @@ export default function RisksPage() {
     }
   };
 
+  const handleEdit = (risk: RiskAssessment) => {
+    setSelectedRisk(risk);
+    setShowEditRiskModal(true);
+  };
+
+  const handleDelete = async (riskId: string) => {
+    if (!confirm('¿Está seguro de eliminar este riesgo? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/risk-assessments/${riskId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        setRisks(risks.filter(r => r.id !== riskId));
+      } else {
+        alert('Error al eliminar el riesgo');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al eliminar el riesgo');
+    }
+  };
+
   const getRiskColor = (score: number) => {
     if (score >= 19) return 'bg-red-100 text-red-800 border-red-200';
     if (score >= 13) return 'bg-orange-100 text-orange-800 border-orange-200';
@@ -141,42 +175,88 @@ export default function RisksPage() {
         <div className="grid gap-4">
           {risks.map((risk) => (
             <div key={risk.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm font-mono text-gray-500">{risk.riskId}</span>
-                    <h3 className="text-lg font-semibold text-gray-900">{risk.name}</h3>
+              {/* Header con título y categoría */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{risk.riskId}</span>
+                  <h3 className="text-lg font-semibold text-gray-900">{risk.name}</h3>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                    {risk.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Información resumida */}
+              <div className="space-y-2 mb-4 text-sm">
+                {risk.cause && (
+                  <div className="flex">
+                    <span className="font-semibold text-gray-700 min-w-[110px]">Causa:</span>
+                    <p className="text-gray-600">{risk.cause.substring(0, 150)}{risk.cause.length > 150 ? '...' : ''}</p>
+                  </div>
+                )}
+                {risk.event && (
+                  <div className="flex">
+                    <span className="font-semibold text-gray-700 min-w-[110px]">Evento:</span>
+                    <p className="text-gray-600">{risk.event.substring(0, 150)}{risk.event.length > 150 ? '...' : ''}</p>
+                  </div>
+                )}
+                {risk.consequence && (
+                  <div className="flex">
+                    <span className="font-semibold text-gray-700 min-w-[110px]">Consecuencia:</span>
+                    <p className="text-gray-600">{risk.consequence.substring(0, 150)}{risk.consequence.length > 150 ? '...' : ''}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Scores y Acciones */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Riesgo Inherente</p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getRiskColor(risk.scoreBefore)}`}>
+                      {getRiskLevel(risk.scoreBefore)} ({risk.scoreBefore})
+                    </span>
                   </div>
                   
-                  <div className="flex items-center gap-4 mt-4">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Riesgo Inherente</p>
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getRiskColor(risk.scoreBefore)}`}>
-                        {getRiskLevel(risk.scoreBefore)} ({risk.scoreBefore})
-                      </span>
-                    </div>
-                    
-                    {risk.scoreAfter && (
-                      <>
-                        <div className="text-gray-400">→</div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Riesgo Residual</p>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getRiskColor(risk.scoreAfter)}`}>
-                            {getRiskLevel(risk.scoreAfter)} ({risk.scoreAfter})
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {risk.scoreAfter && risk.scoreAfter !== risk.scoreBefore && (
+                    <>
+                      <div className="text-gray-400">→</div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Riesgo Residual</p>
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getRiskColor(risk.scoreAfter)}`}>
+                          {getRiskLevel(risk.scoreAfter)} ({risk.scoreAfter})
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                <Link
-                  href={`/dashboard/ara/risks/${risk.id}`}
-                  className="ml-4 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  Ver Detalle
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/dashboard/ara/risks/${risk.id}`}
+                    className="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-2"
+                    title="Ver detalle completo"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Ver Detalle
+                  </Link>
+                  <button
+                    onClick={() => handleEdit(risk)}
+                    className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg flex items-center gap-2"
+                    title="Editar riesgo"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(risk.id)}
+                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"
+                    title="Eliminar riesgo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -201,6 +281,19 @@ export default function RisksPage() {
         processes={processes}
         onSuccess={fetchData}
       />
+
+      {selectedRisk && (
+        <EditRiskModal
+          show={showEditRiskModal}
+          onClose={() => {
+            setShowEditRiskModal(false);
+            setSelectedRisk(null);
+          }}
+          risk={selectedRisk}
+          processes={processes}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 }
