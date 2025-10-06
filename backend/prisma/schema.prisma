@@ -136,6 +136,7 @@ model AuditLog {
 model BusinessProcess {
   id               String   @id @default(uuid())
   tenantId         String
+  processId        String?  @unique @map("processid") // ID autogenerado: P[Tipo][Criticidad][###]
   name             String
   description      String?
   criticalityLevel CriticalityLevel

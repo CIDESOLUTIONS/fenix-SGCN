@@ -18,13 +18,11 @@ export class ReportsService {
       selectedProcessIds?: string[];
     },
     tenantId: string,
-    userId: string,
   ): Promise<Buffer> {
     this.logger.log(`Generando documento de planeación para tenant ${tenantId}`);
 
     // Obtener datos
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     const contexts = dto.includeContexts
       ? await this.prisma.businessContext.findMany({
@@ -54,35 +52,60 @@ export class ReportsService {
         })
       : [];
 
-    // Crear PDF
-    const doc = new PDFDocument({ margin: 50 });
+    // Crear PDF con soporte UTF-8
+    const doc = new PDFDocument({ 
+      margin: 50,
+      bufferPages: true, // Importante para numeración de páginas
+      autoFirstPage: false // Control manual de páginas
+    });
+    
     const chunks: Buffer[] = [];
-
     doc.on('data', (chunk) => chunks.push(chunk));
 
+    // Helper para verificar espacio en página
+    const checkPageSpace = (requiredSpace: number = 100) => {
+      if (doc.y > 700) { // Si quedan menos de ~100px
+        doc.addPage();
+      }
+    };
+
+    // Helper para texto con manejo de UTF-8
+    const safeText = (text: string, options?: any) => {
+      // Reemplazar caracteres problemáticos
+      const cleanText = text
+        .replace(/[^\x00-\x7F]/g, (char) => {
+          const replacements: { [key: string]: string } = {
+            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+            'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+            'ñ': 'n', 'Ñ': 'N', '¿': '', '¡': ''
+          };
+          return replacements[char] || char;
+        });
+      return doc.text(cleanText, options);
+    };
+
     // Portada
+    doc.addPage();
     doc
       .fontSize(24)
       .font('Helvetica-Bold')
-      .text('Documento de Planeación y Gobierno', { align: 'center' })
+      .text('Documento de Planeacion y Gobierno', { align: 'center' })
       .moveDown(0.5);
 
     doc
       .fontSize(16)
       .font('Helvetica')
-      .text('Sistema de Gestión de Continuidad de Negocio (SGCN)', { align: 'center' })
+      .text('Sistema de Gestion de Continuidad de Negocio (SGCN)', { align: 'center' })
       .moveDown(2);
 
     doc
       .fontSize(14)
-      .text(`Organización: ${tenant?.name || 'Sin nombre'}`, { align: 'center' })
-      .text(`Generado por: ${user?.fullName || user?.email || 'Usuario'}`, { align: 'center' })
-      .text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, { align: 'center' })
+      .text(`Organizacion: ${tenant?.name || 'Sin nombre'}`, { align: 'center' })
+      .text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, { align: 'center' })
       .moveDown(3);
 
-    doc.addPage();
-
     // Tabla de contenidos
+    doc.addPage();
     doc
       .fontSize(18)
       .font('Helvetica-Bold')
@@ -92,25 +115,26 @@ export class ReportsService {
     let section = 1;
     doc.fontSize(12).font('Helvetica');
 
-    if (contexts.length > 0) doc.text(`${section++}. Contexto de Negocio y Análisis FODA`);
-    if (policies.length > 0) doc.text(`${section++}. Políticas del SGCN`);
+    if (contexts.length > 0) doc.text(`${section++}. Contexto de Negocio y Analisis FODA`);
+    if (policies.length > 0) doc.text(`${section++}. Politicas del SGCN`);
     if (objectives.length > 0) doc.text(`${section++}. Objetivos del SGCN`);
     if (raciMatrices.length > 0) doc.text(`${section++}. Matriz RACI`);
     if (processes.length > 0) doc.text(`${section++}. Procesos de Negocio`);
 
-    // Resetear contador de secciones
     section = 1;
 
-    // Contextos de Negocio
+    // CONTEXTOS DE NEGOCIO
     if (contexts.length > 0) {
       doc.addPage();
       doc
         .fontSize(18)
         .font('Helvetica-Bold')
-        .text(`${section++}. Contexto de Negocio y Análisis FODA`, { underline: true })
+        .text(`${section++}. Contexto de Negocio y Analisis FODA`, { underline: true })
         .moveDown(1);
 
       contexts.forEach((context, idx) => {
+        checkPageSpace(150);
+        
         doc
           .fontSize(14)
           .font('Helvetica-Bold')
@@ -120,113 +144,158 @@ export class ReportsService {
         doc.fontSize(11).font('Helvetica');
 
         if (context.description) {
-          doc.text(`Descripción: ${context.description}`).moveDown(0.3);
+          // Sin truncamiento, con salto de página automático
+          const lines = doc.heightOfString(context.description, { width: 500 });
+          if (doc.y + lines > 700) doc.addPage();
+          
+          safeText(`Descripcion: ${context.description}`, { width: 500 });
+          doc.moveDown(0.3);
         }
 
-        doc
-          .text(`Fecha de elaboración: ${new Date(context.elaborationDate).toLocaleDateString('es-ES')}`)
-          .text(`Estado: ${this.getStatusLabel(context.status)}`)
-          .moveDown(0.5);
+        safeText(`Fecha: ${new Date(context.elaborationDate).toLocaleDateString('es-ES')}`);
+        safeText(`Estado: ${this.getStatusLabel(context.status)}`);
+        doc.moveDown(0.5);
 
-        if (context.content) {
-          doc
-            .fontSize(12)
-            .font('Helvetica-Bold')
-            .text('Contenido:', { continued: false })
-            .moveDown(0.3);
-
-          doc
-            .fontSize(10)
-            .font('Helvetica')
-            .text(context.content, { align: 'justify' })
-            .moveDown(0.5);
-        }
-
-        // Análisis FODA
+        // SWOT sin truncar
         if (context.swotAnalyses && context.swotAnalyses.length > 0) {
-          doc
-            .fontSize(12)
-            .font('Helvetica-Bold')
-            .text('Análisis FODA:')
-            .moveDown(0.3);
+          context.swotAnalyses.forEach((swot) => {
+            checkPageSpace(200);
+            
+            doc
+              .fontSize(12)
+              .font('Helvetica-Bold')
+              .text('Analisis FODA:')
+              .moveDown(0.3);
 
-          context.swotAnalyses.forEach((swot: any) => {
-            doc.fontSize(11).font('Helvetica-Bold').text(`- ${swot.title}`);
             doc.fontSize(10).font('Helvetica');
-            if (swot.description) doc.text(`  ${swot.description}`);
-            doc.text(`  Facilitador: ${swot.facilitator}`);
-            if (swot.participants?.length) {
-              doc.text(`  Participantes: ${swot.participants.join(', ')}`);
+
+            // Fortalezas
+            if (swot.strengths && Array.isArray(swot.strengths) && swot.strengths.length > 0) {
+              checkPageSpace(100);
+              doc.font('Helvetica-Bold').text('Fortalezas:');
+              swot.strengths.forEach((s: any, i: number) => {
+                checkPageSpace(30);
+                safeText(`  ${i + 1}. ${String(s)}`, { indent: 20 });
+              });
+              doc.moveDown(0.3);
+            } else if (swot.strengths && typeof swot.strengths === 'string') {
+              const strengths = JSON.parse(swot.strengths);
+              if (Array.isArray(strengths) && strengths.length > 0) {
+                checkPageSpace(100);
+                doc.font('Helvetica-Bold').text('Fortalezas:');
+                strengths.forEach((s: string, i: number) => {
+                  checkPageSpace(30);
+                  safeText(`  ${i + 1}. ${s}`, { indent: 20 });
+                });
+                doc.moveDown(0.3);
+              }
             }
-            
-            // Mostrar elementos FODA completos
-            if (swot.strengths?.length) {
-              doc.moveDown(0.3).font('Helvetica-Bold').text('  Fortalezas:').font('Helvetica');
-              swot.strengths.forEach((s: string) => doc.text(`    • ${s}`));
+
+            // Debilidades
+            if (swot.weaknesses && Array.isArray(swot.weaknesses) && swot.weaknesses.length > 0) {
+              checkPageSpace(100);
+              doc.font('Helvetica-Bold').text('Debilidades:');
+              swot.weaknesses.forEach((w: any, i: number) => {
+                checkPageSpace(30);
+                safeText(`  ${i + 1}. ${String(w)}`, { indent: 20 });
+              });
+              doc.moveDown(0.3);
+            } else if (swot.weaknesses && typeof swot.weaknesses === 'string') {
+              const weaknesses = JSON.parse(swot.weaknesses);
+              if (Array.isArray(weaknesses) && weaknesses.length > 0) {
+                checkPageSpace(100);
+                doc.font('Helvetica-Bold').text('Debilidades:');
+                weaknesses.forEach((w: string, i: number) => {
+                  checkPageSpace(30);
+                  safeText(`  ${i + 1}. ${w}`, { indent: 20 });
+                });
+                doc.moveDown(0.3);
+              }
             }
-            if (swot.weaknesses?.length) {
-              doc.moveDown(0.3).font('Helvetica-Bold').text('  Debilidades:').font('Helvetica');
-              swot.weaknesses.forEach((w: string) => doc.text(`    • ${w}`));
+
+            // Oportunidades
+            if (swot.opportunities && Array.isArray(swot.opportunities) && swot.opportunities.length > 0) {
+              checkPageSpace(100);
+              doc.font('Helvetica-Bold').text('Oportunidades:');
+              swot.opportunities.forEach((o: any, i: number) => {
+                checkPageSpace(30);
+                safeText(`  ${i + 1}. ${String(o)}`, { indent: 20 });
+              });
+              doc.moveDown(0.3);
+            } else if (swot.opportunities && typeof swot.opportunities === 'string') {
+              const opportunities = JSON.parse(swot.opportunities);
+              if (Array.isArray(opportunities) && opportunities.length > 0) {
+                checkPageSpace(100);
+                doc.font('Helvetica-Bold').text('Oportunidades:');
+                opportunities.forEach((o: string, i: number) => {
+                  checkPageSpace(30);
+                  safeText(`  ${i + 1}. ${o}`, { indent: 20 });
+                });
+                doc.moveDown(0.3);
+              }
             }
-            if (swot.opportunities?.length) {
-              doc.moveDown(0.3).font('Helvetica-Bold').text('  Oportunidades:').font('Helvetica');
-              swot.opportunities.forEach((o: string) => doc.text(`    • ${o}`));
+
+            // Amenazas
+            if (swot.threats && Array.isArray(swot.threats) && swot.threats.length > 0) {
+              checkPageSpace(100);
+              doc.font('Helvetica-Bold').text('Amenazas:');
+              swot.threats.forEach((t: any, i: number) => {
+                checkPageSpace(30);
+                safeText(`  ${i + 1}. ${String(t)}`, { indent: 20 });
+              });
+              doc.moveDown(0.5);
+            } else if (swot.threats && typeof swot.threats === 'string') {
+              const threats = JSON.parse(swot.threats);
+              if (Array.isArray(threats) && threats.length > 0) {
+                checkPageSpace(100);
+                doc.font('Helvetica-Bold').text('Amenazas:');
+                threats.forEach((t: string, i: number) => {
+                  checkPageSpace(30);
+                  safeText(`  ${i + 1}. ${t}`, { indent: 20 });
+                });
+                doc.moveDown(0.5);
+              }
             }
-            if (swot.threats?.length) {
-              doc.moveDown(0.3).font('Helvetica-Bold').text('  Amenazas:').font('Helvetica');
-              swot.threats.forEach((t: string) => doc.text(`    • ${t}`));
-            }
-            
-            // Análisis de cruzamientos
-            if (swot.crossingAnalysis) {
-              doc.moveDown(0.3).font('Helvetica-Bold').text('  Análisis de Cruzamientos (IA):').font('Helvetica');
-              doc.text(swot.crossingAnalysis, { align: 'justify' });
-            }
-            
-            doc.moveDown(0.5);
           });
         }
-
-        doc.moveDown(1);
       });
     }
 
-    // Políticas
+    // POLÍTICAS
     if (policies.length > 0) {
       doc.addPage();
       doc
         .fontSize(18)
         .font('Helvetica-Bold')
-        .text(`${section++}. Políticas del SGCN`, { underline: true })
+        .text(`${section++}. Politicas del SGCN`, { underline: true })
         .moveDown(1);
 
       policies.forEach((policy, idx) => {
+        checkPageSpace(150);
+        
         doc
           .fontSize(14)
           .font('Helvetica-Bold')
-          .text(`${section - 1}.${idx + 1} ${policy.title} (v${policy.version})`)
+          .text(`${section - 1}.${idx + 1} ${policy.title}`)
           .moveDown(0.5);
 
         doc.fontSize(11).font('Helvetica');
-        doc.text(`Estado: ${this.getStatusLabel(policy.status)}`);
-        doc.text(`Creado: ${new Date(policy.createdAt).toLocaleDateString('es-ES')}`);
-        
-        if (policy.approvedAt) {
-          doc.text(`Aprobado: ${new Date(policy.approvedAt).toLocaleDateString('es-ES')}`);
-        }
 
         if (policy.content) {
+          const lines = doc.heightOfString(policy.content, { width: 500 });
+          if (doc.y + lines > 700) doc.addPage();
+          
+          safeText(policy.content, { width: 500, align: 'justify' });
           doc.moveDown(0.5);
-          doc
-            .fontSize(10)
-            .text(policy.content, { align: 'justify' });
         }
 
+        safeText(`Version: ${policy.version || '1.0'}`);
+        safeText(`Aprobado: ${policy.approvedAt ? new Date(policy.approvedAt).toLocaleDateString('es-ES') : 'Pendiente'}`);
         doc.moveDown(1);
       });
     }
 
-    // Objetivos
+    // OBJETIVOS
     if (objectives.length > 0) {
       doc.addPage();
       doc
@@ -235,26 +304,29 @@ export class ReportsService {
         .text(`${section++}. Objetivos del SGCN`, { underline: true })
         .moveDown(1);
 
-      objectives.forEach((objective, idx) => {
+      objectives.forEach((obj, idx) => {
+        checkPageSpace(100);
+        
         doc
           .fontSize(12)
           .font('Helvetica-Bold')
-          .text(`${section - 1}.${idx + 1} ${objective.description}`)
+          .text(`${section - 1}.${idx + 1} ${obj.description}`)
           .moveDown(0.3);
 
         doc.fontSize(10).font('Helvetica');
-        doc.text(`Criterio de medición: ${objective.measurementCriteria || 'No definido'}`);
-        doc.text(`Estado: ${this.getObjectiveStatusLabel(objective.status)}`);
-        doc.text(`Progreso: ${objective.progress}%`);
-        doc.text(`Responsable: ${objective.owner || 'No asignado'}`);
-        if (objective.targetDate) {
-          doc.text(`Fecha objetivo: ${new Date(objective.targetDate).toLocaleDateString('es-ES')}`);
+        
+        if (obj.description) {
+          const lines = doc.heightOfString(obj.description, { width: 500 });
+          if (doc.y + lines > 700) doc.addPage();
+          
+          safeText(obj.description, { width: 500 });
         }
-        doc.moveDown(0.8);
+        
+        doc.moveDown(0.5);
       });
     }
 
-    // Matriz RACI
+    // MATRIZ RACI
     if (raciMatrices.length > 0) {
       doc.addPage();
       doc
@@ -263,89 +335,80 @@ export class ReportsService {
         .text(`${section++}. Matriz RACI`, { underline: true })
         .moveDown(1);
 
-      raciMatrices.forEach((matrix, idx) => {
+      raciMatrices.forEach((raci, idx) => {
+        checkPageSpace(150);
+        
         doc
           .fontSize(14)
           .font('Helvetica-Bold')
-          .text(`${section - 1}.${idx + 1} ${matrix.processOrActivity}`)
+          .text(`${section - 1}.${idx + 1} ${raci.processOrActivity}`)
           .moveDown(0.5);
 
         doc.fontSize(10).font('Helvetica');
 
-        if (matrix.assignments && Array.isArray(matrix.assignments)) {
-          matrix.assignments.forEach((assignment: any) => {
-            const raciLabel = this.getRaciLabel(assignment.raciType);
-            doc.text(
-              `• ${assignment.role || 'Sin rol'}: ${raciLabel} - ${assignment.responsibility || 'Sin responsabilidad'}`
-            );
-          });
+        // Parsear assignments que es JsonValue
+        if (raci.assignments) {
+          const assignments = typeof raci.assignments === 'string' 
+            ? JSON.parse(raci.assignments) 
+            : raci.assignments;
+          
+          if (assignments && typeof assignments === 'object') {
+            const assignObj = assignments as any;
+            if (assignObj.responsible) safeText(`Responsable (R): ${assignObj.responsible}`);
+            if (assignObj.accountable) safeText(`Aprobador (A): ${assignObj.accountable}`);
+            if (assignObj.consulted) safeText(`Consultado (C): ${assignObj.consulted}`);
+            if (assignObj.informed) safeText(`Informado (I): ${assignObj.informed}`);
+          }
         }
-
+        
         doc.moveDown(1);
       });
     }
 
-    // Procesos de Negocio
+    // PROCESOS
     if (processes.length > 0) {
       doc.addPage();
       doc
         .fontSize(18)
         .font('Helvetica-Bold')
-        .text(`${section++}. Procesos de Negocio Seleccionados para Análisis`, { underline: true })
+        .text(`${section++}. Procesos de Negocio`, { underline: true })
         .moveDown(1);
 
-      processes.forEach((process, idx) => {
+      processes.forEach((proc, idx) => {
+        checkPageSpace(150);
+        
         doc
           .fontSize(14)
           .font('Helvetica-Bold')
-          .text(`${section - 1}.${idx + 1} ${process.name}`)
+          .text(`${section - 1}.${idx + 1} ${proc.name}`)
           .moveDown(0.5);
 
         doc.fontSize(10).font('Helvetica');
 
-        if (process.description) {
-          doc.text(`Descripción: ${process.description}`).moveDown(0.3);
+        if (proc.description) {
+          const lines = doc.heightOfString(proc.description, { width: 500 });
+          if (doc.y + lines > 700) doc.addPage();
+          
+          safeText(`Descripcion: ${proc.description}`, { width: 500 });
         }
 
-        if (process.processType) {
-          doc.text(`Tipo: ${this.getProcessTypeLabel(process.processType)}`);
-        }
-
-        if (process.priorityScore !== null && process.priorityScore !== undefined) {
-          doc.text(`Puntuación de prioridad: ${Number(process.priorityScore).toFixed(2)}/10`);
-        }
-
-        doc.text(`Incluido en análisis de continuidad: ${process.includeInContinuityAnalysis ? 'Sí' : 'No'}`);
+        safeText(`Tipo: ${this.getProcessTypeLabel(proc.processType || 'CORE')}`);
+        safeText(`Criticidad: ${this.getCriticalityLabel(proc.criticalityLevel)}`);
+        safeText(`En analisis de continuidad: ${proc.includeInContinuityAnalysis ? 'Si' : 'No'}`);
         
-        // Caracterización de alto nivel
-        if (process.highLevelCharacterization) {
-          doc.moveDown(0.3).font('Helvetica-Bold').text('Caracterización de Alto Nivel:').font('Helvetica');
-          doc.text(process.highLevelCharacterization, { align: 'justify' });
-        }
-        
-        // Criterios de priorización
-        if (process.prioritizationCriteria) {
-          doc.moveDown(0.3).font('Helvetica-Bold').text('Criterios de Priorización:').font('Helvetica');
-          const criteria = process.prioritizationCriteria as any;
-          if (criteria.strategic) doc.text(`  • Estratégico: ${criteria.strategic}/10`);
-          if (criteria.operational) doc.text(`  • Operacional: ${criteria.operational}/10`);
-          if (criteria.financial) doc.text(`  • Financiero: ${criteria.financial}/10`);
-          if (criteria.regulatory) doc.text(`  • Regulatorio: ${criteria.regulatory}/10`);
-        }
-
         doc.moveDown(1);
       });
     }
 
-    // Footer en todas las páginas
-    const range = doc.bufferedPageRange();
-    for (let i = range.start; i < range.start + range.count; i++) {
+    // Numeración de páginas
+    const pages = doc.bufferedPageRange();
+    for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
       doc
-        .fontSize(8)
+        .fontSize(9)
         .font('Helvetica')
         .text(
-          `Documento generado por Fenix-SGCN | Página ${i + 1} de ${range.count}`,
+          `Pagina ${i + 1} de ${pages.count}`,
           50,
           doc.page.height - 50,
           { align: 'center' }
@@ -354,51 +417,38 @@ export class ReportsService {
 
     doc.end();
 
-    return new Promise((resolve) => {
-      doc.on('end', () => {
-        const pdfBuffer = Buffer.concat(chunks);
-        resolve(pdfBuffer);
-      });
+    return new Promise((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
     });
   }
 
   private getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      DRAFT: 'Borrador',
-      REVIEW: 'En Revisión',
-      APPROVED: 'Aprobado',
-      ACTIVE: 'Activo',
+    const labels: { [key: string]: string } = {
+      'DRAFT': 'Borrador',
+      'IN_REVIEW': 'En Revision',
+      'APPROVED': 'Aprobado',
+      'PUBLISHED': 'Publicado',
     };
     return labels[status] || status;
-  }
-
-  private getObjectiveStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      NOT_STARTED: 'No Iniciado',
-      IN_PROGRESS: 'En Progreso',
-      COMPLETED: 'Completado',
-      ON_HOLD: 'En Pausa',
-      CANCELLED: 'Cancelado',
-    };
-    return labels[status] || status;
-  }
-
-  private getRaciLabel(raciType: string): string {
-    const labels: Record<string, string> = {
-      RESPONSIBLE: 'Responsable',
-      ACCOUNTABLE: 'Aprobador',
-      CONSULTED: 'Consultado',
-      INFORMED: 'Informado',
-    };
-    return labels[raciType] || raciType;
   }
 
   private getProcessTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-      STRATEGIC: 'Estratégico',
-      CORE: 'Misional',
-      SUPPORT: 'Soporte',
+    const labels: { [key: string]: string } = {
+      'STRATEGIC': 'Estrategico',
+      'CORE': 'Misional',
+      'SUPPORT': 'Soporte',
     };
     return labels[type] || type;
+  }
+
+  private getCriticalityLabel(level: string): string {
+    const labels: { [key: string]: string } = {
+      'CRITICAL': 'Critico',
+      'HIGH': 'Alto',
+      'MEDIUM': 'Medio',
+      'LOW': 'Bajo',
+    };
+    return labels[level] || level;
   }
 }

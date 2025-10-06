@@ -41,7 +41,6 @@ export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEdit
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
       
       let fileUrl = null;
       let fileName = null;
@@ -53,7 +52,7 @@ export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEdit
         formDataFile.append('file', uploadedFile);
         formDataFile.append('category', 'business-process');
 
-        const uploadRes = await fetch(`${API_URL}/api/documents/upload`, {
+        const uploadRes = await fetch('/api/documents/upload', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formDataFile,
@@ -82,7 +81,7 @@ export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEdit
         ).toFixed(2))
       };
 
-      const response = await fetch(`${API_URL}/api/business-processes`, {
+      const response = await fetch('/api/business-processes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -8,8 +8,56 @@ export class BusinessProcessesService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Calcular el score de priorización basado en los criterios
+   * Generar ID automático del proceso según formato:
+   * P[Tipo][Criticidad][###]
+   * - P: Fijo (Procesos)
+   * - Tipo: M=Misional, E=Estratégico, S=Soporte
+   * - Criticidad: C=Crítico, A=Alto, M=Medio, B=Bajo
+   * - ###: Consecutivo de 3 dígitos
    */
+  private async generateProcessId(tenantId: string, processType: string, criticalityLevel: string): Promise<string> {
+    // Mapeo de tipos
+    const typeMap: Record<string, string> = {
+      'CORE': 'M',      // Misional (Core)
+      'STRATEGIC': 'E', // Estratégico
+      'SUPPORT': 'S',   // Soporte
+    };
+
+    // Mapeo de criticidad
+    const criticalityMap: Record<string, string> = {
+      'CRITICAL': 'C',
+      'HIGH': 'A',
+      'MEDIUM': 'M',
+      'LOW': 'B',
+    };
+
+    const typeCode = typeMap[processType] || 'M';
+    const criticalityCode = criticalityMap[criticalityLevel] || 'M';
+
+    // Obtener el último consecutivo
+    const lastProcess = await this.prisma.businessProcess.findFirst({
+      where: { 
+        tenantId,
+        processId: {
+          startsWith: `P${typeCode}${criticalityCode}`
+        }
+      },
+      orderBy: { processId: 'desc' },
+      select: { processId: true }
+    });
+
+    let consecutive = 1;
+    if (lastProcess?.processId) {
+      // Extraer los últimos 3 dígitos
+      const lastNumber = parseInt(lastProcess.processId.slice(-3));
+      consecutive = isNaN(lastNumber) ? 1 : lastNumber + 1;
+    }
+
+    // Formatear consecutivo con ceros a la izquierda
+    const consecutiveStr = consecutive.toString().padStart(3, '0');
+
+    return `P${typeCode}${criticalityCode}${consecutiveStr}`;
+  }
   private calculatePriorityScore(criteria?: {
     strategic?: number;
     operational?: number;
@@ -38,6 +86,13 @@ export class BusinessProcessesService {
   }
 
   async create(createBusinessProcessDto: CreateBusinessProcessDto, tenantId: string) {
+    // Generar ID automático
+    const processId = await this.generateProcessId(
+      tenantId,
+      createBusinessProcessDto.processType || 'CORE',
+      createBusinessProcessDto.criticalityLevel || 'MEDIUM'
+    );
+
     // Calcular el priority score
     const priorityScore = this.calculatePriorityScore(
       createBusinessProcessDto.prioritizationCriteria as any
@@ -46,6 +101,7 @@ export class BusinessProcessesService {
     return this.prisma.businessProcess.create({
       data: {
         ...createBusinessProcessDto,
+        processId, // ID automático generado
         priorityScore,
         tenantId,
       },

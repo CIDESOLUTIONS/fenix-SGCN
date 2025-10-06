@@ -13,6 +13,7 @@ import EditContextModal from "@/components/business-context/EditContextModal";
 import CreateContextModal from "@/components/business-context/CreateContextModal";
 import SwotEditor from "@/components/business-context/SwotEditor";
 import BusinessProcessEditor from "@/components/business-processes/BusinessProcessEditor";
+import EditBusinessProcessModal from "@/components/business-processes/EditBusinessProcessModal";
 
 interface Policy {
   id: string;
@@ -57,6 +58,7 @@ interface BusinessContext {
 
 interface BusinessProcess {
   id: string;
+  processId?: string; // ID autogenerado: P[Tipo][Criticidad][###]
   name: string;
   description?: string;
   highLevelCharacterization?: string;
@@ -93,6 +95,7 @@ export default function PlaneacionPage() {
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [editingRaciMatrix, setEditingRaciMatrix] = useState<RaciMatrix | null>(null);
   const [editingSwot, setEditingSwot] = useState<any | null>(null);
+  const [editingProcess, setEditingProcess] = useState<BusinessProcess | null>(null);
   const [loadingSwot, setLoadingSwot] = useState(false);
 
   useEffect(() => {
@@ -103,9 +106,8 @@ export default function PlaneacionPage() {
     setLoadingSwot(true);
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
       
-      const response = await fetch(`${API_URL}/api/business-context/swot/${swotId}`, {
+      const response = await fetch(`/api/business-context/swot/${swotId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -127,22 +129,21 @@ export default function PlaneacionPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
       
       const [policiesRes, objectivesRes, raciRes, contextsRes, processesRes] = await Promise.all([
-        fetch(`${API_URL}/api/governance/policies`, {
+        fetch('/api/governance/policies', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${API_URL}/api/governance/objectives`, {
+        fetch('/api/governance/objectives', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${API_URL}/api/governance/raci-matrix`, {
+        fetch('/api/governance/raci-matrix', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${API_URL}/api/business-context/contexts`, {
+        fetch('/api/business-context/contexts', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${API_URL}/api/business-processes`, {
+        fetch('/api/business-processes', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -169,7 +170,7 @@ export default function PlaneacionPage() {
     if (!window.confirm('⚠️ ¿Eliminar esta política PERMANENTEMENTE?\nEsta acción NO se puede deshacer.')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/policies/${id}`, {
+      const response = await fetch(`/api/governance/policies/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -186,7 +187,7 @@ export default function PlaneacionPage() {
     if (!confirm('¿Eliminar este objetivo?')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/objectives/${id}`, {
+      const response = await fetch(`/api/governance/objectives/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -203,7 +204,7 @@ export default function PlaneacionPage() {
     if (!confirm('¿Eliminar esta matriz RACI?')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/governance/raci-matrix/${id}`, {
+      const response = await fetch(`/api/governance/raci-matrix/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -240,7 +241,7 @@ export default function PlaneacionPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/contexts/${id}`, {
+      const response = await fetch(`/api/business-context/contexts/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -257,7 +258,7 @@ export default function PlaneacionPage() {
     if (!confirm('¿Eliminar este proceso?')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-processes/${id}`, {
+      const response = await fetch(`/api/business-processes/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -323,12 +324,11 @@ export default function PlaneacionPage() {
   const generatePlanningDocument = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
       
       // Obtener procesos seleccionados para análisis
       const selectedProcesses = businessProcesses.filter(p => p.includeInContinuityAnalysis);
       
-      const response = await fetch(`${API_URL}/api/reports/planning-document`, {
+      const response = await fetch('/api/reports/planning-document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -380,6 +380,12 @@ export default function PlaneacionPage() {
       />
       <EditPolicyModal isOpen={!!editingPolicy} onClose={() => setEditingPolicy(null)} onSuccess={fetchData} policy={editingPolicy} />
       <EditObjectiveModal isOpen={!!editingObjective} onClose={() => setEditingObjective(null)} onSuccess={fetchData} objective={editingObjective} />
+      <EditBusinessProcessModal 
+        process={editingProcess} 
+        isOpen={!!editingProcess} 
+        onClose={() => setEditingProcess(null)} 
+        onSuccess={fetchData} 
+      />
 
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -597,7 +603,7 @@ export default function PlaneacionPage() {
                                       if (confirm('¿Eliminar este análisis FODA?')) {
                                         try {
                                           const token = localStorage.getItem('token');
-                                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/business-context/swot/${swot.id}`, {
+                                          const response = await fetch(`/api/business-context/swot/${swot.id}`, {
                                             method: 'DELETE',
                                             headers: { 'Authorization': `Bearer ${token}` },
                                           });
@@ -821,6 +827,11 @@ export default function PlaneacionPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
+                              {process.processId && (
+                                <span className="px-2 py-1 bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 rounded font-mono text-xs font-semibold">
+                                  {process.processId}
+                                </span>
+                              )}
                               <h4 className="font-semibold text-gray-900 dark:text-white">{process.name}</h4>
                               {process.processType && (
                                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
@@ -853,7 +864,7 @@ export default function PlaneacionPage() {
                         </div>
                         <div className="flex gap-2">
                           <button 
-                            onClick={() => alert('Funcionalidad de edición de procesos disponible en próxima versión')}
+                            onClick={() => setEditingProcess(process)}
                             className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
                           >
                             <Edit className="w-4 h-4" />
@@ -907,3 +918,4 @@ export default function PlaneacionPage() {
     </div>
   );
 }
+

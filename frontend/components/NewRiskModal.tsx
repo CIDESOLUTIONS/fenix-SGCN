@@ -66,12 +66,16 @@ export default function NewRiskModal({ show, onClose, processes, onSuccess }: Ne
 
   const handleSaveBasicInfo = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/risk-assessments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           ...formData,
-          processId: formData.affectedProcesses[0] || null, // Primer proceso como principal
+          processId: formData.affectedProcesses[0] || null,
           scoreBefore: formData.probabilityBefore * formData.impactBefore,
         }),
       });
@@ -80,9 +84,13 @@ export default function NewRiskModal({ show, onClose, processes, onSuccess }: Ne
         const created = await response.json();
         setRiskId(created.id);
         setStep(2);
+      } else {
+        const error = await response.json();
+        alert(`Error al crear riesgo: ${error.message || 'Error desconocido'}`);
       }
     } catch (error) {
       console.error('Error:', error);
+      alert('Error al crear riesgo');
     }
   };
 
