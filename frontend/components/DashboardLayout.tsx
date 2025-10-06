@@ -42,8 +42,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Image 
                 src="/cide-logo.png" 
                 alt="CIDE SAS" 
-                width={40} 
-                height={40} 
+                width={50} 
+                height={50} 
                 className="w-10 h-10"
               />
               <div>
