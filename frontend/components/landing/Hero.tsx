@@ -51,25 +51,35 @@ export default function Hero() {
               </button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="mt-10 flex items-center gap-8 text-sm">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+            {/* Trust indicators - Mejorados */}
+            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="font-medium text-gray-600">99.95% SLA</span>
+                <span className="font-bold text-gray-900">99.95%</span>
+                <span className="text-xs text-gray-500">SLA</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                <svg className="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13 7H7v6h6V7z" />
                 </svg>
-                <span className="font-medium text-gray-600">API &lt; 200ms</span>
+                <span className="font-bold text-gray-900">&lt;200ms</span>
+                <span className="text-xs text-gray-500">API</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                <svg className="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="font-medium text-gray-600">Multi-idioma</span>
+                <span className="font-bold text-gray-900">100+</span>
+                <span className="text-xs text-gray-500">Empresas</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88z" clipRule="evenodd" />
+                </svg>
+                <span className="font-bold text-gray-900">100%</span>
+                <span className="text-xs text-gray-500">ISO</span>
               </div>
             </div>
           </div>
