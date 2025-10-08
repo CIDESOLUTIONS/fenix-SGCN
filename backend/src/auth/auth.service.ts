@@ -20,16 +20,19 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, salt);
 
     const now = new Date();
-    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const gracePeriodEndsAt = new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // Solo aplicar trial si el plan es TRIAL
+    const subscriptionPlan = dto.subscriptionPlan || 'TRIAL';
+    const isTrial = subscriptionPlan === 'TRIAL';
+    const trialEndsAt = isTrial ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+    const gracePeriodEndsAt = isTrial ? new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
 
     const newUser = await this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           name: dto.tenantName,
           domain: `${dto.tenantName.toLowerCase().replace(/\s/g, '-')}.fenix-sgcn.com`,
-          subscriptionPlan: 'TRIAL',
-          subscriptionStatus: 'ACTIVE',
+          subscriptionPlan: subscriptionPlan as any,
+          subscriptionStatus: isTrial ? 'ACTIVE' : 'PENDING',
           trialEndsAt,
           gracePeriodEndsAt,
         },
@@ -55,9 +58,9 @@ export class AuthService {
           entity: 'Tenant',
           entityId: tenant.id,
           details: {
-            plan: 'TRIAL',
-            trialDays: 30,
-            gracePeriodDays: 30,
+            plan: subscriptionPlan,
+            trialDays: isTrial ? 30 : 0,
+            gracePeriodDays: isTrial ? 30 : 0,
           },
         },
       });
@@ -66,7 +69,24 @@ export class AuthService {
     });
 
     const { password, ...userWithoutPassword } = newUser.user;
+    
+    // Generar JWT token
+    const payload = {
+      sub: newUser.user.id,
+      email: newUser.user.email,
+      tenantId: newUser.tenant.id,
+      role: 'ADMIN',
+    };
+    
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: this.config.get('JWT_EXPIRES_IN') || '7d',
+      secret: this.config.get('JWT_SECRET'),
+    });
+    
     return {
+      token,
+      userId: newUser.user.id,
+      tenantId: newUser.tenant.id,
       user: userWithoutPassword,
       tenant: {
         id: newUser.tenant.id,

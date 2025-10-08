@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsEnum } from 'class-validator';
 
 export class SignupDto {
   @IsString()
@@ -25,4 +25,8 @@ export class SignupDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @IsString()
+  @IsOptional()
+  subscriptionPlan?: string; // TRIAL, STANDARD, PROFESSIONAL, PREMIUM, ENTERPRISE
 }
