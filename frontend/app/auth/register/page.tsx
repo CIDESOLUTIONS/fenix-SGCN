@@ -106,7 +106,7 @@ function RegisterContent() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Image
-              src="/logo-fenix.png"
+              src="/fenix-logo.png"
               alt="Fenix SGCN"
               width={60}
               height={60}

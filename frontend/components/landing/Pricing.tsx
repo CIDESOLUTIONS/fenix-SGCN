@@ -155,17 +155,17 @@ export default function Pricing() {
               )}
 
               <CardHeader className="text-center pb-4">
-                <div className="text-4xl mb-2">{plan.icon}</div>
-                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                <div className="mt-4">
-                  <span className="text-4xl font-extrabold text-gray-900">
+                <div className="text-3xl mb-2">{plan.icon}</div>
+                <CardTitle className="text-lg font-bold break-words">{plan.name}</CardTitle>
+                <div className="mt-3">
+                  <span className="text-3xl font-extrabold text-gray-900">
                     {plan.price}
                   </span>
                   {plan.period && (
-                    <span className="text-gray-600 ml-1">{plan.period}</span>
+                    <span className="text-sm text-gray-600 ml-1">{plan.period}</span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">{plan.description}</p>
+                <p className="text-xs text-gray-500 mt-2">{plan.description}</p>
               </CardHeader>
 
               <CardContent className="flex-1">

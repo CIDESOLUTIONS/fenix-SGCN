@@ -4,6 +4,13 @@
 
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
+  zoom: 0.85;
+}
+
+@media (max-width: 768px) {
+  body {
+    zoom: 1;
+  }
 }
 
 

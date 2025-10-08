@@ -1,9 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone', // Necesario para Docker
+  output: 'standalone',
   images: {
-    unoptimized: true, // Para evitar problemas con imágenes en Docker
+    unoptimized: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://fenix_backend_prod:3001/:path*',
+      },
+    ];
   },
 };
 
