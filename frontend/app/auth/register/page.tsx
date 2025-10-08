@@ -23,13 +23,19 @@ function RegisterContent() {
   const selectedPlan = searchParams.get('plan') || 'trial';
 
   const planDetails: Record<string, any> = {
-    trial: { name: 'Prueba Gratuita', flow: 'trial' },
-    basic: { name: 'Plan Básico', price: 299, flow: 'paid' },
-    professional: { name: 'Plan Profesional', price: 799, flow: 'paid' },
-    enterprise: { name: 'Plan Empresarial', flow: 'quote' }
+    TRIAL: { name: 'Prueba Gratuita (30 días)', flow: 'trial' },
+    trial: { name: 'Prueba Gratuita (30 días)', flow: 'trial' },
+    STANDARD: { name: 'Standard ($199/mes)', price: 199, flow: 'paid' },
+    standard: { name: 'Standard ($199/mes)', price: 199, flow: 'paid' },
+    PROFESSIONAL: { name: 'Professional ($399/mes)', price: 399, flow: 'paid' },
+    professional: { name: 'Professional ($399/mes)', price: 399, flow: 'paid' },
+    PREMIUM: { name: 'Premium (Personalizado)', flow: 'quote' },
+    premium: { name: 'Premium (Personalizado)', flow: 'quote' },
+    ENTERPRISE: { name: 'Enterprise (Cotización)', flow: 'quote' },
+    enterprise: { name: 'Enterprise (Cotización)', flow: 'quote' }
   };
 
-  const currentPlan = planDetails[selectedPlan] || planDetails.trial;
+  const currentPlan = planDetails[selectedPlan.toUpperCase()] || planDetails[selectedPlan] || planDetails.TRIAL;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
