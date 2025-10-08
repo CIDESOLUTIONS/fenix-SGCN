@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
+import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -24,15 +25,15 @@ export class AuthService {
     const subscriptionPlan = dto.subscriptionPlan || 'TRIAL';
     const isTrial = subscriptionPlan === 'TRIAL';
     const trialEndsAt = isTrial ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
-    const gracePeriodEndsAt = isTrial ? new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+    const gracePeriodEndsAt = isTrial && trialEndsAt ? new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
 
     const newUser = await this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           name: dto.tenantName,
           domain: `${dto.tenantName.toLowerCase().replace(/\s/g, '-')}.fenix-sgcn.com`,
-          subscriptionPlan: subscriptionPlan as any,
-          subscriptionStatus: isTrial ? 'ACTIVE' : 'PENDING',
+          subscriptionPlan: subscriptionPlan as SubscriptionPlan,
+          subscriptionStatus: (isTrial ? 'ACTIVE' : 'EXPIRED') as SubscriptionStatus,
           trialEndsAt,
           gracePeriodEndsAt,
         },
