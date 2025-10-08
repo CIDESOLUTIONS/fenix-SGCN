@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 function RegisterContent() {
   const router = useRouter();
@@ -100,7 +100,18 @@ function RegisterContent() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col">
+      {/* Back Button */}
+      <div className="absolute top-6 left-6 z-10">
+        <Link href="/" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-medium">Volver</span>
+        </Link>
+      </div>
+
+      <div className="flex-1 flex">
       {/* Panel Izquierdo - Formulario */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-gray-900">
         <div className="w-full max-w-md">
@@ -321,6 +332,7 @@ function RegisterContent() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

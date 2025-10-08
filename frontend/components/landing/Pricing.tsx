@@ -76,7 +76,7 @@ export default function Pricing() {
     {
       id: "premium",
       name: "Premium",
-      price: "Personalizado",
+      price: "Custom",
       period: "",
       description: "Solución enterprise a medida",
       icon: "💎",
@@ -98,9 +98,9 @@ export default function Pricing() {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: "Cotización",
+      price: "Quote",
       period: "",
-      description: "Multi-tenant con white-labeling",
+      description: "Multi-tenant white-labeling",
       icon: "👑",
       features: [
         "Multi-empresa",
