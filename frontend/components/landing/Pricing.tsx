@@ -71,8 +71,7 @@ export default function Pricing() {
       ],
       action: "Seleccionar Plan",
       href: "/auth/register?plan=PROFESSIONAL",
-      buttonClass: "bg-gradient-to-r from-indigo-600 to-emerald-500 hover:from-indigo-700 hover:to-emerald-600 text-white shadow-lg",
-      popular: true
+      buttonClass: "bg-gradient-to-r from-indigo-600 to-emerald-500 hover:from-indigo-700 hover:to-emerald-600 text-white shadow-lg"
     },
     {
       id: "premium",
