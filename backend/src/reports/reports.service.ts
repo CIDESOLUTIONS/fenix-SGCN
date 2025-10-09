@@ -452,3 +452,281 @@ export class ReportsService {
     return labels[level] || level;
   }
 }
+  async generateRiskSummary(
+    dto: {
+      includeMatrix?: boolean;
+      includeControls?: boolean;
+      includeTreatment?: boolean;
+      filterByCategory?: string;
+      filterByLevel?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    },
+    tenantId: string,
+  ): Promise<Buffer> {
+    this.logger.log(`Generando resumen de riesgos para tenant ${tenantId}`);
+
+    // Obtener datos del tenant
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+
+    // Obtener todos los riesgos con sus relaciones
+    let where: any = { tenantId };
+    if (dto.filterByCategory) {
+      where.category = dto.filterByCategory;
+    }
+
+    const risks = await this.prisma.riskAssessment.findMany({
+      where,
+      include: {
+        controls: true,
+        process: true,
+      },
+      orderBy: { scoreBefore: 'desc' },
+    });
+
+    // Filtrar por nivel si se especifica
+    const filteredRisks = dto.filterByLevel
+      ? risks.filter(r => this.getRiskLevel(r.scoreBefore) === dto.filterByLevel)
+      : risks;
+
+    // Calcular estadísticas
+    const stats = {
+      total: filteredRisks.length,
+      critical: filteredRisks.filter(r => r.scoreBefore >= 15).length,
+      high: filteredRisks.filter(r => r.scoreBefore >= 9 && r.scoreBefore < 15).length,
+      medium: filteredRisks.filter(r => r.scoreBefore >= 5 && r.scoreBefore < 9).length,
+      low: filteredRisks.filter(r => r.scoreBefore < 5).length,
+      avgBefore: filteredRisks.length > 0
+        ? filteredRisks.reduce((acc, r) => acc + r.scoreBefore, 0) / filteredRisks.length
+        : 0,
+      avgAfter: filteredRisks.length > 0
+        ? filteredRisks.reduce((acc, r) => acc + r.scoreAfter, 0) / filteredRisks.length
+        : 0,
+      withTreatment: filteredRisks.filter(r => r.treatmentStrategy).length,
+    };
+
+    // Crear PDF
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+
+    // Portada
+    doc.addPage();
+    doc.fontSize(24).text('RESUMEN DE RIESGOS', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(16).text('Sistema de Gestion de Continuidad del Negocio', { align: 'center' });
+    doc.moveDown(2);
+    doc.fontSize(12).text(`Organizacion: ${tenant?.companyName || 'N/A'}`, { align: 'center' });
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-CO')}`, { align: 'center' });
+    doc.moveDown(4);
+    doc.fontSize(10).text('ISO 22301:2019 Clausula 8.2.3 & ISO 31000:2018', { align: 'center', italics: true });
+
+    // Resumen ejecutivo
+    doc.addPage();
+    doc.fontSize(18).text('RESUMEN EJECUTIVO');
+    doc.moveDown();
+
+    doc.fontSize(12).text('Estadisticas Generales:', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10);
+    doc.text(`Total de Riesgos Identificados: ${stats.total}`);
+    doc.text(`  - Criticos: ${stats.critical}`);
+    doc.text(`  - Altos: ${stats.high}`);
+    doc.text(`  - Medios: ${stats.medium}`);
+    doc.text(`  - Bajos: ${stats.low}`);
+    doc.moveDown();
+    doc.text(`Riesgo Inherente Promedio: ${stats.avgBefore.toFixed(2)}`);
+    doc.text(`Riesgo Residual Promedio: ${stats.avgAfter.toFixed(2)}`);
+    const reduction = stats.avgBefore > 0 
+      ? ((stats.avgBefore - stats.avgAfter) / stats.avgBefore * 100) 
+      : 0;
+    doc.text(`Reduccion de Riesgo: ${reduction.toFixed(1)}%`);
+    doc.text(`Riesgos con Tratamiento: ${stats.withTreatment}`);
+
+    // Tabla de riesgos
+    doc.addPage();
+    doc.fontSize(16).text('REGISTRO DE RIESGOS');
+    doc.moveDown();
+
+    // Encabezados de tabla
+    const tableTop = doc.y;
+    const col1X = 50;
+    const col2X = 150;
+    const col3X = 350;
+    const col4X = 450;
+
+    doc.fontSize(10).font('Helvetica-Bold');
+    doc.text('ID', col1X, tableTop);
+    doc.text('Riesgo', col2X, tableTop);
+    doc.text('Categoria', col3X, tableTop);
+    doc.text('Nivel', col4X, tableTop);
+
+    // Dibujar línea después de encabezados
+    doc.moveTo(col1X, doc.y + 5).lineTo(550, doc.y + 5).stroke();
+    doc.moveDown();
+
+    // Datos de riesgos
+    doc.font('Helvetica');
+    filteredRisks.forEach((risk, index) => {
+      // Verificar espacio en página
+      if (doc.y > 700) {
+        doc.addPage();
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('ID', col1X, doc.y);
+        doc.text('Riesgo', col2X, doc.y);
+        doc.text('Categoria', col3X, doc.y);
+        doc.text('Nivel', col4X, doc.y);
+        doc.moveTo(col1X, doc.y + 5).lineTo(550, doc.y + 5).stroke();
+        doc.moveDown();
+        doc.font('Helvetica');
+      }
+
+      const startY = doc.y;
+      doc.fontSize(9);
+      doc.text(risk.riskId, col1X, startY, { width: 90 });
+      doc.text(risk.name.substring(0, 40), col2X, startY, { width: 190 });
+      doc.text(risk.category, col3X, startY, { width: 90 });
+      doc.text(this.getRiskLevelLabel(risk.scoreBefore), col4X, startY);
+
+      doc.moveDown(0.5);
+    });
+
+    // Matriz de riesgos si se solicita
+    if (dto.includeMatrix) {
+      doc.addPage();
+      doc.fontSize(16).text('MATRIZ DE RIESGOS');
+      doc.moveDown();
+      doc.fontSize(10).text('(Probabilidad x Impacto)');
+      doc.moveDown();
+
+      // Dibujar matriz simplificada
+      const matrixStartX = 100;
+      const matrixStartY = doc.y + 20;
+      const cellSize = 60;
+
+      // Etiquetas de impacto (eje Y)
+      doc.fontSize(8);
+      for (let i = 5; i >= 1; i--) {
+        const y = matrixStartY + (5 - i) * cellSize + cellSize / 2;
+        doc.text(i.toString(), matrixStartX - 20, y - 5);
+      }
+
+      // Etiquetas de probabilidad (eje X)
+      for (let i = 1; i <= 5; i++) {
+        const x = matrixStartX + (i - 1) * cellSize + cellSize / 2;
+        doc.text(i.toString(), x - 5, matrixStartY + 5 * cellSize + 10);
+      }
+
+      // Dibujar celdas
+      for (let prob = 1; prob <= 5; prob++) {
+        for (let imp = 1; imp <= 5; imp++) {
+          const score = prob * imp;
+          const x = matrixStartX + (prob - 1) * cellSize;
+          const y = matrixStartY + (5 - imp) * cellSize;
+
+          // Color según nivel
+          let color = '#90EE90'; // Verde
+          if (score >= 15) color = '#FF6B6B'; // Rojo
+          else if (score >= 9) color = '#FFA500'; // Naranja
+          else if (score >= 5) color = '#FFD700'; // Amarillo
+
+          doc.rect(x, y, cellSize, cellSize).fillAndStroke(color, '#000');
+
+          // Número en la celda
+          doc.fillColor('#000').fontSize(12);
+          doc.text(score.toString(), x + cellSize / 2 - 5, y + cellSize / 2 - 5);
+        }
+      }
+
+      doc.fillColor('#000'); // Resetear color
+    }
+
+    // Tratamiento de riesgos si se solicita
+    if (dto.includeTreatment) {
+      doc.addPage();
+      doc.fontSize(16).text('TRATAMIENTO DE RIESGOS');
+      doc.moveDown();
+
+      const risksWithTreatment = filteredRisks.filter(r => r.treatmentStrategy);
+
+      if (risksWithTreatment.length === 0) {
+        doc.fontSize(10).text('No hay riesgos con estrategia de tratamiento definida.');
+      } else {
+        risksWithTreatment.forEach(risk => {
+          if (doc.y > 700) doc.addPage();
+
+          doc.fontSize(12).font('Helvetica-Bold');
+          doc.text(`${risk.riskId}: ${risk.name}`);
+          doc.font('Helvetica').fontSize(10);
+          doc.text(`Estrategia: ${this.getTreatmentLabel(risk.treatmentStrategy)}`);
+          doc.text(`Riesgo Inherente: ${risk.scoreBefore.toFixed(1)} -> Residual: ${risk.scoreAfter.toFixed(1)}`);
+
+          if (dto.includeControls && risk.controls.length > 0) {
+            doc.moveDown(0.5);
+            doc.text('Controles:', { underline: true });
+            risk.controls.forEach(control => {
+              doc.text(`  - ${control.name} (${this.getControlTypeLabel(control.type)})`);
+            });
+          }
+
+          doc.moveDown();
+        });
+      }
+    }
+
+    // Pie de página
+    const totalPages = doc.bufferedPageRange().count;
+    for (let i = 0; i < totalPages; i++) {
+      doc.switchToPage(i);
+      doc.fontSize(8).text(
+        `Pagina ${i + 1} de ${totalPages}`,
+        50,
+        doc.page.height - 50,
+        { align: 'center' }
+      );
+    }
+
+    doc.end();
+
+    return new Promise((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
+  }
+
+  private getRiskLevel(score: number): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+    if (score >= 15) return 'CRITICAL';
+    if (score >= 9) return 'HIGH';
+    if (score >= 5) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  private getRiskLevelLabel(score: number): string {
+    const level = this.getRiskLevel(score);
+    const labels = {
+      'CRITICAL': 'Critico',
+      'HIGH': 'Alto',
+      'MEDIUM': 'Medio',
+      'LOW': 'Bajo',
+    };
+    return labels[level];
+  }
+
+  private getTreatmentLabel(strategy?: string): string {
+    const labels: { [key: string]: string } = {
+      'AVOID': 'Evitar',
+      'MITIGATE': 'Mitigar',
+      'TRANSFER': 'Transferir',
+      'ACCEPT': 'Aceptar',
+    };
+    return strategy ? labels[strategy] : 'Sin estrategia';
+  }
+
+  private getControlTypeLabel(type: string): string {
+    const labels: { [key: string]: string } = {
+      'PREVENTIVE': 'Preventivo',
+      'DETECTIVE': 'Detectivo',
+      'CORRECTIVE': 'Correctivo',
+    };
+    return labels[type] || type;
+  }
+
+  private getStatusLabel(status: string): string {

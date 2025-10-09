@@ -8,6 +8,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bull';
 import { BusinessProcessesModule } from './business-processes/business-processes.module';
 import { BiaAssessmentsModule } from './bia-assessments/bia-assessments.module';
+import { BiaCampaignsModule } from './bia-campaigns/bia-campaigns.module';
 import { RiskAssessmentsModule } from './risk-assessments/risk-assessments.module';
 import { ContinuityStrategiesModule } from './continuity-strategies/continuity-strategies.module';
 import { ContinuityPlansModule } from './continuity-plans/continuity-plans.module';
@@ -59,6 +60,7 @@ import { RiskControlsModule } from './risk-controls/risk-controls.module';
     GovernanceModule,
     BusinessProcessesModule,
     BiaAssessmentsModule,
+    BiaCampaignsModule,
     RiskAssessmentsModule,
     RiskControlsModule,
     ContinuityStrategiesModule,

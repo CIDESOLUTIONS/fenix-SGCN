@@ -422,3 +422,357 @@ export class RiskAssessmentsService {
     return 'LOW';
   }
 }
+  /**
+   * Análisis de Puntos Únicos de Fallo (SPOF)
+   */
+  async analyzeSPOF(tenantId: string) {
+    this.logger.log(`Analyzing SPOF for tenant: ${tenantId}`);
+
+    // Obtener análisis de Dgraph
+    const spofAnalysis = await this.dgraphService.analyzeSPOF(tenantId);
+
+    // Obtener riesgos relacionados con activos críticos
+    const risks = await this.prisma.riskAssessment.findMany({
+      where: { tenantId },
+      include: { process: true },
+    });
+
+    // Correlacionar riesgos con SPOF
+    const spofWithRisks = spofAnalysis.criticalAssets.map((asset: any) => {
+      const relatedRisks = risks.filter(r => 
+        r.process && asset.requiredBy?.some((dep: any) => dep.name?.includes(r.process.name))
+      );
+
+      return {
+        ...asset,
+        riskCount: relatedRisks.length,
+        highestRisk: relatedRisks.length > 0 
+          ? Math.max(...relatedRisks.map(r => r.scoreBefore))
+          : 0,
+        relatedRisks: relatedRisks.map(r => ({
+          id: r.id,
+          riskId: r.riskId,
+          name: r.name,
+          score: r.scoreBefore,
+        })),
+      };
+    });
+
+    // Ordenar por criticidad
+    spofWithRisks.sort((a, b) => (b.highestRisk || 0) - (a.highestRisk || 0));
+
+    return {
+      summary: {
+        totalSPOFs: spofWithRisks.length,
+        criticalSPOFs: spofWithRisks.filter(s => s.highestRisk >= 15).length,
+        highRiskSPOFs: spofWithRisks.filter(s => s.highestRisk >= 9 && s.highestRisk < 15).length,
+        spofRiskLevel: spofAnalysis.spofRisk,
+      },
+      criticalAssets: spofWithRisks,
+      recommendations: this.generateSPOFRecommendations(spofWithRisks),
+    };
+  }
+
+  /**
+   * Calcular cascada de impacto de un riesgo
+   */
+  async calculateImpactCascade(riskId: string, tenantId: string) {
+    const risk = await this.prisma.riskAssessment.findFirst({
+      where: { id: riskId, tenantId },
+      include: { process: true },
+    });
+
+    if (!risk) {
+      throw new NotFoundException('Riesgo no encontrado');
+    }
+
+    // Si el riesgo está vinculado a un proceso, analizar su impacto
+    if (risk.process) {
+      const impact = await this.dgraphService.getDownstreamDependencies(
+        risk.process.id,
+        tenantId,
+      );
+
+      const affectedProcesses = impact.impactedProcesses || [];
+
+      return {
+        risk: {
+          id: risk.id,
+          riskId: risk.riskId,
+          name: risk.name,
+          score: risk.scoreBefore,
+        },
+        sourceProcess: {
+          id: risk.process.id,
+          name: risk.process.name,
+        },
+        cascade: {
+          totalAffected: affectedProcesses.length,
+          criticalProcesses: affectedProcesses.filter(p => p.criticality === 'CRITICAL').length,
+          affectedProcesses: affectedProcesses.map(p => ({
+            id: p.id,
+            name: p.name,
+            criticality: p.criticality,
+            nodeType: p.nodeType,
+          })),
+        },
+        impactLevel: this.calculateCascadeImpactLevel(affectedProcesses),
+      };
+    }
+
+    return {
+      risk: {
+        id: risk.id,
+        riskId: risk.riskId,
+        name: risk.name,
+        score: risk.scoreBefore,
+      },
+      cascade: {
+        totalAffected: 0,
+        criticalProcesses: 0,
+        affectedProcesses: [],
+      },
+      impactLevel: 'LOW',
+      message: 'Riesgo no vinculado a proceso. No se puede calcular cascada.',
+    };
+  }
+
+  /**
+   * Generar recomendaciones para mitigar SPOF
+   */
+  private generateSPOFRecommendations(spofs: any[]): string[] {
+    const recommendations: string[] = [];
+
+    const criticalSPOFs = spofs.filter(s => s.highestRisk >= 15);
+    if (criticalSPOFs.length > 0) {
+      recommendations.push(
+        `CRÍTICO: ${criticalSPOFs.length} activos críticos identificados como SPOF con riesgo alto. Priorizar redundancia inmediata.`
+      );
+    }
+
+    const highDependency = spofs.filter(s => s.requiredByCount >= 5);
+    if (highDependency.length > 0) {
+      recommendations.push(
+        `${highDependency.length} activos con alta dependencia (5+ procesos). Implementar controles de disponibilidad.`
+      );
+    }
+
+    if (spofs.length > 10) {
+      recommendations.push(
+        'Arquitectura con múltiples SPOF detectada. Revisar diseño de procesos para distribuir dependencias.'
+      );
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('No se detectaron SPOF críticos. Mantener monitoreo continuo.');
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Calcular nivel de impacto de cascada
+   */
+  private calculateCascadeImpactLevel(affectedProcesses: any[]): string {
+    const criticalCount = affectedProcesses.filter(p => p.criticality === 'CRITICAL').length;
+    const totalCount = affectedProcesses.length;
+
+    if (criticalCount >= 3 || totalCount >= 10) return 'CRITICAL';
+    if (criticalCount >= 1 || totalCount >= 5) return 'HIGH';
+    if (totalCount >= 2) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  /**
+   * Calcular puntuación de riesgo con ponderación
+   */
+  private calculateRiskScore(
+  /**
+   * Solicitar aprobación de riesgo crítico
+   */
+  async requestApproval(riskId: string, tenantId: string, requestedBy: string) {
+    const risk = await this.prisma.riskAssessment.findFirst({
+      where: { id: riskId, tenantId },
+    });
+
+    if (!risk) {
+      throw new NotFoundException('Riesgo no encontrado');
+    }
+
+    // Crear workflow de aprobación
+    const workflow = await this.workflowEngine.createWorkflow({
+      name: `Aprobación Riesgo: ${risk.riskId}`,
+      entityType: 'RISK_ASSESSMENT',
+      entityId: riskId,
+      steps: [
+        {
+          id: 'review',
+          name: 'Revisión Técnica',
+          type: WorkflowTaskType.REVIEW,
+          assignedTo: null, // Asignar al revisor técnico
+          status: 'PENDING',
+        },
+        {
+          id: 'approval',
+          name: 'Aprobación Gerencial',
+          type: WorkflowTaskType.APPROVAL,
+          assignedTo: null, // Asignar al gerente
+          status: 'PENDING',
+        },
+      ],
+    }, tenantId);
+
+    // Actualizar estado del riesgo
+    await this.prisma.riskAssessment.update({
+      where: { id: riskId },
+      data: {
+        status: 'PENDING_APPROVAL',
+      },
+    });
+
+    this.logger.log(`Approval requested for risk ${riskId} by ${requestedBy}`);
+
+    return {
+      message: 'Solicitud de aprobación creada',
+      workflow,
+      risk: {
+        id: risk.id,
+        riskId: risk.riskId,
+        name: risk.name,
+        status: 'PENDING_APPROVAL',
+      },
+    };
+  }
+
+  /**
+   * Aprobar o rechazar riesgo
+   */
+  async approveOrReject(
+    riskId: string,
+    tenantId: string,
+    action: 'APPROVE' | 'REJECT',
+    comments: string,
+    userId: string,
+  ) {
+    const risk = await this.prisma.riskAssessment.findFirst({
+      where: { id: riskId, tenantId },
+    });
+
+    if (!risk) {
+      throw new NotFoundException('Riesgo no encontrado');
+    }
+
+    const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+
+    await this.prisma.riskAssessment.update({
+      where: { id: riskId },
+      data: {
+        status: newStatus,
+      },
+    });
+
+    // Registrar en auditoría
+    await this.analyticsEngine.logEvent({
+      eventType: `RISK_${action}`,
+      entityType: 'RISK_ASSESSMENT',
+      entityId: riskId,
+      userId,
+      metadata: {
+        riskId: risk.riskId,
+        comments,
+        previousStatus: risk.status,
+        newStatus,
+      },
+      tenantId,
+    });
+
+    this.logger.log(`Risk ${riskId} ${action.toLowerCase()}ed by ${userId}`);
+
+    return {
+      message: `Riesgo ${action === 'APPROVE' ? 'aprobado' : 'rechazado'}`,
+      risk: {
+        id: risk.id,
+        riskId: risk.riskId,
+        name: risk.name,
+        status: newStatus,
+      },
+    };
+  }
+
+  /**
+   * Vinculación con procesos BIA
+   */
+  async linkToProcess(riskId: string, processId: string, tenantId: string, userId: string) {
+    const risk = await this.prisma.riskAssessment.findFirst({
+      where: { id: riskId, tenantId },
+    });
+
+    if (!risk) {
+      throw new NotFoundException('Riesgo no encontrado');
+    }
+
+    const process = await this.prisma.businessProcess.findFirst({
+      where: { id: processId, tenantId },
+    });
+
+    if (!process) {
+      throw new NotFoundException('Proceso no encontrado');
+    }
+
+    // Actualizar en PostgreSQL
+    await this.prisma.riskAssessment.update({
+      where: { id: riskId },
+      data: {
+        processId,
+      },
+    });
+
+    // Crear relación en Dgraph
+    await this.dgraphService.createRelationship(
+      riskId,
+      processId,
+      'affects',
+      tenantId,
+    );
+
+    this.logger.log(`Risk ${riskId} linked to process ${processId} by ${userId}`);
+
+    return {
+      message: 'Riesgo vinculado al proceso exitosamente',
+      risk: {
+        id: risk.id,
+        riskId: risk.riskId,
+        name: risk.name,
+      },
+      process: {
+        id: process.id,
+        name: process.name,
+      },
+    };
+  }
+
+  /**
+   * Obtener riesgos por proceso
+   */
+  async getRisksByProcess(processId: string, tenantId: string) {
+    const risks = await this.prisma.riskAssessment.findMany({
+      where: {
+        processId,
+        tenantId,
+      },
+      orderBy: { scoreBefore: 'desc' },
+    });
+
+    return {
+      processId,
+      totalRisks: risks.length,
+      criticalRisks: risks.filter(r => r.scoreBefore >= 15).length,
+      highRisks: risks.filter(r => r.scoreBefore >= 9 && r.scoreBefore < 15).length,
+      risks,
+    };
+  }
+
+  /**
+   * Calcular nivel de impacto de cascada
+   */
+  private calculateCascadeImpactLevel(affectedProcesses: any[]): string {

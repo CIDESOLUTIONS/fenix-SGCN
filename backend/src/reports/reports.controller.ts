@@ -32,4 +32,27 @@ export class ReportsController {
 
     res.send(pdfBuffer);
   }
+
+  @Post('risk-summary')
+  async generateRiskSummary(
+    @Body() dto: {
+      includeMatrix?: boolean;
+      includeControls?: boolean;
+      includeTreatment?: boolean;
+      filterByCategory?: string;
+      filterByLevel?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    },
+    @TenantId() tenantId: string,
+    @Res() res: Response,
+  ) {
+    const pdfBuffer = await this.reportsService.generateRiskSummary(dto, tenantId);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="Resumen_Riesgos_${new Date().toISOString().split('T')[0]}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.send(pdfBuffer);
+  }
 }

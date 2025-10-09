@@ -138,3 +138,88 @@ export class RiskAssessmentsController {
     return this.riskAssessmentsService.remove(id, tenantId, req.user.userId);
   }
 }
+  @Get('spof-analysis')
+  async getSPOFAnalysis(@TenantId() tenantId: string) {
+    return this.riskAssessmentsService.analyzeSPOF(tenantId);
+  }
+
+  @Get(':id/impact-cascade')
+  async getImpactCascade(
+    @Param('id') riskId: string,
+    @TenantId() tenantId: string,
+  ) {
+    return this.riskAssessmentsService.calculateImpactCascade(riskId, tenantId);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.riskAssessmentsService.remove(id, tenantId, req.user.userId);
+  }
+}
+  @Post(':id/request-approval')
+  async requestApproval(
+    @Param('id') riskId: string,
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.riskAssessmentsService.requestApproval(riskId, tenantId, req.user.userId);
+  }
+
+  @Post(':id/approve-reject')
+  async approveOrReject(
+    @Param('id') riskId: string,
+    @TenantId() tenantId: string,
+    @Body() body: { action: 'APPROVE' | 'REJECT'; comments: string },
+    @Request() req: any,
+  ) {
+    return this.riskAssessmentsService.approveOrReject(
+      riskId,
+      tenantId,
+      body.action,
+      body.comments,
+      req.user.userId,
+    );
+  }
+
+  @Post(':id/link-process')
+  async linkToProcess(
+    @Param('id') riskId: string,
+    @Body() body: { processId: string },
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.riskAssessmentsService.linkToProcess(
+      riskId,
+      body.processId,
+      tenantId,
+      req.user.userId,
+    );
+  }
+
+  @Get('process/:processId')
+  async getRisksByProcess(
+    @Param('processId') processId: string,
+    @TenantId() tenantId: string,
+  ) {
+    return this.riskAssessmentsService.getRisksByProcess(processId, tenantId);
+  }
+
+  @Get('spof-analysis')
+  async getSPOFAnalysis(@TenantId() tenantId: string) {
+    return this.riskAssessmentsService.analyzeSPOF(tenantId);
+  }
+
+  @Get(':id/impact-cascade')
+  async getImpactCascade(
+    @Param('id') riskId: string,
+    @TenantId() tenantId: string,
+  ) {
+    return this.riskAssessmentsService.calculateImpactCascade(riskId, tenantId);
+  }
+
+  @Delete(':id')
+  remove(

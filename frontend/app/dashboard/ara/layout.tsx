@@ -14,7 +14,8 @@ import {
   FileText,
   ClipboardList,
   BarChart3,
-  ShieldCheck
+  ShieldCheck,
+  Network
 } from 'lucide-react';
 import Link from 'next/link';
 
