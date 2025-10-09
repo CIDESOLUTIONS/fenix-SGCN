@@ -40,7 +40,7 @@ export default function Sidebar() {
     },
     { 
       name: t('modules.risk'),
-      path: '/dashboard/analisis-riesgos',
+      path: '/dashboard/ara',
       icon: AlertTriangle,
       description: t('modules.risk_desc')
     },

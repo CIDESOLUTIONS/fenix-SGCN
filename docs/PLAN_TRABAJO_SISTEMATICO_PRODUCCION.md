@@ -517,7 +517,7 @@ POST /api/admin/tenants/{id}/reactivate
 
 ---
 
-## 🎯 FASE 2: CORRECCIONES BASE (DÍAS 6-7)
+## 🎯 FASE 2: CORRECCIONES BASE (DÍAS 6-7) 
 
 ### **DÍA 6: DEUDA TÉCNICA #2**
 [Seguir plan original DÍA 1]
