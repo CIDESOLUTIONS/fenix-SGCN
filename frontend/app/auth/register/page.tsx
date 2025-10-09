@@ -52,7 +52,7 @@ function RegisterContent() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/auth/signup`, {
+      const response = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,9 +75,12 @@ function RegisterContent() {
 
       const data = await response.json();
 
-      // Guardar token temporalmente
+      // Guardar token temporalmente en localStorage y cookie
       if (data.token) {
         localStorage.setItem('token', data.token);
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7);
+        document.cookie = `token=${data.token}; Path=/; Expires=${expiryDate.toUTCString()}; SameSite=Lax`;
       }
 
       // Redirigir según el flujo del plan

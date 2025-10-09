@@ -54,6 +54,8 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem('token');
+    // También limpiar cookie si existe
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     setUser(null);
     window.location.href = '/auth/login';
   };

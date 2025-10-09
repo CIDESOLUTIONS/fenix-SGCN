@@ -41,19 +41,27 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/signin", {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
       
-      if (!res.ok) throw new Error("Credenciales inválidas");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Credenciales inválidas");
+      }
       
       const data = await res.json();
       
-      // Guardar el token en localStorage
+      // Guardar el token en localStorage y cookie
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken);
+        // Guardar en cookie con 7 días de expiración
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7);
+        document.cookie = `token=${data.accessToken}; Path=/; Expires=${expiryDate.toUTCString()}; SameSite=Lax`;
         window.location.href = "/dashboard";
       } else {
         throw new Error("No se recibió token de acceso");

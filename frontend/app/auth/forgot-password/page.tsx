@@ -20,7 +20,8 @@ export default function ForgotPasswordPage() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -45,7 +46,8 @@ export default function ForgotPasswordPage() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -70,7 +72,8 @@ export default function ForgotPasswordPage() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword }),
@@ -78,7 +81,7 @@ export default function ForgotPasswordPage() {
 
       if (response.ok) {
         setMessage('¡Contraseña actualizada! Redirigiendo...');
-        setTimeout(() => router.push('/auth/signin'), 2000);
+        setTimeout(() => router.push('/auth/login'), 2000);
       } else {
         setMessage('Error al actualizar contraseña');
       }
