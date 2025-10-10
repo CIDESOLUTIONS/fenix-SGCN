@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { WorkflowEngineService } from '../workflow-engine/workflow-engine.service';
+import { WorkflowEngineService, WorkflowTaskType } from '../workflow-engine/workflow-engine.service';
 import { AnalyticsEngineService } from '../analytics-engine/analytics-engine.service';
 import { ReportGeneratorService } from '../report-generator/report-generator.service';
 import { ActionStatus } from '@prisma/client';
@@ -121,15 +121,15 @@ export class ContinuousImprovementService {
       steps: [
         {
           id: 'implement_action',
-          type: 'TASK',
+          type: WorkflowTaskType.TASK,
           name: 'Implementar Acción Correctiva',
-          assignedTo: [action.assignedTo],
-          dueDate: action.targetDate,
+          assignedTo: [action.assignedTo || userId],
+          dueDate: action.targetDate || undefined,
           metadata: { actionId: action.id, findingId },
         },
         {
           id: 'verify_effectiveness',
-          type: 'APPROVAL',
+          type: WorkflowTaskType.APPROVAL,
           name: 'Verificar Eficacia',
           assignedTo: [userId],
           dueDate: new Date(

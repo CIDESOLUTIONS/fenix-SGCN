@@ -168,6 +168,7 @@ export class ContinuityPlansService {
         id: 'notify-team',
         type: WorkflowTaskType.NOTIFICATION,
         name: 'Notify Response Team',
+        assignedTo: [userId], // Asignar al activador
         metadata: { planId: id, planName: plan.name, activatedBy: userId, reason },
       }],
     });

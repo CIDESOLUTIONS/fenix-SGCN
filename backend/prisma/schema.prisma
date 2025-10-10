@@ -60,6 +60,7 @@ model Tenant {
   businessContexts    BusinessContext[]
   swotAnalyses        SwotAnalysis[]
   aiConfig            AIConfig?
+  workflows           Workflow[]
 
   @@map("tenants")
 }
@@ -993,8 +994,46 @@ enum AutomationLevel {
   MANUAL
 }
 
+// ============================================
+// MOTOR TRANSVERSAL: WORKFLOW ENGINE
+// ============================================
 
+model Workflow {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  entityType  String   // 'bia-assessment', 'risk', 'plan', etc.
+  entityId    String
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tasks  WorkflowTask[]
+
+  @@map("workflows")
+}
+
+model WorkflowTask {
+  id          String    @id @default(uuid())
+  workflowId  String
+  stepId      String
+  name        String
+  type        String    // APPROVAL, REVIEW, TASK, NOTIFICATION
+  assignedTo  String[]  // Array de user IDs
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  dueDate     DateTime?
+  completedAt DateTime?
+  completedBy String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_tasks")
+}
 
 model PasswordReset {
   id        String   @id @default(uuid())
