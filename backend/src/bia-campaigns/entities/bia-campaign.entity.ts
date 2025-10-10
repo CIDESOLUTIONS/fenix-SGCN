@@ -1,6 +1,6 @@
-import { BIACampaign as PrismaBIACampaign } from '@prisma/client';
+import { BiaCampaign as PrismaBiaCampaign } from '@prisma/client';
 
-export class BIACampaign implements PrismaBIACampaign {
+export class BiaCampaign implements PrismaBiaCampaign {
   id: string;
   tenantId: string;
   name: string;

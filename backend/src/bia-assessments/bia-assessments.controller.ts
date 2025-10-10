@@ -56,6 +56,28 @@ export class BiaAssessmentsController {
     return this.biaAssessmentsService.suggestRtoRpo(processId, tenantId);
   }
 
+  @Get(':id/dependency-map')
+  getDependencyMap(@Param('id') id: string, @TenantId() tenantId: string) {
+    return this.biaAssessmentsService.findOne(id, tenantId);
+  }
+
+  @Post(':id/dependencies')
+  addDependency(
+    @Param('id') id: string,
+    @Body() body: { dependencyId: string; dependencyType: string; relationshipType: string },
+    @TenantId() tenantId: string,
+    @Request() req: any,
+  ) {
+    return this.biaAssessmentsService.addDependency(
+      id,
+      body.dependencyId,
+      body.dependencyType,
+      body.relationshipType,
+      tenantId,
+      req.user.userId,
+    );
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,

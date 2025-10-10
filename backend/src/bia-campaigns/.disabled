@@ -1,0 +1,3 @@
+// Este módulo está temporalmente deshabilitado
+// Razón: Falta modelo BiaCampaign en schema.prisma
+// TODO: Agregar modelo y habilitar módulo

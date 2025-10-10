@@ -345,6 +345,61 @@ export class BiaAssessmentsService {
   }
 
   /**
+   * Agregar dependencia interactivamente
+   */
+  async addDependency(
+    biaId: string,
+    dependencyId: string,
+    dependencyType: string,
+    relationshipType: string,
+    tenantId: string,
+    userId: string,
+  ) {
+    const bia = await this.prisma.biaAssessment.findFirst({
+      where: { id: biaId, tenantId },
+    });
+
+    if (!bia) {
+      throw new NotFoundException(`BIA ${biaId} not found`);
+    }
+
+    // Actualizar mapa de dependencias en PostgreSQL
+    const currentMap = (bia.dependencyMap as any) || { dependencies: [] };
+    
+    const newDependency = {
+      id: dependencyId,
+      type: dependencyType,
+      relationshipType,
+      addedBy: userId,
+      addedAt: new Date().toISOString(),
+    };
+
+    currentMap.dependencies.push(newDependency);
+
+    await this.prisma.biaAssessment.update({
+      where: { id: biaId },
+      data: {
+        dependencyMap: currentMap as any,
+      },
+    });
+
+    // Sincronizar a Dgraph
+    await this.dgraphService.createRelationship(
+      bia.processId,
+      dependencyId,
+      relationshipType,
+      tenantId,
+    );
+
+    this.logger.log(`Dependency added to BIA ${biaId}: ${dependencyId} by ${userId}`);
+
+    return {
+      message: 'Dependencia agregada',
+      dependency: newDependency,
+    };
+  }
+
+  /**
    * Eliminar BIA
    */
   async remove(id: string, tenantId: string, userId: string) {

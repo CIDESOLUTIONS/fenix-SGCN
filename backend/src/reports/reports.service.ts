@@ -451,7 +451,7 @@ export class ReportsService {
     };
     return labels[level] || level;
   }
-}
+
   async generateRiskSummary(
     dto: {
       includeMatrix?: boolean;
@@ -476,7 +476,6 @@ export class ReportsService {
     const risks = await this.prisma.riskAssessment.findMany({
       where,
       include: {
-        controls: true,
         process: true,
       },
       orderBy: { scoreBefore: 'desc' },
@@ -484,23 +483,23 @@ export class ReportsService {
 
     // Filtrar por nivel si se especifica
     const filteredRisks = dto.filterByLevel
-      ? risks.filter(r => this.getRiskLevel(r.scoreBefore) === dto.filterByLevel)
+      ? risks.filter(r => this.getRiskLevel(Number(r.scoreBefore)) === dto.filterByLevel)
       : risks;
 
     // Calcular estadísticas
     const stats = {
       total: filteredRisks.length,
-      critical: filteredRisks.filter(r => r.scoreBefore >= 15).length,
-      high: filteredRisks.filter(r => r.scoreBefore >= 9 && r.scoreBefore < 15).length,
-      medium: filteredRisks.filter(r => r.scoreBefore >= 5 && r.scoreBefore < 9).length,
-      low: filteredRisks.filter(r => r.scoreBefore < 5).length,
+      critical: filteredRisks.filter(r => Number(r.scoreBefore) >= 15).length,
+      high: filteredRisks.filter(r => Number(r.scoreBefore) >= 9 && Number(r.scoreBefore) < 15).length,
+      medium: filteredRisks.filter(r => Number(r.scoreBefore) >= 5 && Number(r.scoreBefore) < 9).length,
+      low: filteredRisks.filter(r => Number(r.scoreBefore) < 5).length,
       avgBefore: filteredRisks.length > 0
-        ? filteredRisks.reduce((acc, r) => acc + r.scoreBefore, 0) / filteredRisks.length
+        ? filteredRisks.reduce((acc, r) => acc + Number(r.scoreBefore), 0) / filteredRisks.length
         : 0,
       avgAfter: filteredRisks.length > 0
-        ? filteredRisks.reduce((acc, r) => acc + r.scoreAfter, 0) / filteredRisks.length
+        ? filteredRisks.reduce((acc, r) => acc + Number(r.scoreAfter || 0), 0) / filteredRisks.length
         : 0,
-      withTreatment: filteredRisks.filter(r => r.treatmentStrategy).length,
+      withTreatment: filteredRisks.filter(r => Number(r.scoreAfter || r.scoreBefore) < Number(r.scoreBefore)).length,
     };
 
     // Crear PDF
@@ -514,10 +513,10 @@ export class ReportsService {
     doc.moveDown();
     doc.fontSize(16).text('Sistema de Gestion de Continuidad del Negocio', { align: 'center' });
     doc.moveDown(2);
-    doc.fontSize(12).text(`Organizacion: ${tenant?.companyName || 'N/A'}`, { align: 'center' });
+    doc.fontSize(12).text(`Organizacion: ${tenant?.name || 'N/A'}`, { align: 'center' });
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-CO')}`, { align: 'center' });
     doc.moveDown(4);
-    doc.fontSize(10).text('ISO 22301:2019 Clausula 8.2.3 & ISO 31000:2018', { align: 'center', italics: true });
+    doc.fontSize(10).text('ISO 22301:2019 Clausula 8.2.3 & ISO 31000:2018', { align: 'center' });
 
     // Resumen ejecutivo
     doc.addPage();
@@ -581,10 +580,10 @@ export class ReportsService {
 
       const startY = doc.y;
       doc.fontSize(9);
-      doc.text(risk.riskId, col1X, startY, { width: 90 });
+      doc.text(risk.riskId || risk.id.substring(0, 8), col1X, startY, { width: 90 });
       doc.text(risk.name.substring(0, 40), col2X, startY, { width: 190 });
       doc.text(risk.category, col3X, startY, { width: 90 });
-      doc.text(this.getRiskLevelLabel(risk.scoreBefore), col4X, startY);
+      doc.text(this.getRiskLevelLabel(Number(risk.scoreBefore)), col4X, startY);
 
       doc.moveDown(0.5);
     });
@@ -645,7 +644,7 @@ export class ReportsService {
       doc.fontSize(16).text('TRATAMIENTO DE RIESGOS');
       doc.moveDown();
 
-      const risksWithTreatment = filteredRisks.filter(r => r.treatmentStrategy);
+      const risksWithTreatment = filteredRisks.filter(r => Number(r.scoreAfter || r.scoreBefore) < Number(r.scoreBefore));
 
       if (risksWithTreatment.length === 0) {
         doc.fontSize(10).text('No hay riesgos con estrategia de tratamiento definida.');
@@ -654,18 +653,10 @@ export class ReportsService {
           if (doc.y > 700) doc.addPage();
 
           doc.fontSize(12).font('Helvetica-Bold');
-          doc.text(`${risk.riskId}: ${risk.name}`);
+          doc.text(`${risk.riskId || risk.id.substring(0, 8)}: ${risk.name}`);
           doc.font('Helvetica').fontSize(10);
-          doc.text(`Estrategia: ${this.getTreatmentLabel(risk.treatmentStrategy)}`);
-          doc.text(`Riesgo Inherente: ${risk.scoreBefore.toFixed(1)} -> Residual: ${risk.scoreAfter.toFixed(1)}`);
-
-          if (dto.includeControls && risk.controls.length > 0) {
-            doc.moveDown(0.5);
-            doc.text('Controles:', { underline: true });
-            risk.controls.forEach(control => {
-              doc.text(`  - ${control.name} (${this.getControlTypeLabel(control.type)})`);
-            });
-          }
+          doc.text(`Estrategia: Tratamiento aplicado`);
+          doc.text(`Riesgo Inherente: ${Number(risk.scoreBefore).toFixed(1)} -> Residual: ${Number(risk.scoreAfter || risk.scoreBefore).toFixed(1)}`);
 
           doc.moveDown();
         });
@@ -728,5 +719,4 @@ export class ReportsService {
     };
     return labels[type] || type;
   }
-
-  private getStatusLabel(status: string): string {
+}

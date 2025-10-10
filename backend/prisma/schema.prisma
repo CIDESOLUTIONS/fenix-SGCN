@@ -43,6 +43,7 @@ model Tenant {
   users               User[]
   businessProcesses   BusinessProcess[]
   biaAssessments      BiaAssessment[]
+  biaCampaigns        BiaCampaign[]
   riskAssessments     RiskAssessment[]
   continuityStrategies ContinuityStrategy[]
   continuityPlans     ContinuityPlan[]
@@ -207,8 +208,9 @@ model BiaAssessment {
   id          String   @id @default(uuid())
   tenantId    String
   processId   String
+  status      String?  @default("DRAFT") // DRAFT, IN_PROGRESS, SUBMITTED, APPROVED
   
-  // MÃƒÂ©tricas tiempo (en horas)
+  // Métricas tiempo (en horas)
   rto         Int?     // Recovery Time Objective
   rpo         Int?     // Recovery Point Objective
   mtpd        Int?     // Maximum Tolerable Period of Disruption
@@ -239,8 +241,27 @@ model BiaAssessment {
   @@map("bia_assessments")
 }
 
+model BiaCampaign {
+  id              String   @id @default(uuid())
+  tenantId        String
+  name            String
+  description     String?
+  status          String   // DRAFT, ACTIVE, COMPLETED
+  deadline        DateTime
+  targetProcesses String[] // Array de IDs de procesos objetivo
+  completedCount  Int      @default(0)
+  totalCount      Int
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("bia_campaigns")
+}
+
 // ============================================
-// MÃƒâ€œDULO: RIESGO DE CONTINUIDAD (ARA)
+// MÓDULO: RIESGO DE CONTINUIDAD (ARA)
 // ============================================
 
 model RiskAssessment {

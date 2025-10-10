@@ -12,7 +12,7 @@ import {
 import { BiaCampaignsService } from './bia-campaigns.service';
 import { CreateBiaCampaignDto } from './dto/create-bia-campaign.dto';
 import { UpdateBiaCampaignDto } from './dto/update-bia-campaign.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('bia-campaigns')
 @UseGuards(JwtAuthGuard)
@@ -43,13 +43,18 @@ export class BiaCampaignsController {
     return this.biaCampaignsService.update(id, req.user.tenantId, dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
-    return this.biaCampaignsService.remove(id, req.user.tenantId);
+  @Post(':id/launch')
+  launch(@Param('id') id: string, @Request() req) {
+    return this.biaCampaignsService.launch(id, req.user.tenantId, req.user.sub);
   }
 
   @Post(':id/update-progress')
   updateProgress(@Param('id') id: string, @Request() req) {
     return this.biaCampaignsService.updateProgress(id, req.user.tenantId);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @Request() req) {
+    return this.biaCampaignsService.remove(id, req.user.tenantId);
   }
 }
