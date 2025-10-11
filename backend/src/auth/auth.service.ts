@@ -24,7 +24,7 @@ export class AuthService {
 
     const now = new Date();
     // Solo aplicar trial si el plan es TRIAL
-    const subscriptionPlan = dto.subscriptionPlan || 'TRIAL';
+    const subscriptionPlan = (dto.subscriptionPlan?.toUpperCase() || 'TRIAL') as SubscriptionPlan;
     const isTrial = subscriptionPlan === 'TRIAL';
     const trialEndsAt = isTrial ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
     const gracePeriodEndsAt = isTrial && trialEndsAt ? new Date(trialEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
@@ -83,13 +83,12 @@ export class AuthService {
 
       // Guardar licencia recibida
       if (adminResponse.license) {
-        // TODO: Agregar campo licenseKey al schema si es necesario
-        // await this.prisma.tenant.update({
-        //   where: { id: newUser.tenant.id },
-        //   data: {
-        //     licenseKey: adminResponse.license.licenseKey
-        //   }
-        // });
+        await this.prisma.tenant.update({
+          where: { id: newUser.tenant.id },
+          data: {
+            licenseKey: adminResponse.license.licenseKey
+          }
+        });
       }
 
       console.log('✅ Tenant registrado en fenix-admin con licencia:', adminResponse.license?.licenseKey);

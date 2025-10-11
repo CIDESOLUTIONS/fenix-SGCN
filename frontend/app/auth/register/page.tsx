@@ -64,7 +64,7 @@ function RegisterContent() {
           fullName,
           position,
           phone,
-          subscriptionPlan: selectedPlan
+          subscriptionPlan: selectedPlan.toUpperCase() // Normalizar a mayúsculas
         }),
       });
 
