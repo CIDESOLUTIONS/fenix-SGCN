@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { FenixAdminClientService } from '../fenix-admin-client/fenix-admin-client.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private mailService: MailService,
+    private fenixAdminClient: FenixAdminClientService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -68,6 +70,32 @@ export class AuthService {
 
       return { user, tenant };
     });
+
+    // Registrar tenant en fenix-admin
+    try {
+      const adminResponse = await this.fenixAdminClient.registerTenant({
+        id: newUser.tenant.id,
+        companyName: newUser.tenant.name,
+        contactEmail: newUser.user.email,
+        contactName: newUser.user.fullName,
+        subscriptionPlan: newUser.tenant.subscriptionPlan
+      });
+
+      // Guardar licencia recibida
+      if (adminResponse.license) {
+        await this.prisma.tenant.update({
+          where: { id: newUser.tenant.id },
+          data: {
+            licenseKey: adminResponse.license.licenseKey
+          }
+        });
+      }
+
+      console.log('✅ Tenant registrado en fenix-admin con licencia:', adminResponse.license?.licenseKey);
+    } catch (error) {
+      console.error('⚠️ Error registrando en fenix-admin (no crítico):', error.message);
+      // No bloquear el registro si falla la comunicación con admin
+    }
 
     const { password, ...userWithoutPassword } = newUser.user;
     

@@ -37,6 +37,9 @@ model Tenant {
   // Integraciones IA
   aiApiKey            String?    // API Key para servicios de IA (OpenAI, etc.)
   
+  // Licencia de fenix-admin
+  licenseKey          String?    // Clave de licencia recibida de fenix-admin
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

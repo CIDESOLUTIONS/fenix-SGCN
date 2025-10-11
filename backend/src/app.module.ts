@@ -35,6 +35,7 @@ import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { AIModule } from './ai/ai.module';
 import { RiskControlsModule } from './risk-controls/risk-controls.module';
+import { FenixAdminClientModule } from './fenix-admin-client/fenix-admin-client.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { RiskControlsModule } from './risk-controls/risk-controls.module';
     }),
     
     // === MOTORES TRANSVERSALES ===
+    FenixAdminClientModule,
     DgraphModule,
     WorkflowEngineModule,
     BIDashboardModule,
@@ -79,6 +81,7 @@ import { RiskControlsModule } from './risk-controls/risk-controls.module';
     ReportsModule,
     SettingsModule,
     AIModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
