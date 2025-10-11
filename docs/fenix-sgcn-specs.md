@@ -1,6 +1,14 @@
 
-
 # **Fenix-SGCN \- Especificaciones Funcionales para un Sistema de Gestión de Continuidad de Negocio Líder en el Mercado**
+
+**Proyecto:** Fenix-SGCN — Plataforma SaaS para Sistemas de Gestión de Continuidad del Negocio (SGCN)  
+**Versión:** 2.0 — Fecha: 2025-10-10  
+**Autor:** CIDE Solutions/ Equipo de Producto
+**Empresa:** CIDE SAS
+**Correo: comercial@cidesas.com
+**Ubicación:** Bogotá - Colombia
+**Teléfono:** +57 3157651063 
+**Paleta de colores corporativos: azul indigo y verde esmeralda
 
 
 ## **Parte I: Visión Estratégica y Arquitectura de la Plataforma**
@@ -82,6 +90,29 @@ La siguiente tabla resume cómo Fenix-SGCN se posiciona frente a los líderes de
 El valor de la plataforma no reside únicamente en la centralización de la documentación, sino en la *integración* de los datos. Un usuario en el módulo de Riesgo (Módulo 2\) debe poder ver que un riesgo de alto impacto está vinculado a un proceso crítico identificado en el BIA (Módulo 3), el cual está cubierto por un plan de recuperación específico (Módulo 5\) que fue probado por última vez hace tres meses (Módulo 6). Esta interconexión, impulsada por nuestro modelo de datos en grafo, crea una visión holística de la resiliencia que los módulos GRC aislados no pueden igualar. Esto transforma la plataforma de un sistema de registro a una herramienta de toma de decisiones estratégicas.8
 
 Además, la base de la plataforma sobre una arquitectura sin código/bajo código (no-code/low-code) es una elección estratégica que garantiza su viabilidad a futuro. Competidores como Veoci y Noggin promueven activamente su personalización sin código.21 Esto permite adaptar la plataforma a las necesidades específicas de los clientes sin el costoso y lento desarrollo personalizado, un punto débil importante en sistemas complejos como Fusion.1 Al construir nuestro motor de flujos de trabajo y editor de plantillas sobre una base sin código, empoderamos a nuestros usuarios para que evolucionen su SGCN a medida que su organización cambia, asegurando un valor a largo plazo y reduciendo la rotación de clientes.
+
+### 1.3.1 Portal Público / Comercial
+- Landing + SEO avanzado con contenido sectorial.  
+- Demo interactiva gamificada (mini-BIA y simulación de incidente).  
+- Catálogo de plantillas de cumplimiento (ISO, NIST, GDPR).  
+- Marketplace de add-ons (integraciones externas, módulos premium).  
+
+### 1.3.2  Portal Empresarial "Fenix-SGCN Portafolio"
+- Consola multi-empresa con comparativos de madurez y resiliencia.  
+- White-labeling completo (logo, colores, dominio).  
+- SLA y cumplimiento contractual con dashboards por cliente.  
+- Consolidación de informes y facturación automática (Stripe/PayPal).  
+- Benchmarking anónimo entre empresas del mismo sector. 
+
+### 1.3.3  Portal Administrador Aplicación "Fenix-admin"
+- Consola administración clientes, planes y solicitudes
+- Función de gestión de licenciamiento.  
+- función de Gestiosn de pasarela de pagos.
+- Fución de gestión backups para clintes 
+- Consolidación de informes de clientes y facturación automática (Stripe/PayPal).  
+- atención de cotizaciones y soportes
+- Benchmarking anónimo entre empresas del mismo sector. 
+
 
 ## **Parte II: Especificaciones Funcionales Módulo por Módulo**
 
@@ -383,4 +414,77 @@ La automatización de las partes más tediosas de las pruebas (puntuación, gene
   * Gráficos de tendencias que muestran la mejora del programa a lo largo del tiempo.
 
 Este módulo cierra el ciclo PDCA. Al centralizar todos los hallazgos y vincularlos a un proceso formal de CAPA, Fenix-SGCN asegura que las lecciones aprendidas se traduzcan en mejoras tangibles. El panel de control de la revisión por la dirección automatiza una de las tareas más laboriosas de la gestión de un SGCN, permitiendo a la dirección centrarse en la toma de decisiones estratégicas en lugar de en la recopilación de datos. Esto demuestra un SGCN maduro y eficaz que no solo cumple con la norma, sino que impulsa una verdadera cultura de resiliencia.
+
+
+### ** 9: Requerimientos Ténicos**
+### 9.1 Requerimientos no funcionales y de seguridad
+- **Disponibilidad:** SLA ≥ 99.95%.  
+- **Performance:** respuesta API < 200ms, escalado automático Kubernetes.  
+- **Seguridad:** TLS1.3, AES-256, WAF, DLP, Zero Trust Architecture.  
+- **Identidad:** OIDC, SAML, SCIM, MFA, soporte de políticas passwordless (FIDO2/WebAuthn).  
+- **Auditoría:** logs inmutables (blockchain opcional para trazabilidad).  
+- **Backups:** RPO ≤ 15 min, RTO ≤ 1h en recuperación de plataforma.  
+- **Cumplimiento:** GDPR, SOC2, ISO27001, ISO22301, ISO31000.  
+- ** Soporte inicial para español, inglés y portugués
+- ** Estructura preparada para fácil expansión a otros idiomas
+- ** Formatos de fecha y número según localización
+- ** Soporte para múltiples monedas (dólares americanos, real brasileño y pesos colombianos)
+- ** Soporte de modo de pantalla: claro, oscuro o sistema.
+por defecto debe arrancar en español, pesos colombianos y modo claro.
+
+---
+### 9.2 Arquitectura técnica recomendada
+- ** Desarrollo en contenedores - Docker Compose
+- **API-first** con OpenAPI 3.1. 
+- **Backend:** NestJS/Node.js con microservicios, Prisma ORM.  
+- **Frontend:** Next.js + React + internacionalización i18next.  
+- **DB:** PostgreSQL multi-tenant (schema-per-tenant), soporte DB-per-tenant para enterprise.  
+- **DB: **Dgraph  
+- **Storage:** S3-compatible con versionado, retención, WORM.  
+- **Orquestación:** Kafka para eventos críticos, Redis para cache.  
+- **Monitoring:** Prometheus, Grafana, OpenTelemetry, Sentry.  
+- **Infraestructura:** Kubernetes multi-región, Terraform, ArgoCD.  
+- **Testing:** Vitest/Jest + Playwright E2E + Chaos Engineering.  
+
+---
+### 9.3 Integraciones mínimas y avanzadas (en cada portal que corresponda)
+1. Identity providers (Okta, Azure AD, Auth0).  
+2. Comunicaciones (Twilio, SendGrid, WhatsApp, Teams, Slack).  
+3. ITSM (ServiceNow, Jira).  
+4. Observabilidad (Prometheus, Grafana, ELK, Sentry).  
+5. Storage (S3, GCS, Azure Blob).  
+6. CRM/Billing (HubSpot, Stripe, PayPal ).  
+7. Threat Intel (IBM X-Force, Recorded Future).  
+8. Clima y riesgo físico (OpenWeather, Climate API).  
+
+---
+## 9.4 Marco normativo y Mapeo a estándares. 
+- **ISO 22301:2019** – Requisitos de SGCN, cobertura (planificación, operación, auditoría, mejora).
+- **ISO 22313:2020** – Guía para implementación de SGCN.  
+- **ISO 22316:2017** – Resiliencia organizacional.  
+- **ISO 22317:2021** – Análisis de Impacto al Negocio (BIA).  
+- **ISO 22318:2021** – Continuidad en la cadena de suministro.  
+- **ISO 22330:2021** – Continuidad del recurso humano.  
+- **ISO 22331:2018** – Estrategia y planificación de continuidad.  
+- **ISO 31000:2018** – marco de riesgos integrado con gobernanza y métricas. 
+- **ISO/IEC 27001:2022** – Seguridad de la información (integración complementaria).
+-**NIST:** integración con CSF (Identify, Protect, Detect, Respond, Recover).  
+-**FFIEC:** aplicable a sector financiero (continuidad operativa y ciber).  
+-**GDPR:** cumplimiento en protección de datos y anonimización. 
+
+---
+
+## 9.5 Notas finales
+- Mantener terminología estándar (RTO, RPO, MTPD, MBCO).  
+- Se debe tener la funcionalidad total
+- IA como asistente, no sustituto de expertos.  
+- Exportabilidad y evidencia certificable como diferenciador clave.  
+- Roadmap prioriza MVP competitivo y escalabilidad global.  
+
+---
+
+
+
+
+
 
