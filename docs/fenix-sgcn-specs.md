@@ -2,6 +2,7 @@
 
 # **Fenix-SGCN \- Especificaciones Funcionales para un Sistema de Gestión de Continuidad de Negocio Líder en el Mercado**
 
+
 ## **Parte I: Visión Estratégica y Arquitectura de la Plataforma**
 
 Esta sección fundamental define la filosofía central de Fenix-SGCN. Establece cómo se sintetizan las mejores ideas del mercado en un producto superior y cohesivo, y describe los sistemas transversales de la plataforma que habilitan esta visión.
@@ -10,12 +11,7 @@ Esta sección fundamental define la filosofía central de Fenix-SGCN. Establece 
 
 **Objetivo:** Articular la posición única de Fenix-SGCN en el mercado. Fenix-SGCN no es simplemente otra herramienta de Gestión de Continuidad de Negocio (BCM); es una *Plataforma de Resiliencia Integrada*.
 
-**Principios Fundamentales:** Fenix-SGCN ofrecerá el **poder de los datos relacionales** de Fusion Risk Management 1, la
-
-**experiencia de usuario intuitiva y guiada** de Veoci 2, y la
-
-**inteligencia impulsada por IA y alineada con GRC** de MetricStream.3
-
+**Principios Fundamentales:** Fenix-SGCN ofrecerá el **poder de los datos relacionales** de Fusion Risk Management 1, la **experiencia de usuario intuitiva y guiada** de Veoci 2, y la **inteligencia impulsada por IA y alineada con GRC** de MetricStream.3 
 **Contexto de Mercado:** El mercado está evolucionando desde la planificación estática hacia la resiliencia operativa dinámica, una tendencia confirmada por analistas de la industria como Gartner y Forrester.4 Fenix-SGCN está diseñado desde su concepción para satisfacer esta demanda moderna, transformando los programas de resiliencia tradicionales en una ventaja competitiva.7
 
 La siguiente tabla resume cómo Fenix-SGCN se posiciona frente a los líderes del mercado, destacando las áreas donde ofrecerá una funcionalidad superior o única.
@@ -94,7 +90,7 @@ Además, la base de la plataforma sobre una arquitectura sin código/bajo códig
 #### **2.1. Objetivo y Alineación con ISO**
 
 * **Objetivo:** Establecer el marco fundamental del SGCN, asegurando que la alta dirección demuestre liderazgo y compromiso de manera visible y auditable.  
-* **Alineación ISO:** Aborda directamente los requisitos de la Cláusula 5 de ISO 22301: 5.1 (Liderazgo y compromiso), 5.2 (Política) y 5.3 (Roles, responsabilidades y autoridades de la organización).23
+* **Alineación ISO:** Aborda directamente los requisitos de la Cláusula 5 de ISO 22301: 5.1 (Liderazgo y compromiso), 5.2 (Política) y 5.3 (Roles, responsabilidades y autoridades de la organización).23 
 
 #### **2.2. Especificaciones Funcionales**
 
