@@ -1,235 +1,411 @@
-# 🔥 Fenix-SGCN - Sistema de Gestión de Continuidad del Negocio
+# 🔥 FENIX-SGCN - Sistema de Gestión de Continuidad de Negocio
 
-<div align="center">
-
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
-![ISO](https://img.shields.io/badge/ISO-22301-orange)
-![Status](https://img.shields.io/badge/status-production--ready-success)
-
-**Plataforma SaaS líder para Gestión de Continuidad del Negocio y Resiliencia Organizacional**
-
-[Demo](https://demo.fenix-sgcn.com) | [Documentación](https://docs.fenix-sgcn.com) | [Reportar Bug](https://github.com/fenix-sgcn/issues)
-
-</div>
+**Versión:** 2.0.0  
+**Estado:** ✅ Listo para Deployment  
+**Desarrollado por:** CIDE Solutions
 
 ---
 
-## 🎯 Características Principales
+## 📋 DESCRIPCIÓN
 
-### 📊 Gestión Integral ISO 22301
-- ✅ **7 Módulos Completos**: Planeación, Riesgos, BIA, Estrategias, Planes, Pruebas, Mejora Continua
-- ✅ **Conformidad Total**: Alineado 100% con ISO 22301:2019, ISO 31000, ISO 22317
-- ✅ **Multi-tenancy**: Gestión de múltiples organizaciones desde una sola plataforma
-- ✅ **Trazabilidad**: Auditoría completa de todas las acciones
+Plataforma SaaS empresarial completa para la gestión de continuidad de negocio (BCM) conforme a **ISO 22301, ISO 31000, NIST, FFIEC y GDPR**.
 
-### 🤖 Inteligencia Artificial y Automatización
-- 🧠 **Sugerencias IA**: RTO/RPO inteligentes basados en benchmarks
-- 📈 **Simulación Montecarlo**: Análisis cuantitativo de riesgos
-- 🔄 **Workflows Automatizados**: Aprobaciones, notificaciones, tareas
-- 📊 **Scoring Automático**: Evaluación instantánea de ejercicios
-
-### 🗺️ Mapeo Visual de Dependencias
-- 🕸️ **Grafo de Dependencias**: Visualización interactiva multi-nivel
-- 🔍 **Análisis SPOF**: Identificación automática de puntos únicos de fallo
-- 🔗 **Integración CMDB**: Sincronización con ServiceNow, JIRA
-- 📱 **Acceso Móvil**: Planes disponibles offline
-
-## 🚀 Quick Start
-
-### Prerequisitos
-- Docker 20.10+
-- Docker Compose 2.0+
-- 4GB RAM mínimo
-- 10GB espacio en disco
-
-### Instalación Rápida
-
-```bash
-# 1. Clonar repositorio
-git clone https://github.com/fenix-sgcn/fenix-sgcn.git
-cd fenix-sgcn
-
-# 2. Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus valores
-
-# 3. Desplegar con Docker
-docker-compose -f docker-compose.prod.yml up -d
-
-# 4. Acceder a la aplicación
-# Frontend: http://localhost:3000
-# Backend: http://localhost:3001
-```
-
-## 🏗️ Arquitectura
-
-### Stack Tecnológico
-
-| Capa | Tecnología | Propósito |
-|------|------------|-----------|
-| **Frontend** | Next.js 14, React 18, TypeScript | UI moderna y responsiva |
-| **Backend** | NestJS 10, Node.js 20 | API REST robusta |
-| **Base de Datos** | PostgreSQL 16 | Datos relacionales |
-| **Grafo** | Dgraph | Relaciones y dependencias |
-| **Cache** | Redis 7 | Performance y sesiones |
-| **Storage** | MinIO | Documentos y archivos |
-| **Proxy** | Nginx | Load balancing y SSL |
-
-### Arquitectura de Microservicios
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    NGINX (Puerto 80/443)                │
-├─────────────────┬────────────────┬─────────────────────┤
-│   Frontend      │   Backend API   │    MinIO Storage    │
-│   Next.js       │   NestJS       │    S3-Compatible    │
-└─────────────────┴────────────────┴─────────────────────┘
-                          │
-        ┌─────────────────┼─────────────────┐
-        │                 │                 │
-   PostgreSQL         Dgraph            Redis
-   (RDBMS)           (Graph DB)        (Cache)
-```
-
-## 📦 Módulos del Sistema
-
-### 1️⃣ **Planeación y Gobierno** (ISO 22301 Cl. 5)
-- Gestión de políticas SGCN
-- Objetivos SMART
-- Matriz RACI
-- Flujos de aprobación
-
-### 2️⃣ **Riesgo de Continuidad (ARA)** (ISO 31000)
-- Registro de riesgos
-- Evaluación cualitativa/cuantitativa
-- Simulación Montecarlo
-- Tratamiento y mitigación
-
-### 3️⃣ **Análisis de Impacto (BIA)** (ISO 22317)
-- Encuestas inteligentes
-- Mapeo de dependencias
-- Cálculo RTO/RPO/MTPD
-- Integración ITSM
-
-### 4️⃣ **Escenarios y Estrategias** (ISO 22301 Cl. 8.3)
-- Biblioteca de escenarios
-- Recomendaciones IA
-- Análisis costo-efectividad
-- Gap Analysis
-
-### 5️⃣ **Planes de Continuidad** (ISO 22301 Cl. 8.4)
-- Editor visual drag & drop
-- Playbooks dinámicos
-- Activación en tiempo real
-- Acceso offline
-
-### 6️⃣ **Pruebas de Continuidad** (ISO 22301 Cl. 8.5)
-- Programación de ejercicios
-- Scoring automático
-- Captura de evidencias
-- Reportes post-ejercicio
-
-### 7️⃣ **Mejora Continua** (ISO 22301 Cl. 10)
-- Gestión de hallazgos
-- Workflow CAPA
-- KPIs del SGCN
-- Dashboard ejecutivo
-
-## 🔒 Seguridad
-
-- 🔐 **Autenticación**: JWT con refresh tokens
-- 👥 **RBAC**: Control granular por roles
-- 🔑 **Encriptación**: AES-256 para datos sensibles
-- 📝 **Auditoría**: Log inmutable de todas las acciones
-- 🛡️ **Compliance**: GDPR, SOC2, ISO 27001
-
-## 📊 Planes y Precios
-
-| Plan | Precio | Características |
-|------|--------|-----------------|
-| **Estándar** | $199/mes | Hasta 50 empleados, 10 procesos, 5 módulos |
-| **Profesional** | $399/mes | Hasta 150 empleados, 30 procesos, todos los módulos |
-| **Premium** | Personalizado | Empleados ilimitados, soporte prioritario |
-| **Enterprise** | Personalizado | Multi-empresa, white-label, SLA garantizado |
-
-## 🧪 Testing
-
-```bash
-# Tests unitarios
-cd backend && npm test
-
-# Tests E2E
-cd backend && npm run test:e2e
-
-# Coverage
-cd backend && npm run test:cov
-```
-
-### Cobertura de Tests
-
-| Módulo | Tests | Cobertura |
-|--------|-------|-----------|
-| Módulo 1 | 16/16 | 100% |
-| Módulo 2 | 16/16 | 100% |
-| Módulo 3 | 16/16 | 100% |
-| Módulo 4 | 18/18 | 100% |
-| Módulo 5 | 15/15 | 100% |
-| Módulo 6 | 15/15 | 100% |
-| Módulo 7 | 8/8 | 100% |
-| **TOTAL** | **104/104** | **100%** |
-
-## 📚 Documentación
-
-- [Guía de Instalación](./docs/installation.md)
-- [Manual de Usuario](./docs/user-manual.md)
-- [API Reference](./docs/api-reference.md)
-- [Guía de Desarrollo](./docs/development.md)
-- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
-
-## 🤝 Contribuir
-
-Contribuciones son bienvenidas! Por favor lee [CONTRIBUTING.md](./CONTRIBUTING.md) para detalles sobre nuestro código de conducta y el proceso para enviarnos pull requests.
-
-## 📄 Licencia
-
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.md) para detalles.
-
-## 🏆 Reconocimientos
-
-- ISO 22301:2019 - Business Continuity Management Systems
-- ISO 31000:2018 - Risk Management
-- ISO 22317:2021 - Business Impact Analysis
-- NIST Cybersecurity Framework
-- GDPR Compliance Standards
-
-## 📞 Soporte
-
-- 📧 Email: soporte@fenix-sgcn.com
-- 💬 Slack: [fenix-sgcn.slack.com](https://fenix-sgcn.slack.com)
-- 📖 Docs: [docs.fenix-sgcn.com](https://docs.fenix-sgcn.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/fenix-sgcn/fenix-sgcn/issues)
-
-## ⭐ Características Premium
-
-- 🌍 **Multi-idioma**: Español, Inglés, Portugués
-- 🌙 **Modo Oscuro**: Interfaz adaptativa
-- 📱 **PWA**: Instalable como app nativa
-- 🔄 **Sincronización**: Tiempo real con WebSockets
-- 📊 **Dashboards BI**: Visualizaciones avanzadas
-- 🤖 **AI Assistant**: Chatbot integrado
-- 📧 **Notificaciones**: Email, SMS, WhatsApp, Teams
-- 🔗 **Integraciones**: ServiceNow, JIRA, SAP
+### **Ecosistema Completo:**
+- **Fenix-SGCN:** Aplicación multi-tenant para empresas
+- **Fenix-Admin:** Panel de super-administración para gestión de licencias y clientes
 
 ---
 
-<div align="center">
+## 🚀 INICIO RÁPIDO
 
-**Desarrollado con ❤️ por CIDE Solutions**
+### **1. Build Docker (Primera vez)**
+```bash
+cd C:\Users\meciz\Documents\fenix-SGCN
+docker compose -f docker-compose.ecosystem.yml build --no-cache
+```
 
-[![Website](https://img.shields.io/badge/website-fenix--sgcn.com-blue)](https://fenix-sgcn.com)
-[![Twitter](https://img.shields.io/twitter/follow/fenixsgcn?style=social)](https://twitter.com/fenixsgcn)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-FenixSGCN-blue)](https://linkedin.com/company/fenix-sgcn)
+### **2. Iniciar Ecosystem**
 
-</div>
+**Windows:**
+```powershell
+.\start-ecosystem.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start-ecosystem.sh
+./start-ecosystem.sh
+```
+
+### **3. Acceder a las Aplicaciones**
+- 🌐 **SGCN:** http://localhost
+- 🔧 **Admin:** http://localhost:8080 (admin@fenix.com / Admin2024!)
+- 📊 **Dgraph:** http://localhost:8080/ui
+- 💾 **MinIO:** http://localhost:9001
+
+---
+
+## 🏗️ ARQUITECTURA
+
+```
+┌─────────────────────────────────────────┐
+│       NGINX PROXY (Puerto 80/8080)      │
+└─────────────────────────────────────────┘
+              │              │
+    ┌─────────▼────┐   ┌────▼──────────┐
+    │  FENIX-SGCN  │   │  FENIX-ADMIN  │
+    │  (Multi-     │◄──┤  (Super       │
+    │   tenant)    │   │   Admin)      │
+    └──────┬───────┘   └───────┬───────┘
+           │                   │
+    ┌──────▼─────┐      ┌──────▼─────┐
+    │PostgreSQL  │      │PostgreSQL  │
+    │   :5432    │      │   :5433    │
+    └────────────┘      └────────────┘
+           │
+    ┌──────▼──────────────────────┐
+    │  Infraestructura Compartida │
+    │  - Dgraph, Redis, MinIO     │
+    └─────────────────────────────┘
+```
+
+---
+
+## 📦 SERVICIOS INCLUIDOS
+
+### **Aplicaciones:**
+- `fenix_frontend` - Frontend SGCN (Next.js 14)
+- `fenix_backend` - Backend SGCN (NestJS)
+- `admin_frontend` - Frontend Admin (Next.js 14)
+- `admin_backend` - Backend Admin (NestJS)
+
+### **Bases de Datos:**
+- `fenix_db` - PostgreSQL 17 (:5432)
+- `admin_db` - PostgreSQL 17 (:5433)
+- `fenix_dgraph` - Base de datos en grafo (:8080)
+
+### **Infraestructura:**
+- `fenix_redis` - Cache SGCN (:6379)
+- `admin_redis` - Cache Admin (:6380)
+- `fenix_storage` - MinIO S3 (:9000)
+- `fenix_proxy` - Nginx proxy
+
+---
+
+## 🔑 CARACTERÍSTICAS PRINCIPALES
+
+### **Módulos SGCN:**
+1. ✅ **Planeación y Gobierno** (ISO 22301 Cl. 5)
+2. ✅ **Análisis de Riesgos (ARA)** (ISO 31000)
+3. ✅ **Análisis de Impacto (BIA)** (ISO 22317)
+4. ✅ **Escenarios y Estrategias** (ISO 22301 Cl. 8.3)
+5. ✅ **Planes de Continuidad** (ISO 22301 Cl. 8.4)
+6. ✅ **Pruebas y Ejercicios** (ISO 22301 Cl. 8.5)
+7. ✅ **Mejora Continua** (ISO 22301 Cl. 10)
+
+### **Motores Transversales:**
+- ⚙️ **Workflow Engine** - Automatización de flujos
+- 📊 **Analytics Engine** - Análisis avanzado (Montecarlo, SPOF)
+- 📄 **Reports Engine** - Generación de PDFs
+- 🤖 **AI Integration** - Google Gemini para sugerencias
+
+### **Panel Admin:**
+- 👥 Gestión de clientes/tenants
+- 🔐 Sistema de licencias
+- 📈 Métricas de uso
+- 💰 Facturación y planes
+- 🔍 Auditoría completa
+
+---
+
+## 🔧 CONFIGURACIÓN
+
+### **Variables de Entorno (.env.ecosystem)**
+
+```bash
+# SGCN Database
+POSTGRES_USER=fenix
+POSTGRES_PASSWORD=fenix_prod_2025_secure
+POSTGRES_DB=fenix_sgcn
+
+# Admin Database
+ADMIN_DB_USER=admin_user
+ADMIN_DB_PASSWORD=admin_secure_2025
+ADMIN_DB_NAME=fenix_admin
+
+# JWT Secrets
+JWT_SECRET=your-super-secret-jwt-key-64-chars
+ADMIN_JWT_SECRET=admin-super-secret-key-64-chars
+
+# Integration
+ADMIN_API_KEY=fenix-integration-key-2025
+ADMIN_API_URL=http://admin_backend:3101
+
+# Storage
+MINIO_ACCESS_KEY=fenix_minio_admin
+MINIO_SECRET_KEY=fenix_minio_secure_2025
+
+# Email SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# AI (Opcional)
+GOOGLE_AI_API_KEY=your-gemini-api-key
+```
+
+---
+
+## 📚 DOCUMENTACIÓN
+
+### **Guías Principales:**
+- 📖 `RESUMEN-EJECUTIVO.md` - Resumen para ejecutivos
+- 🚀 `INTEGRATION-README.md` - Guía completa de integración
+- ✅ `DEPLOYMENT-CHECKLIST.md` - Checklist de despliegue
+- 📊 `BUILD-STATUS.md` - Estado de compilación
+
+### **Documentación Técnica:**
+- 🔧 `FASE-3-4-RESUMEN.md` - Resumen de implementación
+- 📝 `docs/fenix-sgcn-specs.md` - Especificaciones funcionales
+- 🏗️ `docs/Fenix-SGCN_EspecificacionesTécnicas_Ver2.0.md` - Specs técnicas
+
+---
+
+## 🔐 PLANES Y LICENCIAS
+
+| Plan | Max Usuarios | Max Procesos | Storage | Precio/Mes |
+|------|--------------|--------------|---------|------------|
+| **TRIAL** | 5 | 10 | 10GB | $0 |
+| **STANDARD** | 25 | 50 | 50GB | $199 |
+| **PROFESSIONAL** | 75 | 150 | 200GB | $399 |
+| **PREMIUM** | 150 | 500 | 500GB | $799 |
+| **ENTERPRISE** | 500+ | Ilimitado | Ilimitado | Custom |
+
+### **Formato de Licencia:**
+```
+FENIX-{COMP}-{YEAR}-{RAND1}-{RAND2}
+Ejemplo: FENIX-ACME-2025-X7K9-P2M4
+```
+
+---
+
+## 🔄 INTEGRACIÓN SGCN ↔ ADMIN
+
+### **Flujo de Registro:**
+```
+1. Usuario se registra en SGCN
+   ↓
+2. SGCN llama a Admin API (registerTenant)
+   ↓
+3. Admin crea cliente y genera licencia
+   ↓
+4. Admin retorna licenseKey
+   ↓
+5. SGCN almacena licencia en tenant
+```
+
+### **Endpoints de Integración:**
+
+**Registro de Cliente:**
+```bash
+POST /api/integration/client/register-from-app
+Headers: X-API-Key: fenix-integration-key-2025
+Body: {
+  "tenantId": "uuid",
+  "companyName": "Empresa XYZ",
+  "contactEmail": "admin@empresa.com",
+  "plan": "STANDARD"
+}
+```
+
+**Validación de Licencia:**
+```bash
+POST /api/integration/licenses/validate
+Headers: X-API-Key: fenix-integration-key-2025
+Body: {
+  "tenantId": "uuid",
+  "licenseKey": "FENIX-XXXX-2025-XXXX-XXXX"
+}
+```
+
+---
+
+## 🛠️ COMANDOS ÚTILES
+
+### **Ver Logs:**
+```bash
+# Todos los servicios
+docker compose -f docker-compose.ecosystem.yml logs -f
+
+# Servicio específico
+docker compose -f docker-compose.ecosystem.yml logs -f fenix_backend
+```
+
+### **Reiniciar Servicios:**
+```bash
+# Todo
+docker compose -f docker-compose.ecosystem.yml restart
+
+# Específico
+docker compose -f docker-compose.ecosystem.yml restart fenix_backend
+```
+
+### **Detener:**
+```bash
+# Sin eliminar datos
+docker compose -f docker-compose.ecosystem.yml down
+
+# Eliminar todo (¡CUIDADO!)
+docker compose -f docker-compose.ecosystem.yml down -v
+```
+
+### **Estado:**
+```bash
+docker compose -f docker-compose.ecosystem.yml ps
+```
+
+---
+
+## 💾 BACKUPS
+
+### **Manual:**
+```bash
+# PostgreSQL SGCN
+docker exec fenix_db_prod pg_dump -U fenix fenix_sgcn > backup-sgcn.sql
+
+# PostgreSQL Admin
+docker exec admin_db_prod pg_dump -U admin_user fenix_admin > backup-admin.sql
+```
+
+### **Automático:**
+Los backups se configuran en cron (ver `DEPLOYMENT-CHECKLIST.md`)
+
+---
+
+## 🧪 TESTING
+
+### **Test de Registro:**
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@empresa.com",
+    "password": "Test123!",
+    "companyName": "Empresa Test",
+    "fullName": "Usuario Test"
+  }'
+```
+
+### **Test de Login:**
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@empresa.com",
+    "password": "Test123!"
+  }'
+```
+
+---
+
+## 🐛 TROUBLESHOOTING
+
+### **Error: Puerto en uso**
+```bash
+# Windows
+netstat -ano | findstr :3001
+
+# Linux/Mac
+lsof -i :3001
+```
+
+### **Error: No se conecta a Admin**
+```bash
+# Verificar servicio
+docker compose -f docker-compose.ecosystem.yml ps admin_backend
+
+# Ver logs
+docker compose -f docker-compose.ecosystem.yml logs admin_backend
+```
+
+### **Error: Build falla**
+```bash
+# Limpiar caché
+docker system prune -a
+
+# Rebuild
+docker compose -f docker-compose.ecosystem.yml build --no-cache
+```
+
+---
+
+## 🔒 SEGURIDAD
+
+### **Antes de Producción:**
+1. ✅ Cambiar todos los passwords
+2. ✅ Rotar JWT secrets (64 chars random)
+3. ✅ Cambiar API keys
+4. ✅ Configurar SSL/HTTPS
+5. ✅ Configurar firewall
+6. ✅ Habilitar 2FA para Admin
+
+### **SSL/HTTPS:**
+```bash
+# Generar certificados
+certbot certonly --standalone -d sgcn.empresa.com
+certbot certonly --standalone -d admin.empresa.com
+
+# Copiar a nginx
+cp /etc/letsencrypt/live/sgcn.empresa.com/*.pem nginx/ssl/
+```
+
+---
+
+## 📞 SOPORTE
+
+**Equipo de Desarrollo:**
+- **Email:** soporte@cidesolutions.com
+- **WhatsApp:** +57 315 765 1063
+- **Ubicación:** Bogotá, Colombia
+
+**Horario de Soporte:**
+- Lunes a Viernes: 8:00 AM - 6:00 PM (COT)
+- Sábados: 9:00 AM - 1:00 PM (COT)
+- Emergencias 24/7: WhatsApp
+
+---
+
+## 🤝 CONTRIBUCIÓN
+
+Este es un proyecto propietario de CIDE Solutions.  
+Para contribuciones o mejoras, contactar al equipo de desarrollo.
+
+---
+
+## 📄 LICENCIA
+
+Copyright © 2025 CIDE Solutions  
+Todos los derechos reservados.
+
+---
+
+## 🎯 ROADMAP
+
+### **v2.1 (Q1 2026)**
+- [ ] Dashboard de métricas en Admin
+- [ ] Sistema de notificaciones push
+- [ ] Integración con Teams/Slack
+- [ ] App móvil nativa
+
+### **v2.2 (Q2 2026)**
+- [ ] ML para predicción de riesgos
+- [ ] Blockchain para auditoría
+- [ ] Multi-región deployment
+- [ ] Advanced analytics
+
+---
+
+**Versión:** 2.0.0  
+**Última actualización:** Octubre 10, 2025  
+**Estado:** ✅ Listo para Deployment

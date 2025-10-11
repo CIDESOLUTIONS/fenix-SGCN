@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FileText, Target, Users, Upload, CheckCircle, Edit, Trash2, Building2, Lightbulb, Network, X } from "lucide-react";
-import { usePreferences } from "@/context/PreferencesContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import CreatePolicyModal from "@/components/governance/CreatePolicyModal";
 import CreateObjectiveModal from "@/components/governance/CreateObjectiveModal";
 import EditPolicyModal from "@/components/governance/EditPolicyModal";
@@ -77,7 +78,7 @@ interface BusinessProcess {
 }
 
 export default function PlaneacionPage() {
-  const { t } = usePreferences();
+  const { t } = useTranslation();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [raciMatrices, setRaciMatrices] = useState<RaciMatrix[]>([]);

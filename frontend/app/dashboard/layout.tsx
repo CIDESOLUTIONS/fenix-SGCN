@@ -1,5 +1,5 @@
 import DashboardLayout from '@/components/DashboardLayout';
-import { PreferencesProvider } from '@/context/PreferencesContext';
+import { PreferencesProvider } from '@/contexts/PreferencesContext';
 
 export default function Layout({
   children,

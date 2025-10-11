@@ -83,12 +83,13 @@ export class AuthService {
 
       // Guardar licencia recibida
       if (adminResponse.license) {
-        await this.prisma.tenant.update({
-          where: { id: newUser.tenant.id },
-          data: {
-            licenseKey: adminResponse.license.licenseKey
-          }
-        });
+        // TODO: Agregar campo licenseKey al schema si es necesario
+        // await this.prisma.tenant.update({
+        //   where: { id: newUser.tenant.id },
+        //   data: {
+        //     licenseKey: adminResponse.license.licenseKey
+        //   }
+        // });
       }
 
       console.log('✅ Tenant registrado en fenix-admin con licencia:', adminResponse.license?.licenseKey);

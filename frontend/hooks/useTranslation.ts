@@ -1,4 +1,4 @@
-import { usePreferences } from '@/context/PreferencesContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import esTranslations from '@/locales/es.json';
 import enTranslations from '@/locales/en.json';
 import ptTranslations from '@/locales/pt.json';
@@ -12,8 +12,8 @@ const translations: Record<string, Translations> = {
 };
 
 export function useTranslation() {
-  const { preferences } = usePreferences();
-  const locale = preferences.locale; // Corregido: usar 'locale' en vez de 'language'
+  const { language } = usePreferences();
+  const locale = language; // Usar 'language' del contexto
 
   const t = (key: string): string => {
     const keys = key.split('.');

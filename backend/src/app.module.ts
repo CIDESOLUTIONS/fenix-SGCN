@@ -81,7 +81,7 @@ import { FenixAdminClientModule } from './fenix-admin-client/fenix-admin-client.
     ReportsModule,
     SettingsModule,
     AIModule,
-    AdminModule,
+    // AdminModule, // TODO: Agregar módulo cuando esté disponible
   ],
   controllers: [AppController],
   providers: [AppService],

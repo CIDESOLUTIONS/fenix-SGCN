@@ -1,0 +1,279 @@
+#version: '3.8'
+
+# =================================================================
+# FENIX ECOSYSTEM - Producción Completa
+# Incluye: Fenix-SGCN + Fenix-Admin + Infraestructura Compartida
+# =================================================================
+
+services:
+  # =================================================================
+  # PROXY INVERSO - Nginx como punto de entrada único
+  # =================================================================
+  fenix_proxy:
+    image: nginx:stable-alpine
+    container_name: fenix_proxy_unified
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.unified.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - fenix_backend
+      - fenix_frontend
+      - admin_backend
+      - admin_frontend
+    networks:
+      - fenix_ecosystem
+    restart: always
+
+  # =================================================================
+  # FENIX-SGCN FRONTEND
+  # =================================================================
+  fenix_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: fenix_frontend_prod
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    networks:
+      - fenix_ecosystem
+    restart: always
+
+  # =================================================================
+  # FENIX-SGCN BACKEND
+  # =================================================================
+  fenix_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: fenix_backend_prod
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fenix}:${POSTGRES_PASSWORD:-fenix2024}@fenix_db:5432/${POSTGRES_DB:-fenix_sgcn}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key}
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      DGRAPH_URL: http://fenix_dgraph:8080
+      DGRAPH_GRPC_URL: fenix_dgraph:9080
+      REDIS_HOST: fenix_redis
+      REDIS_PORT: 6379
+      # Integración con Admin
+      ADMIN_API_URL: http://admin_backend:3101
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-fenix-integration-key-2025}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - fenix_db
+      - fenix_redis
+      - fenix_dgraph
+    networks:
+      - fenix_ecosystem
+    restart: always
+
+  # =================================================================
+  # FENIX-ADMIN BACKEND
+  # =================================================================
+  admin_backend:
+    build:
+      context: ../fenix-admin/admin-backend
+      dockerfile: Dockerfile
+    container_name: admin_backend_prod
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${ADMIN_DB_USER:-admin_user}:${ADMIN_DB_PASSWORD:-admin_secure_password}@admin_db:5432/${ADMIN_DB_NAME:-fenix_admin}?schema=public
+      REDIS_HOST: admin_redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${ADMIN_JWT_SECRET:-admin-super-secret-key}
+      JWT_EXPIRES_IN: 7d
+      PORT: 3101
+      # Webhook a Fenix-SGCN
+      FENIX_SGCN_API_URL: http://fenix_backend:3001
+      FENIX_SGCN_WEBHOOK_URL: http://fenix_backend:3001/webhooks/admin
+    ports:
+      - "3101:3101"
+    depends_on:
+      - admin_db
+      - admin_redis
+    networks:
+      - fenix_ecosystem
+    restart: always
+
+  # =================================================================
+  # FENIX-ADMIN FRONTEND
+  # =================================================================
+  admin_frontend:
+    build:
+      context: ../fenix-admin/admin-frontend
+      dockerfile: Dockerfile
+    container_name: admin_frontend_prod
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_ADMIN_API_URL: http://localhost:3101
+      NEXT_PUBLIC_APP_NAME: Fenix Admin
+    networks:
+      - fenix_ecosystem
+    restart: always
+
+  # =================================================================
+  # BASE DE DATOS FENIX-SGCN
+  # =================================================================
+  fenix_db:
+    image: postgres:17-alpine
+    container_name: fenix_db_prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fenix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fenix2024}
+      POSTGRES_DB: ${POSTGRES_DB:-fenix_sgcn}
+    volumes:
+      - fenix_postgres_data:/var/lib/postgresql/data
+      - ./backups/sgcn:/backups
+    ports:
+      - "5432:5432"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fenix}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # =================================================================
+  # BASE DE DATOS FENIX-ADMIN
+  # =================================================================
+  admin_db:
+    image: postgres:17-alpine
+    container_name: admin_db_prod
+    environment:
+      POSTGRES_USER: ${ADMIN_DB_USER:-admin_user}
+      POSTGRES_PASSWORD: ${ADMIN_DB_PASSWORD:-admin_secure_password}
+      POSTGRES_DB: ${ADMIN_DB_NAME:-fenix_admin}
+    volumes:
+      - admin_postgres_data:/var/lib/postgresql/data
+      - ./backups/admin:/backups
+    ports:
+      - "5433:5432"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ADMIN_DB_USER:-admin_user}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # =================================================================
+  # DGRAPH - Base de Datos en Grafo
+  # =================================================================
+  fenix_dgraph_zero:
+    image: dgraph/dgraph:v24.1.3
+    container_name: fenix_dgraph_zero_prod
+    volumes:
+      - fenix_dgraph_zero_data:/dgraph
+    ports:
+      - "5080:5080"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    command: dgraph zero --my=fenix_dgraph_zero:5080 --replicas=1
+
+  fenix_dgraph:
+    image: dgraph/dgraph:v24.1.3
+    container_name: fenix_dgraph_prod
+    volumes:
+      - fenix_dgraph_data:/dgraph
+    ports:
+      - "8080:8080"
+      - "9080:9080"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    depends_on:
+      - fenix_dgraph_zero
+    command: dgraph alpha --my=fenix_dgraph:7080 --zero=fenix_dgraph_zero:5080
+
+  # =================================================================
+  # REDIS - Cache Compartido
+  # =================================================================
+  fenix_redis:
+    image: redis:7-alpine
+    container_name: fenix_redis_prod
+    volumes:
+      - fenix_redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  admin_redis:
+    image: redis:7-alpine
+    container_name: admin_redis_prod
+    volumes:
+      - admin_redis_data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # =================================================================
+  # ALMACENAMIENTO - MinIO
+  # =================================================================
+  fenix_storage:
+    image: minio/minio:latest
+    container_name: fenix_storage_prod
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - fenix_minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - fenix_ecosystem
+    restart: always
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# =================================================================
+# REDES
+# =================================================================
+networks:
+  fenix_ecosystem:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+
+# =================================================================
+# VOLÚMENES PERSISTENTES
+# =================================================================
+volumes:
+  fenix_postgres_data:
+  admin_postgres_data:
+  fenix_dgraph_zero_data:
+  fenix_dgraph_data:
+  fenix_redis_data:
+  admin_redis_data:
+  fenix_minio_data:

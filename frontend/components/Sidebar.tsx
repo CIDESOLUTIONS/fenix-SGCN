@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { usePreferences } from '@/context/PreferencesContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
   Home,
@@ -22,7 +22,7 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { preferences } = usePreferences();
+  const { language, currency, theme } = usePreferences();
   const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 

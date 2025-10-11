@@ -1,14 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import { Upload, Save, X } from "lucide-react";
-import { usePreferences } from "@/context/PreferencesContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BusinessProcessEditorProps {
   onSuccess: () => void;
 }
 
 export default function BusinessProcessEditor({ onSuccess }: BusinessProcessEditorProps) {
-  const { t } = usePreferences();
+  const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);

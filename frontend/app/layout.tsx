@@ -1,15 +1,7 @@
-import "./globals.css";
-import type { Metadata } from "next";
-import { PreferencesProvider } from "@/contexts/PreferencesContext";
+"use client";
 
-export const metadata: Metadata = {
-  title: "FENIX-SGCN",
-  description:
-    "Plataforma multi-tenant para la gestión de continuidad de negocio (ISO 22301 + complementos).",
-  icons: {
-    icon: "/icon.png",
-  },
-};
+import "./globals.css";
+import { PreferencesProvider } from "@/contexts/PreferencesContext";
 
 export default function RootLayout({
   children,

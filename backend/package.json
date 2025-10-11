@@ -36,6 +36,7 @@
     "@nestjs/schedule": "^4.1.1",
     "@prisma/client": "^5.20.0",
     "@types/bull": "^3.15.9",
+    "axios": "^1.12.2",
     "bcrypt": "^5.1.1",
     "bull": "^4.16.3",
     "class-transformer": "^0.5.1",

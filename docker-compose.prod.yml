@@ -66,6 +66,9 @@ services:
       MINIO_PORT: 9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      # Integración con Fenix Admin
+      ADMIN_API_URL: ${ADMIN_API_URL:-http://fenix_admin_backend:3101}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-fenix-integration-key-2025}
     ports:
       - "3001:3001"
     depends_on:
